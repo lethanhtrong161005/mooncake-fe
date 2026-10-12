@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Alert,
+  Image,
   SafeAreaView,
   ScrollView,
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  Alert,
   StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { colors } from '../theme/colors';
 
@@ -50,7 +50,7 @@ export default function EvaluteScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      
+
       {/* Top App Bar */}
       <View style={styles.appBar}>
         <View>

@@ -1,634 +1,551 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+
+// Danh sách hoạt động đặt hàng & RFQ thực tế theo thời gian thực (Social Proof Ticker)
+const LIVE_B2B_ACTIVITIES = [
+  {
+    icon: 'order_approve',
+    company: 'FPT Software',
+    action: 'vừa chốt 350 Hộp Nguyệt Viên Tri Kỷ',
+    time: '2 phút trước',
+    badge: 'Đơn Sẵn Kho',
+    badgeColor: 'bg-emerald-100 text-emerald-800'
+  },
+  {
+    icon: 'gavel',
+    company: 'Techcombank Chi nhánh Thăng Long',
+    action: 'vừa mở thầu RFQ 500 hộp sơn mài',
+    time: '4 phút trước',
+    badge: 'Đấu Thầu RFQ',
+    badgeColor: 'bg-amber-100 text-amber-900'
+  },
+  {
+    icon: 'local_shipping',
+    company: 'Vingroup Retail',
+    action: 'đã hoàn tất nghiệm thu & bàn giao xe lạnh PoD',
+    time: '6 phút trước',
+    badge: 'Đã Nghiệm Thu',
+    badgeColor: 'bg-blue-100 text-blue-900'
+  },
+  {
+    icon: 'draw',
+    company: 'Vinamilk Corporation',
+    action: 'vừa ký kết hợp đồng điện tử e-Contract 400 hộp',
+    time: '9 phút trước',
+    badge: 'Ký Số B2B',
+    badgeColor: 'bg-purple-100 text-purple-900'
+  }
+];
 
 export default function HomePage({ onNavigate }) {
+  // Trạng thái thông báo hoạt động thời gian thực (Live Toast)
+  const [noticeIdx, setNoticeIdx] = useState(0);
+  const [showNotice, setShowNotice] = useState(true);
 
   useEffect(() => {
-    try {
-      
-                (function initCalculator() {
-    const slider = document.getElementById('box-range-slider');
-                const display = document.getElementById('quantity-display');
-                const discountEl = document.getElementById('tier-discount');
-                const perksEl = document.getElementById('tier-perks');
-
-                if (!slider || !display || !discountEl || !perksEl) return;
-
-                function updateTier(qty) {
-                    display.textContent = Number(qty).toLocaleString('vi-VN');
-
-                if (qty < 100) {
-                    discountEl.textContent = 'Giảm 15%';
-                perksEl.innerHTML = `
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Miễn phí thiệp chúc mừng theo mẫu trang trọng</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Miễn phí vận chuyển nội thành 01 địa điểm</span>
-                </li>
-                <li class="flex items-center gap-2 text-outline">
-                    <span class="material-symbols-outlined text-[18px]">radio_button_unchecked</span>
-                    <span>In logo (áp dụng từ 100 hộp trở lên)</span>
-                </li>
-                `;
-      } else if (qty < 500) {
-                    discountEl.textContent = 'Giảm 25%';
-                perksEl.innerHTML = `
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Miễn phí in logo doanh nghiệp ép kim nhũ vàng</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Tặng thiệp chúc Trung Thu thiết kế tone riêng</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Cung cấp hộp mẫu thử tận nơi miễn phí</span>
-                </li>
-                `;
-      } else {
-                    discountEl.textContent = 'Giảm 35%';
-                perksEl.innerHTML = `
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Chiết khấu kịch trần 35% từ xưởng gốc</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Tùy chỉnh thiết kế hộp riêng (khắc laser, sơn mài, đai lụa)</span>
-                </li>
-                <li class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                    <span>Phân luồng giao hàng tận nơi nhiều chi nhánh toàn quốc</span>
-                </li>
-                `;
-      }
-    }
-
-                slider.addEventListener('input', function(e) {
-                    updateTier(e.target.value);
-    });
-
-                window.setQuantity = function(val) {
-                    slider.value = val;
-                updateTier(val);
-    };
-  })();
-            
-    } catch (err) {
-      console.warn('Script execution notice:', err);
-    }
+    const timer = setInterval(() => {
+      setNoticeIdx((prev) => (prev + 1) % LIVE_B2B_ACTIVITIES.length);
+    }, 5500);
+    return () => clearInterval(timer);
   }, []);
 
+  const currentNotice = LIVE_B2B_ACTIVITIES[noticeIdx];
+
   return (
-    <main className="w-full pt-20 bg-surface min-h-[calc(100vh-20rem)]"><div className="flex flex-col w-full">
-            {/* HERO SECTION */}
-            <section className="relative w-full overflow-hidden bg-surface-container-low py-space-xl lg:py-24">
-                {/* Subtle Golden Moon Glow in Background */}
-                <div className="absolute -top-36 right-[-8%] w-[580px] h-[580px] rounded-full bg-secondary-container/20 blur-[130px] pointer-events-none"></div>
-                <div className="absolute -bottom-24 -left-20 w-[420px] h-[420px] rounded-full bg-primary/5 blur-[100px] pointer-events-none"></div>
-                <div className="max-w-7xl mx-auto px-margin relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center">
-                        {/* Text Column */}
-                        <div className="lg:col-span-7 space-y-space-lg">
-                            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-lowest shadow-sm">
-                                <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
-                                <span className="font-label-md text-label-md text-secondary font-medium tracking-wide">Mùa Trăng 2024 • Cổng Mua Sắm B2B Trực Tuyến</span>
-                            </div>
-                            <h1 className="font-display-hero text-headline-lg lg:text-display-hero text-primary tracking-tight leading-[1.15]">
-                                Tinh Hoa Trăng Rằm — <br className="hidden sm:inline" />
-                                <span className="text-on-surface">Giải Pháp Quà Tặng</span> <br />
-                                <span className="italic font-normal text-secondary">Doanh Nghiệp Toàn Diện</span>
-                            </h1>
-                            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
-                                Kết nối trực tiếp 50+ xưởng bánh nghệ nhân &amp; thương hiệu di sản hàng đầu. Tiết kiệm ngân sách với chiết khấu tới 35%, đồng hành cùng giải pháp in ấn logo độc quyền.
-                            </p>
-                            {/* Dual Buttons */}
-                            <div className="flex flex-wrap items-center gap-space-md pt-2">
-                                <a className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-primary-container text-on-primary font-title-sm text-title-sm shadow-md hover:bg-primary transition-all duration-200" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    <span className="material-symbols-outlined text-[20px]">request_quote</span>
-                                    Tạo Yêu Cầu Báo Giá (RFQ)
-                                </a>
-                                <a className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-surface-container-lowest text-secondary font-title-sm text-title-sm shadow-sm hover:bg-secondary-fixed/40 transition-all duration-200" href="#ai-assistant-sec">
-                                    <span className="material-symbols-outlined text-[20px] text-secondary">auto_awesome</span>
-                                    Hỏi Trợ Lý AI Chọn Quà
-                                </a>
-                            </div>
-                            {/* Value Proposition Pill Matrix */}
-                            <div className="pt-space-md grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-surface-container-lowest shadow-sm">
-                                    <span className="material-symbols-outlined text-secondary text-[22px]">storefront</span>
-                                    <div className="flex flex-col">
-                                        <span className="font-label-sm text-label-sm uppercase text-outline">Thương hiệu</span>
-                                        <span className="font-title-sm text-title-sm text-on-surface font-semibold">50+ Uy Tín</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-surface-container-lowest shadow-sm">
-                                    <span className="material-symbols-outlined text-primary text-[22px]">percent</span>
-                                    <div className="flex flex-col">
-                                        <span className="font-label-sm text-label-sm uppercase text-outline">Đơn Doanh Nghiệp</span>
-                                        <span className="font-title-sm text-title-sm text-primary font-semibold">Giảm đến 35%</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-surface-container-lowest shadow-sm">
-                                    <span className="material-symbols-outlined text-secondary text-[22px]">brush</span>
-                                    <div className="flex flex-col">
-                                        <span className="font-label-sm text-label-sm uppercase text-outline">Gia Công Bao Bì</span>
-                                        <span className="font-title-sm text-title-sm text-on-surface font-semibold">Khắc Logo Riêng</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2.5 p-3 rounded-lg bg-surface-container-lowest shadow-sm">
-                                    <span className="material-symbols-outlined text-tertiary text-[22px]">task_alt</span>
-                                    <div className="flex flex-col">
-                                        <span className="font-label-sm text-label-sm uppercase text-outline">Cam Kết Tiến Độ</span>
-                                        <span className="font-title-sm text-title-sm text-tertiary font-semibold">100% Đúng Hạn</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Visual Hero Showcase */}
-                        <div className="lg:col-span-5 relative">
-                            <div className="relative rounded-2xl overflow-hidden shadow-xl bg-surface-container-lowest p-3">
-                                <img className="w-full h-[440px] object-cover rounded-xl" data-alt="An exquisite high-end Vietnamese Mid-Autumn luxury mooncake gift set displayed on an opulent lacquer tray. Delicate traditional golden crust mooncakes with detailed floral patterns, resting beside a celadon porcelain teapot with steaming tea and golden lotus decor. Warm festive lighting, soft crimson and rich gold tones, high-end commercial editorial product photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5KYJBvLCMp7xupDx-gQDoScTKa2U2dcqnRBSub8sWPgH0wYoLUDuGyXFvrnYfQaTMrYyuNOEY1Xn0Bee6yPg_n-tsDcd3_T5cSaE_UGhNSj0UWvo73nDRHvFsl4OZS7P78Zup2sDWLnSXykjDBRXXtMmkU6M94d1KjHq0Ox75cvfYpXgGAeibwx5Qw3PSLTmfY64Uj9ljl0vcE5NLLbhUry6hrpbOHwKw1n-mfub11OleVIv82chGEg" />
-                                <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-surface/90 backdrop-blur-md shadow-lg flex items-center justify-between">
-                                    <div>
-                                        <span className="font-label-sm text-label-sm uppercase text-secondary font-semibold">Bộ Sưu Tập Giới Hạn</span>
-                                        <p className="font-headline-sm text-headline-sm text-primary">Nguyệt Dạ Hoàng Triều</p>
-                                        <p className="font-body-sm text-body-sm text-on-surface-variant">Sơn mài khắc thủ công dát vàng 24K</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="font-label-sm text-label-sm text-outline">Từ</span>
-                                        <p className="font-price-display text-price-display text-primary">1.250k</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <div className="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen">
+      {/* Redesigned E-Commerce Header */}
+      <Header activePage="trang-chu" onNavigate={onNavigate} />
+
+      <main className="w-full pt-[68px] sm:pt-[72px] bg-surface min-h-[calc(100vh-280px)]">
+        <div className="flex flex-col w-full">
+
+          {/* 1. HERO SECTION CÓ ANIMATION & HIỆU ỨNG TƯƠNG TÁC */}
+          <section className="relative w-full overflow-hidden py-10 sm:py-14 px-4 sm:px-6">
+            {/* Background Image & Soft Transparent Gradient Scrim */}
+            <div className="absolute inset-0 z-0">
+              <img
+                src="/hero_mooncake_bg.jpg"
+                alt="Bánh Trung Thu Doanh Nghiệp"
+                className="w-full h-full object-cover object-center transform scale-100 animate-float-slow"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/45 via-stone-950/25 to-stone-950/50"></div>
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center text-center">
+              {/* Season Tag with Golden Glow Pulse */}
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#ffba00]/80 text-[#fec971] mb-3 shadow-sm animate-pulse-glow cursor-default select-none transition-transform hover:scale-105">
+                <span className="material-symbols-outlined text-[15px] text-[#ffba00] animate-spin-slow">verified</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider">Cổng Phân Phối Quà Tặng Doanh Nghiệp 2025</span>
+              </div>
+
+              {/* Headline */}
+              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] animate-fade-in-up">
+                Nền Tảng Cung Ứng Bánh Trung Thu Doanh Nghiệp
+              </h1>
+
+              {/* Subtitle */}
+              <p className="mt-2.5 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng &amp; VAT minh bạch.
+              </p>
+
+              {/* 3 Trust Badges (Compact) */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs text-white">
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#ffba00]/60 transition-colors">
+                  <span className="material-symbols-outlined text-[#ffba00] text-[16px]">verified</span>
+                  <span className="font-medium">50+ Xưởng Đã Duyệt</span>
                 </div>
-            </section>
-            {/* INTERACTIVE TIERED DISCOUNT CALCULATOR */}
-            <section className="w-full max-w-7xl mx-auto px-margin py-space-xl">
-                <div className="bg-surface-container-lowest rounded-2xl p-6 lg:p-10 shadow-md">
-                    <div className="max-w-3xl mb-8">
-                        <span className="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Tiết Kiệm Chi Phí Thu Mua</span>
-                        <h2 className="font-headline-lg text-headline-lg text-on-surface mt-1">Tính Dự Toán Chiết Khấu Theo Số Lượng</h2>
-                        <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                            Kéo chọn số lượng hộp bạn dự kiến đặt để xem ngay mức giảm giá trực tiếp và các đặc quyền đi kèm từ xưởng bánh.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                        {/* Interactive Controls */}
-                        <div className="lg:col-span-7 space-y-6">
-                            <div className="flex items-center justify-between">
-                                <span className="font-title-md text-title-md text-on-surface">Quy mô đơn hàng:</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-price-display text-3xl text-primary font-bold" id="quantity-display">250</span>
-                                    <span className="font-body-md text-body-md text-on-surface-variant">hộp quà</span>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <input className="w-full h-2.5 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary" id="box-range-slider" max="1000" min="20" step="10" type="range" defaultValue="250" />
-                                <div className="flex justify-between font-label-sm text-label-sm text-outline pt-1">
-                                    <span>20 hộp</span>
-                                    <span>100 hộp</span>
-                                    <span>300 hộp</span>
-                                    <span>500 hộp</span>
-                                    <span>1,000+ hộp</span>
-                                </div>
-                            </div>
-                            {/* Quick Select Buttons */}
-                            <div className="flex items-center gap-2 pt-2">
-                                <span className="font-label-sm text-label-sm text-on-surface-variant">Chọn nhanh:</span>
-                                <button className="px-3 py-1.5 rounded-lg bg-surface-container-low font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors" onclick="setQuantity(50)">50 hộp</button>
-                                <button className="px-3 py-1.5 rounded-lg bg-surface-container-low font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors" onclick="setQuantity(200)">200 hộp</button>
-                                <button className="px-3 py-1.5 rounded-lg bg-surface-container-low font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors" onclick="setQuantity(500)">500 hộp</button>
-                                <button className="px-3 py-1.5 rounded-lg bg-surface-container-low font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors" onclick="setQuantity(1000)">1,000+ hộp</button>
-                            </div>
-                        </div>
-                        {/* Calculated Live Result Box */}
-                        <div className="lg:col-span-5 bg-surface-container-low rounded-xl p-6 shadow-inner space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b-0">
-                                <span className="font-label-md text-label-md text-on-surface-variant">Mức chiết khấu áp dụng:</span>
-                                <span className="font-price-display text-2xl text-primary font-bold" id="tier-discount">Giảm 25%</span>
-                            </div>
-                            <div className="space-y-2">
-                                <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">Đặc quyền đi kèm:</span>
-                                <ul className="space-y-2 font-body-sm text-body-sm text-on-surface" id="tier-perks">
-                                    <li className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                                        <span>Miễn phí in logo doanh nghiệp lên nắp hộp</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                                        <span>Tặng thiệp chúc Trung Thu thiết kế riêng theo tone brand</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
-                                        <span>Giao hàng chia đợt theo nhiều chi nhánh</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="pt-2">
-                                <a className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm hover:bg-primary-container transition-all shadow-sm" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    <span className="material-symbols-outlined text-[18px]">send</span>
-                                    Nhận Báo Giá Dự Toán Ngay
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Tier Guide Minimal Indicators */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 pt-6">
-                        <div className="p-4 rounded-xl bg-surface-container-low/70">
-                            <span className="font-label-sm text-label-sm text-secondary uppercase font-semibold">Hạng Phổ Thông (20 - 99 hộp)</span>
-                            <p className="font-title-md text-title-md text-primary mt-1">Giảm 15%</p>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Miễn phí thiệp chúc + Miễn phí vận chuyển nội thành 01 điểm.</p>
-                        </div>
-                        <div className="p-4 rounded-xl bg-surface-container-low/70">
-                            <span className="font-label-sm text-label-sm text-secondary uppercase font-semibold">Hạng Doanh Nghiệp (100 - 499 hộp)</span>
-                            <p className="font-title-md text-title-md text-primary mt-1">Giảm 25%</p>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Miễn phí in logo ép kim nhũ vàng + Tặng hộp mẫu thử tận nơi.</p>
-                        </div>
-                        <div className="p-4 rounded-xl bg-surface-container-low/70">
-                            <span className="font-label-sm text-label-sm text-secondary uppercase font-semibold">Hạng VIP Toàn Diện (500+ hộp)</span>
-                            <p className="font-title-md text-title-md text-primary mt-1">Giảm 35%</p>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Tùy biến khay quà, vị nhân riêng, quản lý tiến độ bàn giao đa điểm.</p>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-emerald-400/60 transition-colors">
+                  <span className="material-symbols-outlined text-emerald-400 text-[16px]">receipt_long</span>
+                  <span className="font-medium">100% Xuất VAT &amp; Hợp Đồng</span>
                 </div>
-            </section>
-            {/* FEATURED COLLECTIONS & GIFT SETS */}
-            <section className="w-full max-w-7xl mx-auto px-margin py-space-xl">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#fec971]/60 transition-colors">
+                  <span className="material-symbols-outlined text-[#fec971] text-[16px]">local_shipping</span>
+                  <span className="font-medium">Giao PoD Toàn Quốc</span>
+                </div>
+              </div>
+
+              {/* 2 Sleek Action Cards với hiệu ứng Hover Lift & Shimmer Button */}
+              <div className="mt-5 sm:mt-6 w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5 text-left">
+                {/* Card 1: Hàng Sẵn Kho */}
+                <div
+                  onClick={() => onNavigate?.('tim-kiem')}
+                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-md hover:shadow-2xl border border-white/80 hover:border-primary/30 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300 group-hover:scale-105 shadow-xs">
+                      <span className="material-symbols-outlined text-[24px]">inventory_2</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
+                          </span>
+                          Sẵn Kho 24h
+                        </span>
+                        <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 20 hộp</span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-primary transition-colors truncate">
+                        Bánh Sẵn Kho Giao Hỏa Tốc
+                      </h3>
+                      <p className="text-[11px] text-stone-600 truncate">
+                        Chiết khấu bậc thang tới 35% • Xuất VAT tức thì
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="animate-shimmer px-3 sm:px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span>Mua Ngay</span>
+                    <span className="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </button>
+                </div>
+
+                {/* Card 2: Thiết Kế & Báo Giá RFQ */}
+                <div
+                  onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-md hover:shadow-2xl border border-white/80 hover:border-amber-400/50 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center shrink-0 group-hover:bg-[#ffba00] group-hover:text-stone-950 transition-all duration-300 group-hover:scale-105 shadow-xs">
+                      <span className="material-symbols-outlined text-[24px]">draw</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-900">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
+                          </span>
+                          Báo giá xưởng
+                        </span>
+                        <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 50 hộp</span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition-colors truncate">
+                        Báo Giá Xưởng
+                      </h3>
+                      <p className="text-[11px] text-stone-600 truncate">
+                        Khắc logo doanh nghiệp • Nhận 3–5 bản chào giá
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="animate-shimmer px-3 sm:px-3.5 py-2 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span>Tạo báo giá</span>
+                    <span className="material-symbols-outlined text-[15px] group-hover:rotate-12 transition-transform">gavel</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. THANH LOGO ĐỐI TÁC DOANH NGHIỆP CUỘN MARQUEE MƯỢT MÀ */}
+          <div className="w-full bg-[#f8ece4] border-y border-[#ebdcd5] py-2.5 sm:py-3 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-2.5 sm:gap-4">
+              <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
+                <span className="material-symbols-outlined text-[16px] text-amber-600">stars</span>
+                <span>500+ Doanh nghiệp đã tin chọn:</span>
+              </div>
+              <div className="overflow-hidden relative w-full [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+                <div className="animate-marquee flex items-center gap-8 text-xs font-semibold text-stone-600 uppercase tracking-wider select-none py-0.5">
+                  {[
+                    'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
+                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina',
+                    'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
+                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina'
+                  ].map((brand, idx) => (
+                    <span key={idx} className="flex items-center gap-2 hover:text-primary transition-colors cursor-default whitespace-nowrap">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ffba00]"></span>
+                      <span>{brand}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. BỘ SƯU TẬP TIÊU BIỂU VỚI CARD HOVER MICRO-ANIMATIONS */}
+          <section className="w-full bg-surface py-space-xl px-gutter">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-space-lg">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Sản phẩm nổi bật vụ mùa 2025</span>
+                  </div>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bộ Sưu Tập Bánh Trung Thu Tiêu Biểu</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.('tim-kiem')}
+                  className="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-bold hover:text-primary-container transition-colors group mt-2 md:mt-0 cursor-pointer"
+                >
+                  <span>Xem tất cả 120+ mẫu hộp 2025</span>
+                  <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+
+                {/* PRODUCT 1 */}
+                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
+                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0gce54U1n3kxiDSj_WZFJlCiiqIoXmsqFi5RYcNbE-HyrDYGdatgnVooMWFft7pgTd6ywe3cnZFmwRXVj6-HW98F0Fwk3gNfTVBSw7rBLbrF33ZhdDpVwyiRH56g4-dfFbFya0reGpmL-Hg-p2xW4ghvbZt-9XsLApvBWLRHyojKhGRFcCW7kp_sDFULOOcoXGqIknBa3fyYIkUUZ5QoR6YDPYuQqPll4ZIqIrynw9uXYHAPGqKJt"
+                      alt="Hộp Nguyệt Viên Tri Kỷ"
+                    />
+                    <span className="absolute top-2 left-2 bg-surface-container-lowest/90 backdrop-blur-md px-2 py-0.5 rounded font-label-sm text-label-sm text-tertiary font-semibold flex items-center gap-1 shadow-sm">
+                      <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
+                    </span>
+                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Giao trong 48h
+                    </span>
+                  </div>
+                  <div className="p-space-md flex-1 flex flex-col justify-between">
                     <div>
-                        <span className="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Mẫu Quà Mùa Trăng Tuyển Chọn</span>
-                        <h2 className="font-headline-lg text-headline-lg text-on-surface mt-1">Bộ Sưu Tập Tiêu Biểu Cho Khách Hàng &amp; Đối Tác</h2>
+                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
+                        <span className="truncate font-medium">Kinh Đô B2B</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (1.2k)</span>
+                      </div>
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                        Hộp Thượng Hạng “Nguyệt Viên Tri Kỷ”
+                      </h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh x 180g • Thập cẩm sò điệp, sen dừa</p>
+                      <div className="mt-space-sm flex flex-wrap gap-1">
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 30 hộp</span>
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Hỗ trợ in logo</span>
+                      </div>
                     </div>
-                    <a className="inline-flex items-center gap-1 font-title-sm text-title-sm text-primary hover:text-primary-container font-semibold transition-colors" data-path="bo-suu-tap-banh" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('bo-suu-tap-banh'); }}>
-                        Xem tất cả 120+ mẫu quà
-                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                    </a>
-                </div>
-                {/* Minimal Category Tabs */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-8 scrollbar-none">
-                    <button className="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm">Tất cả</button>
-                    <button className="px-4 py-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-colors">Set Quà Doanh Nghiệp</button>
-                    <button className="px-4 py-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-colors">Hộp Sơn Mài Cao Cấp</button>
-                    <button className="px-4 py-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-colors">Bánh Truyền Thống Nghệ Nhân</button>
-                    <button className="px-4 py-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-colors">Bánh Healthy Ít Ngọt</button>
-                </div>
-                {/* 4 Clean Product Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* Card 1 */}
-                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
-                        <div className="relative aspect-square overflow-hidden bg-surface-container-low">
-                            <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" data-alt="Premium Mid-Autumn corporate mooncake box named Nguyet Hoa Doan Vien. Deep crimson red rigid box embossed with delicate golden peony motifs, holding four exquisite artisanal mooncakes and a canister of organic Oolong tea. Studio lighting, pure clean backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc1iH9XqLqmSS73Hbc5pxnaJnMX4PxU874FB1i1aIl2PShasUrLjaBtz7KIPZ0bLU7ASrFpOuAyEEveXS_pQ6mhEcKFFQIOxqMzLktzCZTAgls94kvmziSr5EGneFLgeT8siCFSuBkP-oXF3fOLJwWfFZiLvvh3hcoK4EmBMBlIIhjPmZcC07zONw2wM2bs_EvrgMT7UVLSuzJFDQaaqwrtVza4gtkZArOSOoUFgYEwtA9D6itGtumwQ" />
-                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-secondary text-on-secondary font-label-sm text-label-sm uppercase tracking-wider font-semibold shadow-sm">
-                                Bán Chạy B2B
-                            </div>
-                            <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-surface/90 backdrop-blur-sm text-outline font-label-sm text-label-sm">
-                                Tối thiểu 10 hộp
-                            </div>
-                        </div>
-                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <div>
-                                <span className="font-label-sm text-label-sm text-secondary uppercase font-medium">Xưởng Bánh Kinh Đô Grand</span>
-                                <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 leading-snug">Hộp Nguyệt Hoa Đoàn Viên</h3>
-                                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">4 bánh 180g (Thập cẩm jambon xá xíu, Hạt sen trà xanh, Cua bát bửu, Đậu xanh hạt dưa).</p>
-                            </div>
-                            <div className="pt-3 flex items-center justify-between">
-                                <div>
-                                    <span className="font-label-sm text-label-sm text-outline">Đơn giá B2B:</span>
-                                    <p className="font-price-display text-price-display text-primary">580.000đ</p>
-                                </div>
-                                <a className="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary hover:text-on-primary text-on-surface font-title-sm text-body-sm font-semibold transition-all" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    Báo giá
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Card 2 */}
-                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
-                        <div className="relative aspect-square overflow-hidden bg-surface-container-low">
-                            <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" data-alt="Luxury Vietnamese handcrafted wooden lacquer mooncake gift box with mother of pearl inlay art depicting the Autumn Full Moon. Containing four golden lotus seed mooncakes and a jar of premium saffron. Rich heritage aesthetic, elegant dark lacquer and warm champagne tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_HTr31JkVtuuJhZ9y170DJifZs1NJiJ3jaISJhDJHZCCZs76I-4Oqbej4UzhiRiFiIm_mmvp-WQPmsj8cM-SQCO53rs4uyUzQuUZCk7SsPesp7YvK1Jof3AXFRk427PaqceESTcBpwAPCTpuLfWqvjVut6EAY0XXbzXxnzI9X11xyDGb1vUguZnqHXPpQSiT4hfQJkiQ5AOpqXm9ZE1YvCBKPa4szn5zKTK_h51lLk3047-AZ1ZIsTg" />
-                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider font-semibold shadow-sm">
-                                VIP Sơn Mài
-                            </div>
-                            <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-surface/90 backdrop-blur-sm text-outline font-label-sm text-label-sm">
-                                Tối thiểu 5 hộp
-                            </div>
-                        </div>
-                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <div>
-                                <span className="font-label-sm text-label-sm text-secondary uppercase font-medium">Nghệ Nhân Hưng Ký 1954</span>
-                                <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 leading-snug">Sơn Mài Khảm Xà Cừ Vọng Nguyệt</h3>
-                                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">Hộp gỗ sơn mài Tương Bình Hiệp thủ công + 4 bánh Yến sào Vi cá thượng hạng.</p>
-                            </div>
-                            <div className="pt-3 flex items-center justify-between">
-                                <div>
-                                    <span className="font-label-sm text-label-sm text-outline">Đơn giá B2B:</span>
-                                    <p className="font-price-display text-price-display text-primary">1.850.000đ</p>
-                                </div>
-                                <a className="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary hover:text-on-primary text-on-surface font-title-sm text-body-sm font-semibold transition-all" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    Báo giá
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Card 3 */}
-                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
-                        <div className="relative aspect-square overflow-hidden bg-surface-container-low">
-                            <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" data-alt="Elegant contemporary mooncake gift set crafted with sage green textures and bamboo accents. Featuring healthy low-sugar mooncakes with chia seeds, matcha, and macadamia fillings. Modern minimalist gourmet styling, soft daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYtaeubsl4FTR25BPwU8EHtSvOMaFG3NggwAFJzzBa6MvUWiiZ6tvrACcC8Htz8EL0XDmFBrRaV1uUaXt_N7I5aCM6JELeR8ieSAHHXi1Z-Ap1dYnCfXB3YSJ5NkqpdvAs6LidBUrhdNOUbAbkYIAJQK1faENFgRMSYtmk6v_zWEXourZl-1MmwfUWp_RopvIM7rdfDMB90NdSf9WGEo6c4mArH2v7HEyOgYlWdlCvcvFTpsVgyixprQ" />
-                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-tertiary text-on-tertiary font-label-sm text-label-sm uppercase tracking-wider font-semibold shadow-sm">
-                                Healthy Ít Đường
-                            </div>
-                            <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-surface/90 backdrop-blur-sm text-outline font-label-sm text-label-sm">
-                                Tối thiểu 10 hộp
-                            </div>
-                        </div>
-                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <div>
-                                <span className="font-label-sm text-label-sm text-secondary uppercase font-medium">Madame Hương Hà Thành</span>
-                                <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 leading-snug">Thanh Nguyệt Dưỡng Tâm</h3>
-                                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">Đường Isomalt ăn kiêng, 4 bánh hạt Macca, Trà xanh Tuyết shan, Hạt chia mè đen.</p>
-                            </div>
-                            <div className="pt-3 flex items-center justify-between">
-                                <div>
-                                    <span className="font-label-sm text-label-sm text-outline">Đơn giá B2B:</span>
-                                    <p className="font-price-display text-price-display text-primary">690.000đ</p>
-                                </div>
-                                <a className="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary hover:text-on-primary text-on-surface font-title-sm text-body-sm font-semibold transition-all" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    Báo giá
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Card 4 */}
-                    <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col">
-                        <div className="relative aspect-square overflow-hidden bg-surface-container-low">
-                            <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" data-alt="Traditional Vietnamese mooncake gift box with nostalgic gold and imperial navy details. Authentic handcrafted mooncakes with salted egg yolk centers and glazed golden brown crusts. Beautiful tea set companion, clean composition on warm alabaster ground." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7_AfCeoxH2XheJs2tcQ7FGl3eqzMlf2WBg5wfXnAcsNxaGznSpjKsQM9uqDGscmlBnyx4Yck3QO___YahmqgsZPAeoR8t5fpKt_TeilViyvAQ8O4Q1XISPR9ICtBSdtO0wErU2C78FPkx3LYBzEHyxstWSdGH0ZvF3NjL7bBcY9uA1rEafZ4VflbW1LUJ3BeyN3VZW373AOgqrzbJTulht2qyZOLLhpgv1shtM0pALBEL0GgtoPRk2Q" />
-                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-container font-label-sm text-label-sm uppercase tracking-wider font-semibold shadow-sm">
-                                Di Sản Cổ Truyền
-                            </div>
-                            <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-surface/90 backdrop-blur-sm text-outline font-label-sm text-label-sm">
-                                Tối thiểu 10 hộp
-                            </div>
-                        </div>
-                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <div>
-                                <span className="font-label-sm text-label-sm text-secondary uppercase font-medium">Thu Hương Bakery</span>
-                                <h3 className="font-headline-sm text-headline-sm text-on-surface mt-1 leading-snug">Hộp Kim Cúc Tụ Phúc</h3>
-                                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">Hương vị Hà Nội xưa, vỏ bánh nướng thơm lừng lá chanh và mỡ phần ướp đường cát.</p>
-                            </div>
-                            <div className="pt-3 flex items-center justify-between">
-                                <div>
-                                    <span className="font-label-sm text-label-sm text-outline">Đơn giá B2B:</span>
-                                    <p className="font-price-display text-price-display text-primary">450.000đ</p>
-                                </div>
-                                <a className="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary hover:text-on-primary text-on-surface font-title-sm text-body-sm font-semibold transition-all" data-path="yeu-cau-bao-gia" href="#" onClick={(e) => { e.preventDefault(); onNavigate?.('yeu-cau-bao-gia'); }}>
-                                    Báo giá
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            {/* VERIFIED WORKSHOPS & BAKERIES */}
-            <section className="w-full bg-surface-container-low py-space-xl">
-                <div className="max-w-7xl mx-auto px-margin">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                    <div className="mt-space-md pt-space-xs">
+                      <div className="flex items-baseline justify-between mb-space-sm">
                         <div>
-                            <span className="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Đối Tác Bảo Chứng Nguồn Gốc</span>
-                            <h2 className="font-headline-lg text-headline-lg text-on-surface mt-1">Xưởng Bánh Nghệ Nhân &amp; Thương Hiệu Uy Tín</h2>
-                            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-                                Đã hoàn tất kiểm định an toàn vệ sinh thực phẩm ISO 22000, cam kết sản lượng và tiến độ hợp đồng B2B.
-                            </p>
+                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (đã giảm 12%):</span>
+                          <span className="font-headline-sm text-headline-sm font-bold text-primary">480.000 ₫</span>
                         </div>
-                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-lowest shadow-sm">
-                            <span className="material-symbols-outlined text-tertiary text-[20px]">verified_user</span>
-                            <span className="font-label-md text-label-md text-on-surface font-semibold">Đã hoàn thành 1,200+ hợp đồng B2B</span>
-                        </div>
+                        <span className="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed px-1.5 py-0.5 rounded font-semibold">-12%</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-space-xs">
+                        <button
+                          onClick={() => onNavigate?.('san-pham')}
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
+                          type="button"
+                        >
+                          Mẫu thử
+                        </button>
+                        <button
+                          onClick={() => onNavigate?.('tim-kiem')}
+                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          Đặt ngay
+                        </button>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Bakery 1 */}
-                        <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
-                                    KD
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1">
-                                        <h4 className="font-title-md text-title-md text-on-surface">Kinh Đô Grand</h4>
-                                        <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
-                                    </div>
-                                    <span className="font-label-sm text-label-sm text-outline">26 năm kinh nghiệm • Toàn quốc</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5 text-body-sm font-body-sm text-on-surface-variant">
-                                <p className="flex items-center justify-between">
-                                    <span>Đánh giá tín nhiệm:</span>
-                                    <span className="text-secondary font-semibold">⭐ 4.9/5 (840 đánh giá)</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Tỷ lệ giao đúng hẹn:</span>
-                                    <span className="text-tertiary font-semibold">99.8%</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Thế mạnh đặc sắc:</span>
-                                    <span className="text-on-surface font-medium">Bánh Trăng Vàng VIP &amp; Năng lực sx lớn</span>
-                                </p>
-                            </div>
-                        </div>
-                        {/* Bakery 2 */}
-                        <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
-                                    TH
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1">
-                                        <h4 className="font-title-md text-title-md text-on-surface">Thu Hương Bakery</h4>
-                                        <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
-                                    </div>
-                                    <span className="font-label-sm text-label-sm text-outline">18 năm kinh nghiệm • Hà Nội</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5 text-body-sm font-body-sm text-on-surface-variant">
-                                <p className="flex items-center justify-between">
-                                    <span>Đánh giá tín nhiệm:</span>
-                                    <span className="text-secondary font-semibold">⭐ 4.9/5 (520 đánh giá)</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Tỷ lệ giao đúng hẹn:</span>
-                                    <span className="text-tertiary font-semibold">99.6%</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Thế mạnh đặc sắc:</span>
-                                    <span className="text-on-surface font-medium">Vị cổ truyền thanh tao, mẫu hộp hoa sen</span>
-                                </p>
-                            </div>
-                        </div>
-                        {/* Bakery 3 */}
-                        <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
-                                    MH
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1">
-                                        <h4 className="font-title-md text-title-md text-on-surface">Madame Hương</h4>
-                                        <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
-                                    </div>
-                                    <span className="font-label-sm text-label-sm text-outline">12 năm kinh nghiệm • Hà Nội / TP.HCM</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5 text-body-sm font-body-sm text-on-surface-variant">
-                                <p className="flex items-center justify-between">
-                                    <span>Đánh giá tín nhiệm:</span>
-                                    <span className="text-secondary font-semibold">⭐ 4.8/5 (410 đánh giá)</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Tỷ lệ giao đúng hẹn:</span>
-                                    <span className="text-tertiary font-semibold">99.4%</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Thế mạnh đặc sắc:</span>
-                                    <span className="text-on-surface font-medium">Bao bì thời thượng phong cách Pháp &amp; Bánh dẻo</span>
-                                </p>
-                            </div>
-                        </div>
-                        {/* Bakery 4 */}
-                        <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
-                                    HK
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-1">
-                                        <h4 className="font-title-md text-title-md text-on-surface">Nghệ Nhân Hưng Ký</h4>
-                                        <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
-                                    </div>
-                                    <span className="font-label-sm text-label-sm text-outline">70 năm di sản • Chợ Lớn Sài Gòn</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5 text-body-sm font-body-sm text-on-surface-variant">
-                                <p className="flex items-center justify-between">
-                                    <span>Đánh giá tín nhiệm:</span>
-                                    <span className="text-secondary font-semibold">⭐ 5.0/5 (390 đánh giá)</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Tỷ lệ giao đúng hẹn:</span>
-                                    <span className="text-tertiary font-semibold">100%</span>
-                                </p>
-                                <p className="flex items-center justify-between">
-                                    <span>Thế mạnh đặc sắc:</span>
-                                    <span className="text-on-surface font-medium">Thập cẩm gà quay xá xíu chuẩn thủ công</span>
-                                </p>
-                            </div>
-                        </div>
+                  </div>
+                </div>
+
+                {/* PRODUCT 2 */}
+                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
+                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQMG1AQ2M24puU7Wk-qFSPiPY5ooN2Vb1C-bf4rPc15CeqNt3b2CutQ0_J8tcAIyIjgguRLdgomEbGT7FWt_c6rsBDZsd4VMHA6_R31OVY3bcB2Yyh4NXr4fFrt1Yy38xhNpyqGWpywfcMC0_YsZu2Ph5y0ASpB1YxK4_Mez7znUkz_xaEJAIG-EeOdZn6pKU2ilOsgbPZ7QnMUu7J5UHMQi_5e8ByNty_3-SxqavFi2-TZSOB3Aog"
+                      alt="Hộp Sơn Mài Hoàng Kim Vọng Nguyệt"
+                    />
+                    <span className="absolute top-2 left-2 bg-surface-container-lowest/90 backdrop-blur-md px-2 py-0.5 rounded font-label-sm text-label-sm text-tertiary font-semibold flex items-center gap-1 shadow-sm">
+                      <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
+                    </span>
+                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      Sản xuất: 5 ngày
+                    </span>
+                  </div>
+                  <div className="p-space-md flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
+                        <span className="truncate font-medium">Madame Hương</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 5.0 (860)</span>
+                      </div>
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                        Hộp Sơn Mài “Hoàng Kim Vọng Nguyệt”
+                      </h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">6 bánh Lava trứng chảy + Hũ trà sen Tây Hồ</p>
+                      <div className="mt-space-sm flex flex-wrap gap-1">
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 20 hộp</span>
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Hộp gỗ sơn mài</span>
+                      </div>
                     </div>
-                </div>
-            </section>
-            {/* CUSTOM CORPORATE RFQ WORKFLOW (3 STEPS) */}
-            <section className="w-full max-w-7xl mx-auto px-margin py-space-xl">
-                <div className="text-center max-w-2xl mx-auto mb-12">
-                    <span className="font-label-md text-label-md uppercase tracking-wider text-secondary font-semibold">Quy Trình Tinh Gọn</span>
-                    <h2 className="font-headline-lg text-headline-lg text-on-surface mt-1">3 Bước Đặt Hàng B2B Nhanh Chóng</h2>
-                    <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                        Tối ưu hoá thủ tục cho phòng Thu mua &amp; Nhân sự. Minh bạch giá cả, bảo hộ thanh toán toàn diện.
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-                    {/* Step 1 */}
-                    <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm relative flex flex-col justify-between">
+                    <div className="mt-space-md pt-space-xs">
+                      <div className="flex items-baseline justify-between mb-space-sm">
                         <div>
-                            <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold mb-4">
-                                01
-                            </div>
-                            <h3 className="font-title-md text-title-md text-on-surface">Gửi Yêu Cầu &amp; Ngân Sách</h3>
-                            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                                Chọn mẫu bánh ưng ý, số lượng dự kiến và yêu cầu in ấn logo doanh nghiệp hoặc khắc thiệp chúc mừng.
-                            </p>
+                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (bậc B2B):</span>
+                          <span className="font-headline-sm text-headline-sm font-bold text-primary">850.000 ₫</span>
                         </div>
-                        <div className="mt-6 pt-4 flex items-center gap-2 text-primary font-label-md text-label-md font-medium">
-                            <span className="material-symbols-outlined text-[18px]">touch_app</span>
-                            <span>Chỉ mất 2 phút hoàn tất form</span>
-                        </div>
+                        <span className="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-1.5 py-0.5 rounded font-semibold">VIP</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-space-xs">
+                        <button
+                          onClick={() => onNavigate?.('san-pham')}
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
+                          type="button"
+                        >
+                          Mẫu thử
+                        </button>
+                        <button
+                          onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          Gửi RFQ
+                        </button>
+                      </div>
                     </div>
-                    {/* Step 2 */}
-                    <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm relative flex flex-col justify-between">
-                        <div>
-                            <div className="w-12 h-12 rounded-xl bg-secondary-container/40 flex items-center justify-center font-headline-sm text-headline-sm text-secondary font-bold mb-4">
-                                02
-                            </div>
-                            <h3 className="font-title-md text-title-md text-on-surface">Nhận Báo Giá Sau 2 Giờ</h3>
-                            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                                Hệ thống so khớp với các xưởng đối tác để gửi bảng báo giá chi tiết kèm mức chiết khấu và ảnh mẫu demo hộp.
-                            </p>
-                        </div>
-                        <div className="mt-6 pt-4 flex items-center gap-2 text-secondary font-label-md text-label-md font-medium">
-                            <span className="material-symbols-outlined text-[18px]">timer</span>
-                            <span>Phản hồi cam kết trong 120 phút</span>
-                        </div>
-                    </div>
-                    {/* Step 3 */}
-                    <div className="bg-surface-container-lowest p-6 rounded-2xl shadow-sm relative flex flex-col justify-between">
-                        <div>
-                            <div className="w-12 h-12 rounded-xl bg-tertiary-fixed-dim/40 flex items-center justify-center font-headline-sm text-headline-sm text-tertiary font-bold mb-4">
-                                03
-                            </div>
-                            <h3 className="font-title-md text-title-md text-on-surface">Hợp Đồng &amp; Giao Đúng Hạn</h3>
-                            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-                                Ký hợp đồng điện tử pháp lý đầy đủ, xuất VAT 100%. Thanh toán qua tài khoản ký quỹ bảo vệ người mua SafeTrade.
-                            </p>
-                        </div>
-                        <div className="mt-6 pt-4 flex items-center gap-2 text-tertiary font-label-md text-label-md font-medium">
-                            <span className="material-symbols-outlined text-[18px]">verified_user</span>
-                            <span>Bảo chứng chất lượng &amp; hoàn tiền</span>
-                        </div>
-                    </div>
+                  </div>
                 </div>
-            </section>
-            {/* AI GIFT ASSISTANT HIGHLIGHT BANNER */}
-            <section className="w-full max-w-7xl mx-auto px-margin pb-space-xl" id="ai-assistant-sec">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-primary-container via-primary to-primary-container text-on-primary p-8 lg:p-12 shadow-xl">
-                    {/* Glow decoration */}
-                    <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none"></div>
-                    <div className="max-w-3xl space-y-4 relative z-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest/15 backdrop-blur-md">
-                            <span className="material-symbols-outlined text-secondary-fixed text-[18px]">auto_awesome</span>
-                            <span className="font-label-sm text-label-sm text-secondary-fixed font-semibold uppercase tracking-wider">Trợ Lý AI Nguyệt Phố</span>
-                        </div>
-                        <h2 className="font-headline-lg text-headline-lg leading-tight text-on-primary">
-                            Chưa rõ nên chọn set bánh nào cho đối tác &amp; nhân viên?
-                        </h2>
-                        <p className="font-body-lg text-body-lg text-on-primary-container">
-                            Gợi ý giải pháp chuẩn ngân sách, số lượng nhân sự, khẩu vị vùng miền và ý nghĩa phong thủy doanh nghiệp chỉ trong 30 giây.
-                        </p>
-                        {/* Fast Interactive Prompt Input */}
-                        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                            <div className="flex-1 relative">
-                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search_spark</span>
-                                <input className="w-full h-12 pl-12 pr-4 rounded-lg bg-surface text-on-surface placeholder:text-outline font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-secondary" placeholder="VD: Cần 150 hộp ngân sách 500k/hộp cho đối tác công nghệ..." type="text" />
-                            </div>
-                            <button className="h-12 px-6 rounded-lg bg-secondary-container hover:bg-secondary-fixed-dim text-on-secondary-container font-title-sm text-title-sm font-semibold transition-colors flex items-center justify-center gap-2 shrink-0">
-                                <span>Tư vấn ngay</span>
-                                <span className="material-symbols-outlined text-[18px]">spark</span>
-                            </button>
-                        </div>
-                        {/* Quick filter chips for AI */}
-                        <div className="flex flex-wrap items-center gap-2 pt-2">
-                            <span className="font-label-sm text-label-sm text-on-primary-container">Gợi ý nhanh:</span>
-                            <button className="px-3 py-1 rounded-full bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary font-label-sm text-label-sm transition-colors">VIP Cao cấp (&gt;1 triệu)</button>
-                            <button className="px-3 py-1 rounded-full bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary font-label-sm text-label-sm transition-colors">Tặng Nhân viên (300k - 500k)</button>
-                            <button className="px-3 py-1 rounded-full bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 text-on-primary font-label-sm text-label-sm transition-colors">Bánh chay &amp; ít ngọt</button>
-                        </div>
+
+                {/* PRODUCT 3 */}
+                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
+                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSUU9euk8QszNuwm4Nu_KHGlyRVO6UZa1xAl1qcfUXYkLsaNkL_fo9Y0eBt_pwk-0eq4n7nXJd22bVLwySIH28YqkxQLX1sH74WnTPo1OmweLxstBD8bq7nZpvvI6hI1yfphoRnfldacMi4cEWs-EbM0ix2RwtoGX0Ip90H7Xk7euQe5hhZqxAlK5KNUXqbAtTq5HnS100yvTqcSeSIXTgqcollqTsTw7gCUY5IETDzQU9UuMPqq2H"
+                      alt="Bánh Dưỡng Sinh Thanh Nguyệt Yến"
+                    />
+                    <span className="absolute top-2 left-2 bg-surface-container-lowest/90 backdrop-blur-md px-2 py-0.5 rounded font-label-sm text-label-sm text-tertiary font-semibold flex items-center gap-1 shadow-sm">
+                      <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
+                    </span>
+                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Giao trong 24h
+                    </span>
+                  </div>
+                  <div className="p-space-md flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
+                        <span className="truncate font-medium">Nghệ Nhân Hữu Nghị</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.8 (950)</span>
+                      </div>
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                        Bánh Dưỡng Sinh “Thanh Nguyệt Yến”
+                      </h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh yến sào hạt sen • Ít ngọt ăn kiêng</p>
+                      <div className="mt-space-sm flex flex-wrap gap-1">
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 50 hộp</span>
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Healthy ít đường</span>
+                      </div>
                     </div>
+                    <div className="mt-space-md pt-space-xs">
+                      <div className="flex items-baseline justify-between mb-space-sm">
+                        <div>
+                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (đã giảm 10%):</span>
+                          <span className="font-headline-sm text-headline-sm font-bold text-primary">390.000 ₫</span>
+                        </div>
+                        <span className="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed px-1.5 py-0.5 rounded font-semibold">-10%</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-space-xs">
+                        <button
+                          onClick={() => onNavigate?.('san-pham')}
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
+                          type="button"
+                        >
+                          Mẫu thử
+                        </button>
+                        <button
+                          onClick={() => onNavigate?.('tim-kiem')}
+                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          Đặt ngay
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-            </section>
+
+                {/* PRODUCT 4 */}
+                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
+                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOL-Cav9v6rbL1i553OXUyPC1E2zvaok6KNoZjacOPOUdvERGXoE-Wh7kXxHfJEW2bvbWVefYDVCEQ5DAOc4m9LJlOWah_9tg75rJy6I6bysyxwwsNXa6GbzQb4lcysJAIM8wkk7aei8UgYBX40_YCYa1UmqA4X_uylmQwjBQiMcpuN4txuO9dekT-HywkN-YeCgIvkq1Aq-D2vCp8-cG5ZdaSAOc_PGVCOWZqT5EDsT5PZthuvrb3"
+                      alt="Set Quà Đoàn Viên Phú Quý"
+                    />
+                    <span className="absolute top-2 left-2 bg-surface-container-lowest/90 backdrop-blur-md px-2 py-0.5 rounded font-label-sm text-label-sm text-tertiary font-semibold flex items-center gap-1 shadow-sm">
+                      <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
+                    </span>
+                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      Sản xuất: 3 ngày
+                    </span>
+                  </div>
+                  <div className="p-space-md flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
+                        <span className="truncate font-medium">Thu Hương Bakery</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (620)</span>
+                      </div>
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                        Set Quà “Đoàn Viên Phú Quý”
+                      </h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh thượng hạng + 1 Chai vang cao cấp</p>
+                      <div className="mt-space-sm flex flex-wrap gap-1">
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 25 hộp</span>
+                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Kèm túi &amp; thiệp</span>
+                      </div>
+                    </div>
+                    <div className="mt-space-md pt-space-xs">
+                      <div className="flex items-baseline justify-between mb-space-sm">
+                        <div>
+                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (bậc 100 hộp):</span>
+                          <span className="font-headline-sm text-headline-sm font-bold text-primary">720.000 ₫</span>
+                        </div>
+                        <span className="font-label-sm text-label-sm text-secondary bg-secondary-fixed px-1.5 py-0.5 rounded font-semibold">-15%</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-space-xs">
+                        <button
+                          onClick={() => onNavigate?.('san-pham')}
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
+                          type="button"
+                        >
+                          Mẫu thử
+                        </button>
+                        <button
+                          onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
+                          type="button"
+                        >
+                          Gửi RFQ
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* 4. BANNER DÀNH CHO NHÀ SẢN XUẤT CÓ ANIMATION TỎA SÁNG */}
+          <section className="w-full bg-surface py-space-lg px-gutter">
+            <div className="max-w-7xl mx-auto">
+              <div className="relative overflow-hidden bg-gradient-to-r from-[#7a0010] via-[#8f0e19] to-[#7a0010] text-on-primary rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-white/10">
+                {/* Background decorative glowing orb */}
+                <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#ffba00]/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-10 max-w-2xl space-y-2 text-center md:text-left">
+                  <div className="inline-flex items-center gap-1.5 font-label-sm text-label-sm font-bold uppercase px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container shadow-xs">
+                    <span className="material-symbols-outlined text-[15px] text-amber-900">storefront</span>
+                    <span>Dành cho Nhà Sản Xuất &amp; Nghệ Nhân</span>
+                  </div>
+                  <h3 className="font-headline-md text-headline-md font-bold text-on-primary leading-tight">
+                    Bạn là xưởng sản xuất hoặc thương hiệu bánh Trung Thu uy tín?
+                  </h3>
+                  <p className="font-body-md text-body-md text-rose-100/90 leading-relaxed">
+                    Gia nhập mạng lưới B2B Nguyệt Phố, tiếp cận hàng nghìn khách hàng doanh nghiệp trong mùa vụ 2025. Hỗ trợ hợp đồng e-Contract, ký quỹ và vận hành trọn gói.
+                  </p>
+                </div>
+                <div className="relative z-10 shrink-0 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate?.('nha-cung-cap/thiet-lap-gian-hang')}
+                    className="animate-shimmer w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-[#fff8f5] font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span>Đăng ký mở gian hàng (Xét duyệt 24h)</span>
+                    <span className="material-symbols-outlined text-[18px]">verified</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
         </div>
-            {/* Inline JavaScript for Calculator slider micro-interaction */}
-            </main>
+      </main>
+
+      {/* 5. FLOATING LIVE SOCIAL PROOF TICKER (TOAST THÔNG BÁO HOẠT ĐỘNG THỜI GIAN THỰC) */}
+      {showNotice && (
+        <aside className="fixed bottom-5 left-5 z-40 max-w-sm hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-[0_10px_35px_-5px_rgba(0,0,0,0.15)] border border-[#ebdcd5] animate-fade-in-up transition-all hover:scale-[1.02]">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-container text-[#fec971] flex items-center justify-center shrink-0 shadow-xs">
+            <span className="material-symbols-outlined text-[19px]">
+              {currentNotice.icon}
+            </span>
+          </div>
+          <div className="min-w-0 pr-1">
+            <div className="flex items-center gap-1.5 leading-tight">
+              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${currentNotice.badgeColor}`}>
+                {currentNotice.badge}
+              </span>
+              <span className="text-[10px] text-stone-500">
+                • {currentNotice.time}
+              </span>
+            </div>
+            <p className="text-xs text-stone-800 font-medium truncate mt-0.5">
+              <strong className="text-stone-900 font-bold">
+                {currentNotice.company}
+              </strong>{' '}
+              {currentNotice.action}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNotice(false)}
+            className="text-stone-400 hover:text-stone-700 shrink-0 p-1 cursor-pointer transition-colors"
+            title="Đóng thông báo"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[15px]">close</span>
+          </button>
+        </aside>
+      )}
+
+      {/* Standard E-Commerce Footer */}
+      <Footer onNavigate={onNavigate} />
+    </div>
   );
 }
