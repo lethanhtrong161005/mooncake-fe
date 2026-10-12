@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function PackagingAndLogoPrinting({ onNavigate }) {
   const [boxType, setBoxType] = useState('lacquer-4');
@@ -78,11 +78,10 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                   <label
                     key={opt.id}
                     onClick={() => setBoxType(opt.id)}
-                    className={`block p-4 rounded-xl border transition-all cursor-pointer ${
-                      boxType === opt.id
-                        ? 'border-primary bg-primary-fixed/20 shadow-sm'
-                        : 'border-outline-variant/40 hover:bg-surface-container-low'
-                    }`}
+                    className={`block p-4 rounded-xl border transition-all cursor-pointer ${boxType === opt.id
+                      ? 'border-primary bg-primary-fixed/20 shadow-sm'
+                      : 'border-outline-variant/40 hover:bg-surface-container-low'
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -125,11 +124,10 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                     key={tech.id}
                     type="button"
                     onClick={() => setTechnique(tech.id)}
-                    className={`p-3.5 rounded-xl border text-left transition-all ${
-                      technique === tech.id
-                        ? 'border-primary bg-primary/5 text-primary font-semibold'
-                        : 'border-outline-variant/40 hover:bg-surface-container-low text-on-surface'
-                    }`}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${technique === tech.id
+                      ? 'border-primary bg-primary/5 text-primary font-semibold'
+                      : 'border-outline-variant/40 hover:bg-surface-container-low text-on-surface'
+                      }`}
                   >
                     <div className="text-xs font-bold">{tech.title}</div>
                     <div className="text-[11px] text-on-surface-variant mt-1">{tech.desc}</div>
@@ -150,11 +148,10 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                       key={c.id}
                       type="button"
                       onClick={() => setFoilColor(c.id)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all ${
-                        foilColor === c.id
-                          ? 'border-primary ring-2 ring-primary/30 font-semibold'
-                          : 'border-outline-variant/40 hover:bg-surface-container-low'
-                      }`}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all ${foilColor === c.id
+                        ? 'border-primary ring-2 ring-primary/30 font-semibold'
+                        : 'border-outline-variant/40 hover:bg-surface-container-low'
+                        }`}
                     >
                       <span className={`w-3.5 h-3.5 rounded-full ${c.bg}`}></span>
                       <span>{c.label}</span>

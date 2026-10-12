@@ -42,6 +42,7 @@ export default function App() {
 
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [prefilledPhone, setPrefilledPhone] = useState('');
   const [showNavMenu, setShowNavMenu] = useState(false);
 
   const navigateTo = (pageKey) => {
@@ -194,11 +195,10 @@ export default function App() {
                     key={item.key}
                     type="button"
                     onClick={() => navigateTo(item.key)}
-                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${
-                      currentPage === item.key
+                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${currentPage === item.key
                         ? 'bg-primary-container text-on-primary font-semibold'
                         : 'hover:bg-surface-container text-on-surface'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -225,11 +225,10 @@ export default function App() {
                     key={item.key}
                     type="button"
                     onClick={() => navigateTo(item.key)}
-                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${
-                      currentPage === item.key
+                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${currentPage === item.key
                         ? 'bg-primary-container text-on-primary font-semibold'
                         : 'hover:bg-surface-container text-on-surface'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -255,11 +254,10 @@ export default function App() {
                     key={item.key}
                     type="button"
                     onClick={() => navigateTo(item.key)}
-                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${
-                      currentPage === item.key
+                    className={`text-left px-2.5 py-1.5 rounded-lg transition-colors ${currentPage === item.key
                         ? 'bg-primary-container text-on-primary font-semibold'
                         : 'hover:bg-surface-container text-on-surface'
-                    }`}
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -302,12 +300,22 @@ export default function App() {
         isOpen={showLogin}
         onClose={() => setShowLogin(false)}
         onNavigate={navigateTo}
+        initialPhone={prefilledPhone}
+        onSwitchToRegister={() => {
+          setShowLogin(false);
+          setShowRegister(true);
+        }}
       />
 
       <RegisterPopup
         isOpen={showRegister}
         onClose={() => setShowRegister(false)}
         onNavigate={navigateTo}
+        onSwitchToLogin={(phone) => {
+          if (phone) setPrefilledPhone(phone);
+          setShowRegister(false);
+          setShowLogin(true);
+        }}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 @layer base {
-  html, body {
+
+  html,
+  body {
     margin: 0;
     padding: 0;
     overscroll-behavior: none;
@@ -27,4 +29,113 @@
 /* Smooth hidden scrollbar */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* ======================================================= */
+/* LUXURY E-COMMERCE MICRO-ANIMATIONS                      */
+/* ======================================================= */
+
+/* 1. Shimmer Light Sweep (Ánh sáng lướt qua nút bấm) */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+
+  30%,
+  100% {
+    transform: translateX(220%) skewX(-20deg);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  transform: translateX(-160%) skewX(-20deg);
+  animation: shimmerSweep 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* 2. Soft Breathing Golden Glow (Hào quang vàng dịu mắt) */
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(254, 201, 113, 0.25), 0 0 4px rgba(255, 186, 0, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 24px rgba(254, 201, 113, 0.55), 0 0 8px rgba(255, 186, 0, 0.45);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* 3. Slow Gentle Float (Bay bổng nhẹ nhàng) */
+@keyframes floatSlow {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+/* 4. Marquee Loop (Cuộn liên tục logo doanh nghiệp) */
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* 5. Smooth Fade-in-up entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
