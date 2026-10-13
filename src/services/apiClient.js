@@ -1,16 +1,24 @@
-/**
- * Centralized Enterprise HTTP API Client using Axios
- * Fully compatible with ASP.NET Core 8 Clean Architecture Web API
- */
+/** Centralized Axios client with one refresh request for concurrent 401 responses. */
 
 import axios from 'axios';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import storage from '../utils/storage';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8089/api';
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 15000;
 const IS_DEBUG = import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true';
+const AUTH_PATHS = [
+  API_ENDPOINTS.AUTH.LOGIN,
+  API_ENDPOINTS.AUTH.REGISTER,
+  API_ENDPOINTS.AUTH.REFRESH_TOKEN,
+  API_ENDPOINTS.AUTH.LOGOUT,
+  API_ENDPOINTS.AUTH.SEND_OTP,
+  API_ENDPOINTS.AUTH.VERIFY_OTP,
+  API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
+  API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
+  API_ENDPOINTS.AUTH.GOOGLE_AUTHORIZATION_URL,
+];
 
-// Khởi tạo Axios instance với các thiết lập mặc định
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL.replace(/\/$/, ''),
   timeout: DEFAULT_TIMEOUT,
@@ -20,135 +28,134 @@ export const axiosInstance = axios.create({
   },
 });
 
-/**
- * Request Interceptor:
- * - Tự động đính kèm Bearer JWT Token từ storage
- * - Ghi log phục vụ debug trong môi trường phát triển
- */
-axiosInstance.interceptors.request.use(
-  (config) => {
+let refreshPromise = null;
+
+export const clearAuthSession = (showLogin = true) => {
+  storage.remove('auth_token');
+  storage.remove('auth_refresh_token');
+  storage.remove('auth_user');
+  window.dispatchEvent(new CustomEvent(showLogin ? 'auth:unauthorized' : 'auth:changed'));
+};
+
+const saveTokenPair = ({ accessToken, refreshToken }) => {
+  if (!accessToken || !refreshToken) {
+    throw new Error('Phản hồi xác thực không hợp lệ.');
+  }
+  if (!storage.set('auth_token', accessToken) ||
+      !storage.set('auth_refresh_token', refreshToken)) {
+    clearAuthSession();
+    throw new Error('Không thể lưu phiên đăng nhập trên trình duyệt.');
+  }
+  window.dispatchEvent(new CustomEvent('auth:changed'));
+};
+
+const refreshAccessToken = () => {
+  if (refreshPromise) return refreshPromise;
+
+  const currentRefreshToken = storage.get('auth_refresh_token');
+  if (!currentRefreshToken) {
+    return Promise.reject(new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'));
+  }
+
+  refreshPromise = axiosInstance.post(
+    API_ENDPOINTS.AUTH.REFRESH_TOKEN,
+    { refreshToken: currentRefreshToken },
+    { skipAuthHeader: true, skipAuthRefresh: true }
+  ).then((response) => {
+    if (storage.get('auth_refresh_token') !== currentRefreshToken) {
+      throw new Error('Phiên đăng nhập đã kết thúc.');
+    }
+    saveTokenPair(response?.data || {});
+    return response.data.accessToken;
+  }).finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+};
+
+axiosInstance.interceptors.request.use((config) => {
+  if (!config.skipAuthHeader && !AUTH_PATHS.includes(config.url)) {
     const token = storage.get('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    if (IS_DEBUG) {
-      console.log(
-        `[Axios Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`,
-        config.data || config.params || ''
-      );
-    }
-
-    return config;
-  },
-  (error) => {
-    if (IS_DEBUG) {
-      console.error('[Axios Request Error]', error);
-    }
-    return Promise.reject(error);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
-);
 
-/**
- * Response Interceptor:
- * - Trả về dữ liệu payload (response.data) trực tiếp
- * - Bắt và chuẩn hóa lỗi nghiệp vụ từ ASP.NET Core (ApiResponse<T>)
- * - Tự động dọn session khi token hết hạn (401 Unauthorized)
- */
+  if (IS_DEBUG) {
+    console.log(`[Axios Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  }
+  return config;
+});
+
 axiosInstance.interceptors.response.use(
-  (response) => {
-    if (IS_DEBUG) {
-      console.log(
-        `[Axios Response] ${response.status} ${response.config.url}`,
-        response.data
-      );
-    }
-    // Trả về data envelope trực tiếp để các services sử dụng thuận tiện
-    return response.data;
-  },
-  (error) => {
-    const { response, code } = error;
+  (response) => response.data,
+  async (error) => {
+    const { response, config = {}, code } = error;
+    const isAuthPath = AUTH_PATHS.includes(config.url);
+    const refreshToken = storage.get('auth_refresh_token');
 
-    if (IS_DEBUG) {
-      console.warn(
-        `[Axios Error] ${response?.status || code} ${error.config?.url}:`,
-        response?.data || error.message
-      );
-    }
-
-    // 1. Xử lý Timeout
-    if (code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      const timeoutError = new Error('Yêu cầu kết nối quá hạn (Timeout). Vui lòng thử lại!');
-      timeoutError.isTimeout = true;
-      return Promise.reject(timeoutError);
+    if (response?.status === 401 && !isAuthPath && !config.skipAuthRefresh &&
+        !config.authRetried && refreshToken) {
+      config.authRetried = true;
+      try {
+        const sentToken = config.headers?.Authorization?.replace(/^Bearer /, '');
+        const currentToken = storage.get('auth_token');
+        const nextToken = sentToken && currentToken && sentToken !== currentToken
+          ? currentToken : await refreshAccessToken();
+        config.headers.Authorization = `Bearer ${nextToken}`;
+        return await axiosInstance(config);
+      } catch (refreshError) {
+        if (storage.get('auth_refresh_token') === refreshToken) clearAuthSession();
+        if (refreshError?.status === 401) throw refreshError;
+        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', {
+          cause: refreshError,
+        });
+      }
     }
 
-    // 2. Xử lý phiên hết hạn (401 Unauthorized)
-    if (response?.status === 401) {
-      storage.remove('auth_token');
-      storage.remove('auth_user');
-      // Có thể phát custom event để App/AuthContext lắng nghe nếu cần
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    if (response?.status === 401 && !isAuthPath && !config.skipAuthRefresh &&
+        storage.get('auth_token')) {
+      clearAuthSession();
     }
 
-    // 3. Chuẩn hóa thông điệp lỗi từ Backend ApiResponse<T>
-    const backendMessage =
-      response?.data?.message ||
-      (Array.isArray(response?.data?.errors) && response?.data?.errors.length > 0
-        ? response.data.errors[0]
-        : null) ||
-      error.message ||
-      'Lỗi kết nối máy chủ';
-
-    const customError = new Error(backendMessage);
-    customError.status = response?.status;
-    customError.data = response?.data;
-    customError.errors = response?.data?.errors;
-    customError.originalError = error;
-
-    return Promise.reject(customError);
+    let message = response?.data?.message || response?.data?.errors?.[0];
+    if (!message && response?.status === 401) {
+      message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+    }
+    if (!message && (code === 'ECONNABORTED' || error.message?.includes('timeout'))) {
+      message = 'Kết nối quá thời gian chờ. Vui lòng thử lại.';
+    }
+    if (!message && !response) {
+      message = 'Không thể kết nối đến máy chủ. Vui lòng thử lại.';
+    }
+    const normalized = new Error(message || 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.');
+    normalized.status = response?.status;
+    normalized.data = response?.data;
+    normalized.originalError = error;
+    return Promise.reject(normalized);
   }
 );
 
-/**
- * Enterprise ApiClient Wrapper Class
- */
 export class ApiClient {
   constructor(instance = axiosInstance) {
     this.instance = instance;
   }
 
-  /**
-   * HTTP GET
-   */
   get(endpoint, config = {}) {
     return this.instance.get(endpoint, config);
   }
 
-  /**
-   * HTTP POST
-   */
   post(endpoint, data, config = {}) {
     return this.instance.post(endpoint, data, config);
   }
 
-  /**
-   * HTTP PUT
-   */
   put(endpoint, data, config = {}) {
     return this.instance.put(endpoint, data, config);
   }
 
-  /**
-   * HTTP PATCH
-   */
   patch(endpoint, data, config = {}) {
     return this.instance.patch(endpoint, data, config);
   }
 
-  /**
-   * HTTP DELETE
-   */
   delete(endpoint, config = {}) {
     return this.instance.delete(endpoint, config);
   }

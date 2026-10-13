@@ -5,7 +5,7 @@
 
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import storage from '../utils/storage';
-import apiClient from './apiClient';
+import apiClient, { clearAuthSession } from './apiClient';
 
 const ENABLE_MOCK_FALLBACK = import.meta.env.VITE_ENABLE_MOCK_FALLBACK !== 'false';
 
@@ -13,37 +13,23 @@ export const authService = {
   /**
    * Login with Phone number & Password
    */
-  async login(phone, password, rememberMe = true) {
-    try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, {
-        phone: phone.trim().replace(/\s+/g, ''),
-        password,
-        rememberMe,
-      });
-
-      if (response?.data?.token) {
-        storage.set('auth_token', response.data.token);
-        storage.set('auth_user', response.data.user);
-      }
-      return response;
-    } catch (error) {
-      if (ENABLE_MOCK_FALLBACK) {
-        // Fallback mock success for development
-        const mockUser = {
-          id: 'usr_mock_01',
-          name: 'Tập đoàn An Phát',
-          phone,
-          role: 'Customer',
-          tier: 'VIP B2B',
-          creditLimit: 500000000,
-        };
-        const mockToken = 'mock_jwt_token_nguyetpho_2025';
-        storage.set('auth_token', mockToken);
-        storage.set('auth_user', mockUser);
-        return { success: true, data: { user: mockUser, token: mockToken } };
-      }
-      throw error;
+  async login(phone, password) {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, {
+      phoneNumber: phone.trim().replace(/\s+/g, ''),
+      password,
+    });
+    const { accessToken, refreshToken, user } = response?.data || {};
+    if (!accessToken || !refreshToken || !user) {
+      throw new Error('Phản hồi đăng nhập không hợp lệ.');
     }
+    if (!storage.set('auth_token', accessToken) ||
+        !storage.set('auth_refresh_token', refreshToken) ||
+        !storage.set('auth_user', user)) {
+      clearAuthSession();
+      throw new Error('Không thể lưu phiên đăng nhập trên trình duyệt.');
+    }
+    window.dispatchEvent(new CustomEvent('auth:changed'));
+    return response;
   },
 
   /**
@@ -105,43 +91,50 @@ export const authService = {
     }
   },
 
-  /**
-   * Social Login with Google
-   */
-  async loginWithGoogle(googleToken) {
-    try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, {
-        credential: googleToken,
-      });
-      if (response?.data?.token) {
-        storage.set('auth_token', response.data.token);
-        storage.set('auth_user', response.data.user);
-      }
-      return response;
-    } catch (error) {
-      if (ENABLE_MOCK_FALLBACK) {
-        const mockUser = {
-          id: 'usr_google_01',
-          name: 'Đối Tác Doanh Nghiệp',
-          email: 'corporate@partner.com',
-          role: 'Customer',
-          tier: 'Standard B2B',
-        };
-        const mockToken = 'mock_jwt_google_token_2025';
-        storage.set('auth_token', mockToken);
-        storage.set('auth_user', mockUser);
-        return { success: true, data: { user: mockUser, token: mockToken } };
-      }
-      throw error;
+  /** Create an authorization URL bound to a one-use backend state. */
+  async getGoogleAuthorizationUrl() {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_AUTHORIZATION_URL, {});
+    if (!response?.data?.authorizationUrl || !response?.data?.state) {
+      throw new Error('Không thể bắt đầu đăng nhập Google. Vui lòng thử lại.');
     }
+    return response.data;
+  },
+
+  /** Exchange the Google code for Mooncake tokens. Authentication has no mock fallback. */
+  async loginWithGoogle(code, state) {
+    const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, { code, state });
+    const { accessToken, refreshToken, user } = response?.data || {};
+    if (!accessToken || !refreshToken || !user) {
+      throw new Error('Phản hồi đăng nhập không hợp lệ.');
+    }
+    if (!storage.set('auth_token', accessToken) ||
+        !storage.set('auth_refresh_token', refreshToken) ||
+        !storage.set('auth_user', user)) {
+      clearAuthSession(false);
+      throw new Error('Không thể lưu phiên đăng nhập trên trình duyệt.');
+    }
+    window.dispatchEvent(new CustomEvent('auth:changed'));
+    return response;
   },
 
   /**
    * Logout user and clear tokens
    */
-  logout() {
-    storage.remove('auth_token');
-    storage.remove('auth_user');
+  async logout() {
+    const refreshToken = storage.get('auth_refresh_token');
+    clearAuthSession(false);
+    if (refreshToken) {
+      try {
+        await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, { refreshToken });
+      } catch {
+        // Local logout remains complete if the API is unavailable.
+      }
+    }
+  },
+
+  async getMe() {
+    const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
+    return response.data;
   },
 
   /**
@@ -155,7 +148,7 @@ export const authService = {
    * Check if user is logged in
    */
   isAuthenticated() {
-    return !!storage.get('auth_token');
+    return !!storage.get('auth_token') && !!storage.get('auth_refresh_token');
   },
 };
 

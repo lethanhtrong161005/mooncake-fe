@@ -14,8 +14,10 @@ export const API_ENDPOINTS = {
     SEND_OTP: `/${API_VERSION}/auth/send-otp`,
     VERIFY_OTP: `/${API_VERSION}/auth/verify-otp`,
     FORGOT_PASSWORD: `/${API_VERSION}/auth/forgot-password`,
-    GOOGLE_LOGIN: `/${API_VERSION}/auth/google`,
+    GOOGLE_AUTHORIZATION_URL: `/${API_VERSION}/auth/google/authorization-url`,
+    GOOGLE_LOGIN: `/${API_VERSION}/auth/google/login`,
     REFRESH_TOKEN: `/${API_VERSION}/auth/refresh-token`,
+    ME: `/${API_VERSION}/auth/me`,
     PROFILE: `/${API_VERSION}/users/profile`,
   },
 

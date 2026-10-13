@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import authService from '../services/authService';
 
-export default function LoginPopup({
+export default function LoginPopup(props) {
+  if (!props.isOpen) return null;
+  return <LoginPopupContent {...props} />;
+}
+
+function LoginPopupContent({
   isOpen = true,
   onClose,
   onNavigate,
@@ -10,13 +17,14 @@ export default function LoginPopup({
   // Form states
   const [phone, setPhone] = useState(initialPhone);
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [view, setView] = useState('login'); // 'login' | 'forgot'
   const [forgotPhone, setForgotPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState(initialPhone
+    ? 'Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.' : '');
   const [isLoading, setIsLoading] = useState(false);
 
   // Close on ESC key
@@ -30,25 +38,8 @@ export default function LoginPopup({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Reset state when closing / reopening
-  useEffect(() => {
-    if (isOpen) {
-      if (initialPhone) {
-        setPhone(initialPhone);
-        setSuccessMsg('Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.');
-      } else {
-        setErrorMsg('');
-        setSuccessMsg('');
-      }
-      setView('login');
-      setOtpSent(false);
-    }
-  }, [isOpen, initialPhone]);
-
-  if (!isOpen) return null;
-
   // Xử lý đăng nhập bằng SĐT & Mật khẩu
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -56,48 +47,50 @@ export default function LoginPopup({
     // Validate phone number
     const cleanPhone = phone.trim().replace(/\s+/g, '');
     if (!cleanPhone) {
-      setErrorMsg('Vui lòng nhập số điện thoại');
+      setErrorMsg('Vui lòng nhập số điện thoại.');
       return;
     }
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
+    const phoneRegex = /^(?:0[35789]\d{8}|(?:\+?84)[35789]\d{8})$/;
     if (!phoneRegex.test(cleanPhone)) {
-      setErrorMsg('Số điện thoại không đúng định dạng (VD: 0912 345 678)');
+      setErrorMsg('Số điện thoại không hợp lệ.');
       return;
     }
 
     // Validate password
-    if (!password) {
-      setErrorMsg('Vui lòng nhập mật khẩu');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMsg('Mật khẩu phải từ 6 ký tự trở lên');
+    if (!password.trim()) {
+      setErrorMsg('Vui lòng nhập mật khẩu.');
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await login(cleanPhone, password);
+      setSuccessMsg('Đăng nhập thành công');
+      setPassword('');
+      onClose?.();
+      onNavigate?.('trang-chu');
+    } catch (error) {
+      setErrorMsg(error.message);
+    } finally {
       setIsLoading(false);
-      setSuccessMsg('Đăng nhập thành công! Đang chuyển hướng...');
-      setTimeout(() => {
-        onClose?.();
-        onNavigate?.('trang-chu');
-      }, 1000);
-    }, 800);
+    }
   };
 
   // Xử lý đăng nhập qua Google
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
+  const handleGoogleLogin = async () => {
+    if (isLoading) return;
     setErrorMsg('');
-    setTimeout(() => {
+    setIsLoading(true);
+    try {
+      const { authorizationUrl, state } = await authService.getGoogleAuthorizationUrl();
+      sessionStorage.setItem('mooncake_google_state', state);
+      sessionStorage.setItem('mooncake_google_return_page',
+        window.location.hash.replace(/^#/, '') || 'trang-chu');
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setErrorMsg(error.message || 'Không thể bắt đầu đăng nhập Google. Vui lòng thử lại.');
       setIsLoading(false);
-      setSuccessMsg('Đăng nhập với Google thành công!');
-      setTimeout(() => {
-        onClose?.();
-        onNavigate?.('trang-chu');
-      }, 900);
-    }, 700);
+    }
   };
 
   // Xử lý quên mật khẩu
@@ -227,7 +220,7 @@ export default function LoginPopup({
 
                   {/* Field: Số điện thoại */}
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-stone-800">
+                    <label htmlFor="login-phone-number" className="block text-xs font-bold text-stone-800">
                       Số điện thoại <span className="text-red-500">*</span>
                     </label>
                     <div className="relative flex items-center">
@@ -235,20 +228,20 @@ export default function LoginPopup({
                         phone_iphone
                       </span>
                       <input
+                        id="login-phone-number"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 focus:bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-stone-900 placeholder:text-stone-400 text-xs transition-all"
                         placeholder="Ví dụ: 0912 345 678"
                         type="tel"
                         autoComplete="tel"
-                        required
                       />
                     </div>
                   </div>
 
                   {/* Field: Mật khẩu */}
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-stone-800">
+                    <label htmlFor="login-password" className="block text-xs font-bold text-stone-800">
                       Mật khẩu <span className="text-red-500">*</span>
                     </label>
                     <div className="relative flex items-center">
@@ -256,19 +249,20 @@ export default function LoginPopup({
                         lock
                       </span>
                       <input
+                        id="login-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-stone-50 border border-stone-200 focus:bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 text-stone-900 placeholder:text-stone-400 text-xs transition-all"
                         placeholder="Nhập mật khẩu của bạn"
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="current-password"
-                        required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer p-0.5"
                         title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           {showPassword ? 'visibility_off' : 'visibility'}
@@ -277,17 +271,8 @@ export default function LoginPopup({
                     </div>
                   </div>
 
-                  {/* 3. GHI NHỚ MẬT KHẨU & QUÊN MẬT KHẨU */}
-                  <div className="flex items-center justify-between text-xs pt-0.5">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-4 h-4 rounded text-primary accent-primary cursor-pointer border-stone-300"
-                        type="checkbox"
-                      />
-                      <span className="text-stone-700 font-medium">Ghi nhớ mật khẩu</span>
-                    </label>
+                  {/* 3. QUÊN MẬT KHẨU */}
+                  <div className="flex items-center justify-end text-xs pt-0.5">
                     <button
                       type="button"
                       onClick={() => {
