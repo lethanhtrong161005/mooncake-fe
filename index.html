@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>Nguyệt Phố - Sàn Giao Dịch Bánh Trung Thu B2B Luxury</title>
     
     <!-- Google Fonts -->
@@ -13,9 +14,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
+      if (window.location.pathname !== '/auth/google/callback') {
+        document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+      }
+    </script>
+    <script>
+      if (window.location.pathname !== '/auth/google/callback') {
+        tailwind.config = {
         darkMode: "class",
         theme: {
           extend: {
@@ -119,7 +125,8 @@
             }
           }
         }
-      };
+        };
+      }
     </script>
   </head>
   <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">

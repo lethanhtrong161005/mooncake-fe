@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Header({ activePage = 'trang-chu', onNavigate }) {
-  // Navigation & Auth State (Default: false = Chưa đăng nhập như ảnh 3)
+  const { isLoggedIn, user, logout } = useAuth();
+  const accountName = user?.fullName?.trim() || user?.phone || 'Tài khoản';
+  const avatarInitials = accountName.split(/\s+/).slice(-2)
+    .map((part) => part[0]).join('').toUpperCase();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('b2b_logged_in') === 'true';
-  });
   const [selectedRegion, setSelectedRegion] = useState(() => {
     return isLoggedIn ? 'Toàn quốc' : 'Chọn khu vực';
   });
@@ -58,14 +59,10 @@ export default function Header({ activePage = 'trang-chu', onNavigate }) {
     setShowUserDropdown(false);
   };
 
-  const handleToggleAuth = (state) => {
-    const nextState = state !== undefined ? state : !isLoggedIn;
-    setIsLoggedIn(nextState);
-    localStorage.setItem('b2b_logged_in', nextState ? 'true' : 'false');
-    if (!nextState && selectedRegion === 'Toàn quốc') {
+  const handleLogout = async () => {
+    await logout();
+    if (selectedRegion === 'Toàn quốc') {
       setSelectedRegion('Chọn khu vực');
-    } else if (nextState && selectedRegion === 'Chọn khu vực') {
-      setSelectedRegion('Toàn quốc');
     }
     setShowUserDropdown(false);
   };
@@ -484,7 +481,7 @@ export default function Header({ activePage = 'trang-chu', onNavigate }) {
                 {isLoggedIn ? (
                   /* Logged-in Avatar: Colorful initials AP */
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-primary to-primary-container text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                    AP
+                    {avatarInitials}
                   </div>
                 ) : (
                   /* Logged-out Avatar: Outline user icon person (Ảnh 3) */
@@ -503,16 +500,12 @@ export default function Header({ activePage = 'trang-chu', onNavigate }) {
                     <>
                       <div className="p-3 bg-[#fff8f5] border border-[#ebdcd5] rounded-xl mb-2.5">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-stone-900 text-sm whitespace-nowrap">Tập đoàn An Phát</span>
+                          <span className="font-bold text-stone-900 text-sm truncate">{accountName}</span>
                           <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap shrink-0">
-                            VIP B2B
+                            {user?.role}
                           </span>
                         </div>
-                        <div className="text-[11px] text-stone-500 mt-1 whitespace-nowrap">MST: 0108923481 • Hà Nội &amp; TP.HCM</div>
-                        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-800 font-bold whitespace-nowrap">
-                          <span className="material-symbols-outlined text-[15px] text-emerald-600 shrink-0">verified</span>
-                          <span>Hạn mức trả chậm: 500 Triệu VNĐ</span>
-                        </div>
+                        <div className="text-[11px] text-stone-500 mt-1">{user?.phone}</div>
                       </div>
 
                       <div className="space-y-1">
@@ -585,10 +578,10 @@ export default function Header({ activePage = 'trang-chu', onNavigate }) {
                         <div className="flex gap-2 pt-1">
                           <button
                             type="button"
-                            onClick={() => handleToggleAuth(false)}
+                            onClick={handleLogout}
                             className="flex-1 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-center font-bold text-xs cursor-pointer transition-colors"
                           >
-                            Đăng xuất (Khách)
+                            Đăng xuất
                           </button>
                           <button
                             type="button"
@@ -658,15 +651,6 @@ export default function Header({ activePage = 'trang-chu', onNavigate }) {
 
                         <div className="my-1.5 border-t border-stone-100"></div>
 
-                        {/* Quick Demo Switcher to view Logged-In state */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleAuth(true)}
-                          className="w-full py-2 px-3 rounded-lg bg-[#fff8eb] border border-[#fcd34d] hover:bg-[#fef3c7] text-[#92400e] font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
-                          <span>Xem thử: Đã đăng nhập (VIP)</span>
-                        </button>
                       </div>
                     </>
                   )}

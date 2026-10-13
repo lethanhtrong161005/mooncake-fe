@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 // Customer / General Pages
 import HomePage from './Pages/HomePage';
@@ -33,6 +33,7 @@ import AdminProfile from './Pages/Admin/AdminProfile';
 // Popups
 import LoginPopup from './Pages/LoginPopup';
 import RegisterPopup from './Pages/RegisterPopup';
+import GoogleCallbackPage from './Pages/Auth/GoogleCallbackPage';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -66,7 +67,7 @@ export default function App() {
     }
 
     setCurrentPage(target);
-    window.location.hash = target;
+    window.history.pushState(null, '', `/#${encodeURI(target)}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setShowNavMenu(false);
   };
@@ -77,7 +78,17 @@ export default function App() {
       if (hash) setCurrentPage(hash);
     };
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleExpiredSession = () => setShowLogin(true);
+    window.addEventListener('auth:unauthorized', handleExpiredSession);
+    return () => window.removeEventListener('auth:unauthorized', handleExpiredSession);
   }, []);
 
   const renderPage = () => {
@@ -146,6 +157,10 @@ export default function App() {
         return <HomePage onNavigate={navigateTo} />;
     }
   };
+
+  if (window.location.pathname === '/auth/google/callback') {
+    return <GoogleCallbackPage />;
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col font-body-md antialiased relative">

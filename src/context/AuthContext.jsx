@@ -1,15 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import authService from '../services/authService';
 import storage from '../utils/storage';
-
-const AuthContext = createContext(null);
+import AuthContext from './authContextStore';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => storage.get('auth_user', null));
   const [token, setToken] = useState(() => storage.get('auth_token', null));
   const [isLoading, setIsLoading] = useState(false);
 
-  const isLoggedIn = !!token && !!user;
+  const isLoggedIn = !!token && !!user && !!storage.get('auth_refresh_token');
 
   // Sync state if storage changes
   useEffect(() => {
@@ -18,13 +17,31 @@ export function AuthProvider({ children }) {
       setToken(storage.get('auth_token', null));
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:changed', handleStorageChange);
+    window.addEventListener('auth:unauthorized', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:changed', handleStorageChange);
+      window.removeEventListener('auth:unauthorized', handleStorageChange);
+    };
   }, []);
 
-  const login = async (phone, password, rememberMe) => {
+  useEffect(() => {
+    if (!storage.get('auth_token') || !storage.get('auth_refresh_token')) return;
+    authService.getMe().then((currentUser) => {
+      if (!storage.get('auth_token') || !storage.get('auth_refresh_token')) return;
+      storage.set('auth_user', currentUser);
+      setUser(currentUser);
+      setToken(storage.get('auth_token'));
+    }).catch(() => {
+      // The client clears an expired session when refresh fails.
+    });
+  }, []);
+
+  const login = async (phone, password) => {
     setIsLoading(true);
     try {
-      const res = await authService.login(phone, password, rememberMe);
+      const res = await authService.login(phone, password);
       const currentUser = storage.get('auth_user');
       const currentToken = storage.get('auth_token');
       setUser(currentUser);
@@ -35,10 +52,10 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const loginWithGoogle = async (googleToken) => {
+  const loginWithGoogle = async (code, state) => {
     setIsLoading(true);
     try {
-      const res = await authService.loginWithGoogle(googleToken);
+      const res = await authService.loginWithGoogle(code, state);
       setUser(storage.get('auth_user'));
       setToken(storage.get('auth_token'));
       return res;
@@ -47,10 +64,11 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    const logoutRequest = authService.logout();
     setUser(null);
     setToken(null);
+    await logoutRequest;
   };
 
   const value = {
@@ -65,13 +83,3 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-export default AuthContext;
