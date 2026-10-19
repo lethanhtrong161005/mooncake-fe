@@ -32,12 +32,16 @@ export const API_ENDPOINTS = {
 
   // B2B RFQ (Request for Quote) & Bidding
   RFQ: {
-    CREATE: `/${API_VERSION}/rfq`,
-    LIST: `/${API_VERSION}/rfq`,
-    DETAILS: (id) => `/${API_VERSION}/rfq/${id}`,
-    QUOTES: (rfqId) => `/${API_VERSION}/rfq/${rfqId}/quotes`,
-    COMPARE: (rfqId) => `/${API_VERSION}/rfq/${rfqId}/compare`,
-    ACCEPT_QUOTE: (rfqId, quoteId) => `/${API_VERSION}/rfq/${rfqId}/quotes/${quoteId}/accept`,
+    CREATE: `/${API_VERSION}/rfqs`,
+    LIST: `/${API_VERSION}/rfqs/mine`,
+    DETAILS: (id) => `/${API_VERSION}/rfqs/${id}`,
+    PUBLISH: (id) => `/${API_VERSION}/rfqs/${id}/publish`,
+    CANCEL: (id) => `/${API_VERSION}/rfqs/${id}/cancel`,
+    INVITATIONS: (id) => `/${API_VERSION}/rfqs/${id}/invitations`,
+    DECLINE: (id) => `/${API_VERSION}/rfqs/${id}/decline`,
+    BIDS: (id) => `/${API_VERSION}/rfqs/${id}/bids`,
+    CANCEL_BID: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/cancel`,
+    ACCEPT_BID: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/accept`,
   },
 
   // Orders & PoD Logistics
@@ -46,33 +50,54 @@ export const API_ENDPOINTS = {
     LIST: `/${API_VERSION}/orders`,
     DETAILS: (id) => `/${API_VERSION}/orders/${id}`,
     CANCEL: (id) => `/${API_VERSION}/orders/${id}/cancel`,
-    TRACKING_POD: (id) => `/${API_VERSION}/orders/${id}/tracking`,
-    SAMPLE_BOX: `/${API_VERSION}/orders/sample-box`,
+    CUSTOMER_LIST: `/${API_VERSION}/orders/mine`,
+    SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
+    CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
+    REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
+    PROCESSING: (id) => `/${API_VERSION}/orders/${id}/processing`,
+    SHIP: (id) => `/${API_VERSION}/orders/${id}/ship`,
+    CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
   },
 
   // e-Contract & Escrow Payments
   CONTRACTS: {
-    LIST: `/${API_VERSION}/contracts`,
+    LIST: `/${API_VERSION}/contracts/mine`,
     DETAILS: (id) => `/${API_VERSION}/contracts/${id}`,
     SIGN: (id) => `/${API_VERSION}/contracts/${id}/sign`,
-    MILESTONES: (id) => `/${API_VERSION}/contracts/${id}/milestones`,
-    ESCROW_STATUS: (id) => `/${API_VERSION}/contracts/${id}/escrow`,
+    SIGNATURE_OTP: (id) => `/${API_VERSION}/contracts/${id}/signature-otp`,
+    SUBMIT_FOR_SIGNATURE: (id) => `/${API_VERSION}/contracts/${id}/submit-for-signature`,
+  },
+
+  PAYMENTS: {
+    CREATE: `/${API_VERSION}/payments`,
+    LIST: `/${API_VERSION}/payments/mine`,
+    CONFIRM: (id) => `/${API_VERSION}/payments/${id}/confirm`,
+    REFUND: (id) => `/${API_VERSION}/payments/${id}/refund`,
   },
 
   // Suppliers & Workshops
   SUPPLIERS: {
     LIST: `/${API_VERSION}/suppliers`,
     DETAILS: (id) => `/${API_VERSION}/suppliers/${id}`,
-    STORE_SETUP: `/${API_VERSION}/suppliers/store-setup`,
-    INVENTORY: `/${API_VERSION}/suppliers/inventory`,
+    APPLY: `/${API_VERSION}/suppliers/me/apply`,
+    MY_PROFILE: `/${API_VERSION}/suppliers/me`,
+    PENDING: `/${API_VERSION}/suppliers/pending`,
+    REVIEW: (profileId) => `/${API_VERSION}/suppliers/${profileId}/review`,
+    PROMOTIONS: `/${API_VERSION}/supplier/promotions`,
+    PROMOTION: (id) => `/${API_VERSION}/supplier/promotions/${id}`,
   },
 
   // Admin Portal & Oversight
   ADMIN: {
     DASHBOARD_STATS: `/${API_VERSION}/admin/dashboard`,
-    APPROVE_SUPPLIERS: `/${API_VERSION}/admin/approvals/suppliers`,
-    APPROVE_PRODUCTS: `/${API_VERSION}/admin/approvals/products`,
-    SYSTEM_CONFIG: `/${API_VERSION}/admin/system/config`,
+    SYSTEM_CONFIG: `/${API_VERSION}/admin/system-config`,
+    SYSTEM_CONFIG_ITEM: (key) => `/${API_VERSION}/admin/system-config/${key}`,
+    AUDIT_LOGS: `/${API_VERSION}/admin/audit-logs`,
+    SHOPS: `/${API_VERSION}/admin/shops`,
+    SHOP_STATUS: (shopId) => `/${API_VERSION}/admin/shops/${shopId}/status`,
+    CONTRACT_DEPOSIT_RULES: `/${API_VERSION}/admin/contract-deposit-rules`,
+    CONTRACT_DEPOSIT_RULE: (ruleId) => `/${API_VERSION}/admin/contract-deposit-rules/${ruleId}`,
+    USER: (userId) => `/${API_VERSION}/admin/users/${userId}`,
   },
 };
 
