@@ -17,3 +17,9 @@
 ## 3. Bảo Toàn Mã Nguồn & Bình Luận Nghiệp Vụ
 - Giữ nguyên các ghi chú, docstrings và chú thích nghiệp vụ đã tồn tại trong file, trừ phi người dùng yêu cầu xóa bỏ hoặc sửa đổi cụ thể.
 - Không tự ý xóa code của các phân hệ khác khi đang sửa một phân hệ cụ thể.
+
+## 4. Kiểm Soát Tuân Thủ Ant Design (Mandatory UI Compliance)
+- Trước khi hoàn thành bất kỳ task thêm tính năng UI mới hoặc chỉnh sửa giao diện, Agent BẮT BUỘC rà soát:
+  - 100% các thành phần giao diện tương tác (Button, Input, Form, Modal, Table, Card, Tag, Alert, Spin, v.v.) phải được import từ thư viện `antd` và `@ant-design/icons`.
+  - Không còn tồn tại các thẻ HTML trần (`<button>`, `<input>`, `<select>`, `<dialog>`, `<table>`) phục vụ tương tác người dùng.
+

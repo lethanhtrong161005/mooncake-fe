@@ -50,8 +50,11 @@
 ## 5. Module & Import/Export
 - Sử dụng ES Module (`import` / `export`), không dùng CommonJS (`require` / `module.exports`).
 - Sắp xếp thứ tự import theo nhóm chuẩn:
-  1. Thư viện bên ngoài (React, Axios, etc.)
-  2. Components & Hooks
-  3. Services & API
-  4. Constants & Utils
-  5. Assets & CSS
+  1. React & Core Hooks (`react`)
+  2. UI Framework Ant Design (`antd`) & Icons (`@ant-design/icons`)
+  3. Thư viện bên ngoài khác (`axios`, v.v.)
+  4. Project Custom Components & Hooks (`useAuth`, `ColonyAdminLayout`, `CustomerHeader`)
+  5. Services & API Client (`authService`, `apiClient`)
+  6. Constants & Utilities (`apiEndpoints`, `formatters`)
+  7. Assets & CSS Stylesheets
+
