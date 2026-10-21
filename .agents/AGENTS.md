@@ -32,6 +32,10 @@ Mọi Agent AI khi sinh mã (generate code), sửa đổi (refactor), hoặc rev
   - Sử dụng Optional Chaining (`?.`) và Nullish Coalescing (`??`) thay vì chuỗi điều kiện lồng nhau `a && a.b && a.b.c`.
   - Luôn sử dụng Template Literals (backticks) khi nối chuỗi: `${baseURL}/${endpoint}`.
 
+### 1.3. Bắt buộc sử dụng Thư viện Giao diện Ant Design (Mandatory Ant Design)
+- **Tuyệt đối cấm sử dụng thẻ HTML trần** cho tương tác người dùng (`<button>`, `<input>`, `<select>`, `<dialog>`, `<table>`).
+- Khi phát triển bất kỳ tính năng UI mới hoặc sửa giao diện: **BẮT BUỘC 100% phải dùng UI component của Ant Design (`antd`)** và icon từ `@ant-design/icons`.
+
 ---
 
 ## 2. KIẾN TRÚC PHÂN TẦNG DOANH NGHIỆP (ENTERPRISE LAYERED ARCHITECTURE)
@@ -45,8 +49,9 @@ src/
 ├── utils/        # Hàm thuần túy (pure functions): formatters, validators, storage helpers
 ├── context/      # Quản lý state toàn cục (Auth, Cart, Notification)
 ├── hooks/        # Custom React Hooks tách biệt logic khỏi UI
-├── components/   # Giao diện dùng chung (Header, Footer, Button, Modal, Card)
-└── Pages/        # Màn hình chức năng (HomePage, SearchPage, Customer, Supplier, Admin)
+├── theme/        # Theme Tokens Ant Design tập trung (antdTheme.js)
+├── components/   # Giao diện dùng chung & Layouts (CustomerHeader, CustomerFooter, ColonyAdminLayout, AppLogo)
+└── Pages/        # Màn hình chức năng (HomePage, SearchPage, Customer, Supplier, Admin, Auth sub-steps)
 ```
 
 ---
@@ -62,16 +67,17 @@ src/
 
 ## 4. QUY TẮC PHÁT TRIỂN GIAO DIỆN REACT (REACT & UI/UX RULES)
 
-1. **Design System & Tailwind CSS:**
-   - Sử dụng bảng màu sang trọng (Luxury Gold, Amber, Deep Stone) của dự án.
-   - Thêm micro-animations tinh tế (`transition-all duration-200`, `hover:scale-[1.02]`, hover shadows).
-2. **Accessibility & Semantic HTML:**
-   - Dùng đúng thẻ semantic: `<header>`, `<main>`, `<section>`, `<nav>`, `<footer>`, `<button>`, `<label>`.
-   - Các nút icon hoặc tương tác bắt buộc có `aria-label` hoặc tooltip.
+1. **BẮT BUỘC SỬ DỤNG ANT DESIGN (MANDATORY ANTD DESIGN SYSTEM):**
+   - **Quy tắc tối thượng:** Mọi tính năng UI mới, màn hình (Page), popup (Modal), thẻ (Card), form nhập liệu (Form/Input), bảng dữ liệu (Table), nút bấm (Button), thông báo (Alert/Notification) **BẮT BUỘC 100% PHẢI SỬ DỤNG UI COMPONENTS CỦA ANT DESIGN (`antd`) & `@ant-design/icons`**.
+   - **Tuyệt đối KHÔNG tự viết thẻ HTML trần** như `<button>`, `<input>`, `<select>`, `<dialog>`, `<table>` khi Ant Design đã có sẵn các component tương ứng (`Button`, `Input`, `Select`, `Modal`, `Table`, `Card`, `Steps`, `Tag`, `Badge`, `Spin`, `Alert`, `Result`, `Statistic`, `Breadcrumb`, `Dropdown`, `Avatar`).
+   - Sử dụng theme Ant Design tập trung tại `src/theme/antdTheme.js` với tông màu Luxury B2B: Đỏ rượu hoàng gia (`#8c1524`), Vàng kim (`#d48806`), Nền ấm (`#faf8f6`).
+   - Màn hình Quản trị (Admin) và Kênh Nhà Cung Cấp (Supplier) **bắt buộc dùng layout Colony Admin** tại `src/components/layout/ColonyAdminLayout.jsx`.
+2. **Khả Năng Tiếp Cận & Semantic (Accessibility & Semantics):**
+   - Các nút icon hoặc tương tác bắt buộc có `aria-label` hoặc `title`/`tooltip`.
    - Ảnh bắt buộc có thuộc tính `alt` mô tả rõ ràng.
-3. **State Management & Re-renders:**
+3. **Quản Lý State & Tránh Re-render Thừa:**
    - Không lạm dụng `useEffect` cho các tính toán có thể derive trực tiếp từ props/state.
-   - Tránh re-render không cần thiết bằng cách phân chia component con hợp lý.
+   - Chia tách nhỏ các popup/bước phức tạp thành các sub-components độc lập (như quy trình Auth tại `src/Pages/Auth/`).
 
 ---
 
