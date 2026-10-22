@@ -1,6 +1,6 @@
-import React from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import { useState } from 'react';
+import CustomerHeader from '../components/layout/CustomerHeader';
+import CustomerFooter from '../components/layout/CustomerFooter';
 import AnnouncementPill from '../components/lucian/AnnouncementPill';
 import B2BPriceCalculator from '../components/lucian/B2BPriceCalculator';
 import TearOffCoupon from '../components/lucian/TearOffCoupon';
@@ -9,37 +9,105 @@ import FaqAccordion from '../components/lucian/FaqAccordion';
 import RecentOrderToast from '../components/lucian/RecentOrderToast';
 
 export default function HomePage({ onNavigate }) {
-  return (
-    <div className="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen">
-      {/* Redesigned E-Commerce Header */}
-      <Header activePage="trang-chu" onNavigate={onNavigate} />
+  const categories = [
+    {
+      key: 'nuong',
+      image: '/categories/banh-nuong.jpg',
+      title: 'Bánh Nướng Truyền Thống',
+      desc: 'Thập cẩm gà quay, vi cá, jambon hảo hạng',
+    },
+    {
+      key: 'deo',
+      image: '/categories/banh-deo.jpg',
+      title: 'Bánh Dẻo Truyền Thống',
+      desc: 'Hạt sen hoa bưởi, đậu xanh cốm non',
+    },
+    {
+      key: 'hop-vip',
+      image: '/categories/hop-son-mai.jpg',
+      title: 'Hộp Quà Sơn Mài Cao Cấp',
+      desc: 'Sơn mài khóa đồng, khắc logo theo yêu cầu',
+    },
+    {
+      key: 'healthy',
+      image: '/categories/banh-dinh-duong.jpg',
+      title: 'Bánh Dinh Dưỡng Ít Ngọt',
+      desc: 'Đường ăn kiêng tự nhiên, hạt dinh dưỡng',
+    },
+  ];
 
-      <main className="w-full pt-[68px] sm:pt-[72px] bg-surface min-h-[calc(100vh-280px)]">
+  const featuredSuppliers = [
+    {
+      id: 'trang-an',
+      name: 'Xưởng Bánh Tràng An',
+      image: '/suppliers/xuong-trang-an.jpg',
+      avatarText: 'TA',
+      desc: 'Nghề truyền thống gia truyền 4 đời tại Hà Nội. Năng lực sản xuất quy mô lớn, chuyên set quà doanh nghiệp thượng hạng.',
+      badge: '★ Đối Tác Tiêu Biểu',
+      location: 'Hà Nội',
+      capacity: '50.000 hộp/vụ',
+      rating: 4.9,
+      reviewsCount: 128,
+      cert: 'Chuẩn An Toàn Thực Phẩm',
+      tags: ['Bánh nướng gia truyền', 'Hộp sơn mài', 'In logo riêng'],
+    },
+    {
+      id: 'huu-nghi',
+      name: 'Xưởng Bánh Hữu Nghị',
+      image: '/suppliers/xuong-huu-nghi.jpg',
+      avatarText: 'HN',
+      desc: 'Thương hiệu lâu năm, dây chuyền sản xuất hiện đại, chuyên cung cấp các gói quà tặng số lượng lớn cho tập đoàn.',
+      badge: '★ Đối Tác Tiêu Biểu',
+      location: 'Hà Nội & TP. HCM',
+      capacity: '120.000 hộp/vụ',
+      rating: 4.8,
+      reviewsCount: 215,
+      cert: 'Tiêu Chuẩn Xuất Khẩu',
+      tags: ['Sản xuất số lượng lớn', 'Hộp cao cấp', 'Chiết khấu cao'],
+    },
+    {
+      id: 'bao-phuong',
+      name: 'Xưởng Bánh Bảo Phương',
+      image: '/suppliers/xuong-bao-phuong.jpg',
+      avatarText: 'BP',
+      desc: 'Bánh tươi thủ công truyền thống phố cổ Thụy Khuê, hương vị sen nhài cốm non nguyên bản nổi tiếng thủ đô.',
+      badge: '★ Đối Tác Tiêu Biểu',
+      location: 'Hà Nội - Thụy Khuê',
+      capacity: '35.000 hộp/vụ',
+      rating: 4.9,
+      reviewsCount: 96,
+      cert: 'Chứng Nhận Vệ Sinh An Toàn',
+      tags: ['Bánh dẻo cốm non', 'Bánh tươi thủ công', 'Quà biếu nghệ nhân'],
+    },
+  ];
+
+  return (
+    <div className="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col">
+      {/* 1. Customer Navigation Header */}
+      <CustomerHeader activeKey="trang-chu" onNavigate={onNavigate} />
+
+      <main className="w-full bg-surface flex-1">
         <div className="flex flex-col w-full">
 
-          {/* 1. HERO SECTION WITH LUCIAN #252 ANNOUNCEMENT PILL & CALL TO ACTION */}
-          <section className="relative w-full overflow-hidden py-10 sm:py-16 px-4 sm:px-6">
-            {/* Background Image & Soft Transparent Gradient Scrim */}
+          {/* 2. HERO SECTION WITH LUCIAN #252 ANNOUNCEMENT PILL & CALL TO ACTION */}
+          <section className="relative w-full overflow-hidden py-12 sm:py-16 px-4 sm:px-6">
             <div className="absolute inset-0 z-0">
               <img
                 src="/hero_mooncake_bg.jpg"
                 alt="Bánh Trung Thu Doanh Nghiệp"
                 className="w-full h-full object-cover object-center transform scale-100 animate-float-slow"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/70" />
+              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-950/45 to-stone-950/75" />
             </div>
 
-            {/* Content */}
             <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center text-center">
               {/* Lucian Element #252: Shining Expandable Announcement Pill */}
               <AnnouncementPill onNavigate={onNavigate} />
 
-              {/* Headline */}
               <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                 Nền Tảng Cung Ứng Bánh Trung Thu Doanh Nghiệp
               </h1>
 
-              {/* Subtitle */}
               <p className="mt-3 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
                 Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng ký số e-Contract &amp; 100% xuất hóa đơn VAT minh bạch.
               </p>
@@ -62,7 +130,6 @@ export default function HomePage({ onNavigate }) {
 
               {/* 2 Sleek Action Cards */}
               <div className="mt-6 sm:mt-7 w-full grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 text-left max-w-3xl">
-                {/* Card 1: Hàng Sẵn Kho */}
                 <div
                   onClick={() => onNavigate?.('tim-kiem')}
                   className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-primary/40 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
@@ -75,8 +142,8 @@ export default function HomePage({ onNavigate }) {
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
                           <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600" />
                           </span>
                           Sẵn Kho 24h
                         </span>
@@ -92,6 +159,7 @@ export default function HomePage({ onNavigate }) {
                   </div>
                   <button
                     type="button"
+                    aria-label="Mua ngay bánh sẵn kho"
                     className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span>Mua Ngay</span>
@@ -99,9 +167,8 @@ export default function HomePage({ onNavigate }) {
                   </button>
                 </div>
 
-                {/* Card 2: Thiết Kế & Báo Giá RFQ */}
                 <div
-                  onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                  onClick={() => onNavigate?.('so-sanh-bao-gia')}
                   className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-amber-400/50 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
@@ -112,8 +179,8 @@ export default function HomePage({ onNavigate }) {
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-900">
                           <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600" />
                           </span>
                           Báo giá xưởng
                         </span>
@@ -129,6 +196,7 @@ export default function HomePage({ onNavigate }) {
                   </div>
                   <button
                     type="button"
+                    aria-label="Tạo yêu cầu báo giá RFQ"
                     className="px-3.5 py-2 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span>Tạo RFQ</span>
@@ -139,7 +207,7 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 2. LOGO MARQUEE */}
+          {/* 3. LOGO MARQUEE */}
           <div className="w-full bg-[#f8ece4] border-y border-[#ebdcd5] py-3 overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-3">
               <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
@@ -152,10 +220,10 @@ export default function HomePage({ onNavigate }) {
                     'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
                     'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina',
                     'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
-                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina'
+                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina',
                   ].map((brand, idx) => (
                     <span key={idx} className="flex items-center gap-2 hover:text-primary transition-colors cursor-default whitespace-nowrap">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#ffba00]"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ffba00]" />
                       <span>{brand}</span>
                     </span>
                   ))}
@@ -164,7 +232,62 @@ export default function HomePage({ onNavigate }) {
             </div>
           </div>
 
-          {/* 3. NEW SECTION: LUCIAN B2B PRICE CALCULATOR (#278) & TEAR-OFF COUPON (#298) */}
+          {/* 4. PRODUCT CATEGORIES GRID (MERGED FROM DEV) */}
+          <section className="w-full py-12 px-gutter bg-white border-b border-stone-200/60">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Danh Mục Quà Tặng 2025</span>
+                  </div>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Phân Loại Dòng Bánh B2B</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.('tim-kiem')}
+                  className="inline-flex items-center gap-1 text-sm text-primary font-bold hover:text-primary-container transition-colors group mt-2 md:mt-0 cursor-pointer"
+                >
+                  <span>Khám phá toàn bộ danh mục</span>
+                  <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.key}
+                    onClick={() => onNavigate?.('tim-kiem')}
+                    className="group bg-surface-container-low rounded-2xl overflow-hidden border border-stone-200 hover:border-primary/40 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+                      <img
+                        src={cat.image}
+                        alt={cat.title}
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="text-base font-bold text-stone-900 group-hover:text-primary transition-colors">
+                          {cat.title}
+                        </h3>
+                        <p className="text-xs text-stone-600 mt-1 line-clamp-2">
+                          {cat.desc}
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs font-bold text-primary">
+                        <span>Xem chi tiết</span>
+                        <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 5. LUCIAN B2B PRICE CALCULATOR (#278) & TEAR-OFF COUPON (#298) */}
           <section className="w-full bg-gradient-to-b from-surface-container-low to-surface py-12 sm:py-16 px-gutter border-b border-stone-200/50">
             <div className="max-w-7xl mx-auto">
               <div className="text-center max-w-2xl mx-auto mb-10">
@@ -181,16 +304,13 @@ export default function HomePage({ onNavigate }) {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* Left: Lucian #278 Seat-based price calculator adapted for Mooncake quantity */}
                 <div className="lg:col-span-7 flex flex-col items-center">
                   <B2BPriceCalculator onNavigate={onNavigate} />
                 </div>
 
-                {/* Right: Lucian #298 Tear-off discount coupon & Corporate Perks */}
                 <div className="lg:col-span-5 flex flex-col gap-5 items-center">
                   <TearOffCoupon />
 
-                  {/* Corporate perks callout */}
                   <div className="w-full max-w-[440px] bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase text-primary tracking-wider">
                       <span className="material-symbols-outlined text-[18px]">verified</span>
@@ -216,13 +336,13 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 4. FEATURED PRODUCTS COLLECTION */}
+          {/* 6. FEATURED PRODUCTS COLLECTION */}
           <section className="w-full bg-surface py-space-xl px-gutter">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-space-lg">
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                     <span>Sản phẩm nổi bật vụ mùa 2025</span>
                   </div>
                   <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bộ Sưu Tập Bánh Trung Thu Tiêu Biểu</h2>
@@ -250,7 +370,7 @@ export default function HomePage({ onNavigate }) {
                       <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
                     </span>
                     <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Giao trong 48h
                     </span>
                   </div>
@@ -258,7 +378,7 @@ export default function HomePage({ onNavigate }) {
                     <div>
                       <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
                         <span className="truncate font-medium">Kinh Đô B2B</span>
-                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (1.2k)</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> 4.9 (1.2k)</span>
                       </div>
                       <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Hộp Thượng Hạng “Nguyệt Viên Tri Kỷ”
@@ -309,7 +429,7 @@ export default function HomePage({ onNavigate }) {
                       <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
                     </span>
                     <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                       Sản xuất: 5 ngày
                     </span>
                   </div>
@@ -317,7 +437,7 @@ export default function HomePage({ onNavigate }) {
                     <div>
                       <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
                         <span className="truncate font-medium">Madame Hương</span>
-                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 5.0 (860)</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> 5.0 (860)</span>
                       </div>
                       <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Hộp Sơn Mài “Hoàng Kim Vọng Nguyệt”
@@ -345,7 +465,7 @@ export default function HomePage({ onNavigate }) {
                           Mẫu thử
                         </button>
                         <button
-                          onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                          onClick={() => onNavigate?.('so-sanh-bao-gia')}
                           className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
@@ -368,7 +488,7 @@ export default function HomePage({ onNavigate }) {
                       <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
                     </span>
                     <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Giao trong 24h
                     </span>
                   </div>
@@ -376,7 +496,7 @@ export default function HomePage({ onNavigate }) {
                     <div>
                       <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
                         <span className="truncate font-medium">Nghệ Nhân Hữu Nghị</span>
-                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.8 (950)</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> 4.8 (950)</span>
                       </div>
                       <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Bánh Dưỡng Sinh “Thanh Nguyệt Yến”
@@ -427,7 +547,7 @@ export default function HomePage({ onNavigate }) {
                       <span className="material-symbols-outlined text-[14px]">verified</span> NCC Xác Minh
                     </span>
                     <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                       Sản xuất: 3 ngày
                     </span>
                   </div>
@@ -435,7 +555,7 @@ export default function HomePage({ onNavigate }) {
                     <div>
                       <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
                         <span className="truncate font-medium">Thu Hương Bakery</span>
-                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (620)</span>
+                        <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span> 4.9 (620)</span>
                       </div>
                       <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Set Quà “Đoàn Viên Phú Quý”
@@ -463,7 +583,7 @@ export default function HomePage({ onNavigate }) {
                           Mẫu thử
                         </button>
                         <button
-                          onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                          onClick={() => onNavigate?.('so-sanh-bao-gia')}
                           className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
@@ -478,8 +598,97 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 5. NEW SECTION: LUCIAN TRUST & SECURITY BADGES (#243) */}
-          <section className="w-full bg-[#fbf5f2] py-12 sm:py-16 px-gutter border-y border-stone-200/60">
+          {/* 7. FEATURED SUPPLIERS SHOWCASE (MERGED FROM DEV) */}
+          <section className="w-full py-12 px-gutter bg-surface-container-low border-b border-stone-200/60">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>Mạng Lưới Sản Xuất B2B</span>
+                  </div>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Đối Tác Xưởng Bánh Tiêu Biểu</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.('tim-kiem')}
+                  className="inline-flex items-center gap-1 text-sm text-primary font-bold hover:text-primary-container transition-colors group mt-2 md:mt-0 cursor-pointer"
+                >
+                  <span>Xem tất cả 50+ xưởng đối tác</span>
+                  <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">chevron_right</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {featuredSuppliers.map((sup) => (
+                  <div
+                    key={sup.id}
+                    className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                  >
+                    <div className="relative aspect-[16/9] overflow-hidden bg-stone-100">
+                      <img
+                        src={sup.image}
+                        alt={sup.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                        {sup.badge}
+                      </span>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base font-bold text-stone-900">{sup.name}</h3>
+                          <span className="text-xs text-amber-600 font-bold flex items-center gap-0.5">
+                            ★ {sup.rating} ({sup.reviewsCount})
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs text-stone-500 mt-1 mb-2">
+                          <span>{sup.location}</span>
+                          <span>•</span>
+                          <span className="text-emerald-700 font-semibold">{sup.capacity}</span>
+                        </div>
+
+                        <p className="text-xs text-stone-600 line-clamp-3 leading-relaxed">
+                          {sup.desc}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {sup.tags.map((tag, idx) => (
+                            <span key={idx} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-stone-100 text-stone-600">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-stone-100 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onNavigate?.('tim-kiem')}
+                          className="py-2 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Xem Sản Phẩm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onNavigate?.('so-sanh-bao-gia')}
+                          className="py-2 text-xs font-bold text-white bg-primary hover:bg-primary-container rounded-lg transition-colors cursor-pointer shadow-xs"
+                        >
+                          Nhận Báo Giá
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 8. LUCIAN TRUST & SECURITY BADGES (#243) */}
+          <section className="w-full bg-[#fbf5f2] py-12 sm:py-16 px-gutter border-b border-stone-200/60">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-4">
@@ -519,11 +728,11 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 6. BANNER DÀNH CHO NHÀ SẢN XUẤT */}
+          {/* 9. VENDOR BANNER */}
           <section className="w-full bg-surface py-space-lg px-gutter">
             <div className="max-w-7xl mx-auto">
               <div className="relative overflow-hidden bg-gradient-to-r from-[#7a0010] via-[#8f0e19] to-[#7a0010] text-on-primary rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-white/10">
-                <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#ffba00]/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#ffba00]/15 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 max-w-2xl space-y-2 text-center md:text-left">
                   <div className="inline-flex items-center gap-1.5 font-label-sm text-label-sm font-bold uppercase px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container shadow-xs">
@@ -540,7 +749,7 @@ export default function HomePage({ onNavigate }) {
                 <div className="relative z-10 shrink-0 w-full md:w-auto">
                   <button
                     type="button"
-                    onClick={() => onNavigate?.('nha-cung-cap/thiet-lap-gian-hang')}
+                    onClick={() => onNavigate?.('thiet-lap-gian-hang')}
                     className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-[#fff8f5] font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap"
                   >
                     <span>Đăng ký mở gian hàng (Xét duyệt 24h)</span>
@@ -551,7 +760,7 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 7. LUCIAN FAQ ACCORDION (#044) */}
+          {/* 10. LUCIAN FAQ ACCORDION (#044) */}
           <section className="w-full bg-surface-container-low py-12 sm:py-16 px-gutter border-t border-stone-200/50">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-10">
@@ -572,11 +781,11 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 8. CLOSING CTA SECTION */}
+          {/* 11. CLOSING CTA SECTION */}
           <section className="w-full bg-gradient-to-b from-stone-100 to-surface py-12 sm:py-16 px-gutter border-t border-stone-200/60">
             <div className="max-w-5xl mx-auto text-center bg-gradient-to-br from-[#7a0010] via-[#541829] to-[#3c1723] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-amber-500/30">
-              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
 
               <div className="relative z-10 max-w-2xl mx-auto space-y-4">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-[#ffba00]/60 text-[#fec971] text-xs font-bold uppercase tracking-wider">
@@ -595,7 +804,7 @@ export default function HomePage({ onNavigate }) {
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                   <button
                     type="button"
-                    onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                    onClick={() => onNavigate?.('so-sanh-bao-gia')}
                     className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[18px]">gavel</span>
@@ -630,11 +839,11 @@ export default function HomePage({ onNavigate }) {
         </div>
       </main>
 
-      {/* 9. LUCIAN RECENT ORDER TOAST (#253) */}
+      {/* 12. LUCIAN RECENT ORDER TOAST (#253) */}
       <RecentOrderToast />
 
-      {/* Standard E-Commerce Footer */}
-      <Footer onNavigate={onNavigate} />
+      {/* 13. Customer Footer */}
+      <CustomerFooter onNavigate={onNavigate} />
     </div>
   );
 }
