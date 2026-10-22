@@ -1,0 +1,190 @@
+/* Lucian UX/UI Prompt #044 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#044 */
+.u044-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 auto;
+}
+
+.u044-it {
+  position: relative;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgba(122, 0, 16, 0.09), 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: background-color 0.4s var(--ux-ease), box-shadow 0.5s var(--ux-ease), transform 0.5s var(--ux-spring);
+}
+
+.u044-it.open {
+  box-shadow: 0 0 0 1px rgba(122, 0, 16, 0.18), 0 20px 36px -20px rgba(122, 0, 16, 0.2);
+  transform: translateY(-2px);
+}
+
+.u044-q {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 20px;
+  background: none;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1f1b18;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.u044-q:hover {
+  color: #7a0010;
+}
+
+.u044-q:focus-visible {
+  outline: 2px solid #7a0010;
+  outline-offset: 2px;
+}
+
+.u044-n {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #8d706e;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+  flex-shrink: 0;
+}
+
+.u044-it.open .u044-n {
+  color: #7a0010;
+}
+
+.u044-t {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.u044-pm {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: #fbf2ed;
+  box-shadow: none;
+  transition: background-color 0.35s var(--ux-ease), transform 0.45s var(--ux-spring);
+}
+
+.u044-q:hover .u044-pm {
+  transform: scale(1.08);
+}
+
+.u044-q:active .u044-pm {
+  transform: scale(0.92);
+}
+
+.u044-pm::before,
+.u044-pm::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  margin: -1px 0 0 -6px;
+  border-radius: 2px;
+  background: #1f1b18;
+  transition: transform 0.5s var(--ux-spring), background-color 0.3s;
+}
+
+.u044-pm::after {
+  transform: rotate(90deg);
+}
+
+.u044-it.open .u044-pm {
+  background: #7a0010;
+}
+
+.u044-it.open .u044-pm::before,
+.u044-it.open .u044-pm::after {
+  background: #ffffff;
+}
+
+.u044-it.open .u044-pm::after {
+  transform: rotate(180deg);
+}
+
+.u044-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.5s var(--ux-ease);
+}
+
+.u044-it.open .u044-body {
+  grid-template-rows: 1fr;
+}
+
+.u044-body > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.u044-a {
+  padding: 0 20px 20px 48px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s var(--ux-ease), transform 0.45s var(--ux-spring);
+}
+
+.u044-it.open .u044-a {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.12s;
+}
+
+.u044-a p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #59413f;
+}
+
+.u044-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 750;
+  color: #7a0010;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.u044-link:hover {
+  color: #d97706;
+}
+
+.u044-link:focus-visible {
+  outline: 2px solid #7a0010;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.u044-link i {
+  font-style: normal;
+  transition: transform 0.3s var(--ux-spring);
+}
+
+.u044-link:hover i {
+  transform: translateX(4px);
+}

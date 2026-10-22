@@ -1,57 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-
-// Danh sách hoạt động đặt hàng & RFQ thực tế theo thời gian thực (Social Proof Ticker)
-const LIVE_B2B_ACTIVITIES = [
-  {
-    icon: 'order_approve',
-    company: 'FPT Software',
-    action: 'vừa chốt 350 Hộp Nguyệt Viên Tri Kỷ',
-    time: '2 phút trước',
-    badge: 'Đơn Sẵn Kho',
-    badgeColor: 'bg-emerald-100 text-emerald-800'
-  },
-  {
-    icon: 'gavel',
-    company: 'Techcombank Chi nhánh Thăng Long',
-    action: 'vừa mở thầu RFQ 500 hộp sơn mài',
-    time: '4 phút trước',
-    badge: 'Đấu Thầu RFQ',
-    badgeColor: 'bg-amber-100 text-amber-900'
-  },
-  {
-    icon: 'local_shipping',
-    company: 'Vingroup Retail',
-    action: 'đã hoàn tất nghiệm thu & bàn giao xe lạnh PoD',
-    time: '6 phút trước',
-    badge: 'Đã Nghiệm Thu',
-    badgeColor: 'bg-blue-100 text-blue-900'
-  },
-  {
-    icon: 'draw',
-    company: 'Vinamilk Corporation',
-    action: 'vừa ký kết hợp đồng điện tử e-Contract 400 hộp',
-    time: '9 phút trước',
-    badge: 'Ký Số B2B',
-    badgeColor: 'bg-purple-100 text-purple-900'
-  }
-];
+import AnnouncementPill from '../components/lucian/AnnouncementPill';
+import B2BPriceCalculator from '../components/lucian/B2BPriceCalculator';
+import TearOffCoupon from '../components/lucian/TearOffCoupon';
+import TrustSecurityBadges from '../components/lucian/TrustSecurityBadges';
+import FaqAccordion from '../components/lucian/FaqAccordion';
+import RecentOrderToast from '../components/lucian/RecentOrderToast';
 
 export default function HomePage({ onNavigate }) {
-  // Trạng thái thông báo hoạt động thời gian thực (Live Toast)
-  const [noticeIdx, setNoticeIdx] = useState(0);
-  const [showNotice, setShowNotice] = useState(true);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNoticeIdx((prev) => (prev + 1) % LIVE_B2B_ACTIVITIES.length);
-    }, 5500);
-    return () => clearInterval(timer);
-  }, []);
-
-  const currentNotice = LIVE_B2B_ACTIVITIES[noticeIdx];
-
   return (
     <div className="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen">
       {/* Redesigned E-Commerce Header */}
@@ -60,8 +17,8 @@ export default function HomePage({ onNavigate }) {
       <main className="w-full pt-[68px] sm:pt-[72px] bg-surface min-h-[calc(100vh-280px)]">
         <div className="flex flex-col w-full">
 
-          {/* 1. HERO SECTION CÓ ANIMATION & HIỆU ỨNG TƯƠNG TÁC */}
-          <section className="relative w-full overflow-hidden py-10 sm:py-14 px-4 sm:px-6">
+          {/* 1. HERO SECTION WITH LUCIAN #252 ANNOUNCEMENT PILL & CALL TO ACTION */}
+          <section className="relative w-full overflow-hidden py-10 sm:py-16 px-4 sm:px-6">
             {/* Background Image & Soft Transparent Gradient Scrim */}
             <div className="absolute inset-0 z-0">
               <img
@@ -69,52 +26,49 @@ export default function HomePage({ onNavigate }) {
                 alt="Bánh Trung Thu Doanh Nghiệp"
                 className="w-full h-full object-cover object-center transform scale-100 animate-float-slow"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/45 via-stone-950/25 to-stone-950/50"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/40 to-stone-950/70" />
             </div>
 
             {/* Content */}
             <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center text-center">
-              {/* Season Tag with Golden Glow Pulse */}
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#ffba00]/80 text-[#fec971] mb-3 shadow-sm animate-pulse-glow cursor-default select-none transition-transform hover:scale-105">
-                <span className="material-symbols-outlined text-[15px] text-[#ffba00] animate-spin-slow">verified</span>
-                <span className="text-[11px] font-bold uppercase tracking-wider">Cổng Phân Phối Quà Tặng Doanh Nghiệp 2025</span>
-              </div>
+              {/* Lucian Element #252: Shining Expandable Announcement Pill */}
+              <AnnouncementPill onNavigate={onNavigate} />
 
               {/* Headline */}
-              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] animate-fade-in-up">
+              <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                 Nền Tảng Cung Ứng Bánh Trung Thu Doanh Nghiệp
               </h1>
 
               {/* Subtitle */}
-              <p className="mt-2.5 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng &amp; VAT minh bạch.
+              <p className="mt-3 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
+                Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng ký số e-Contract &amp; 100% xuất hóa đơn VAT minh bạch.
               </p>
 
-              {/* 3 Trust Badges (Compact) */}
+              {/* 3 Trust Badges */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs text-white">
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#ffba00]/60 transition-colors">
+                <div className="flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#ffba00]/60 transition-colors">
                   <span className="material-symbols-outlined text-[#ffba00] text-[16px]">verified</span>
                   <span className="font-medium">50+ Xưởng Đã Duyệt</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-emerald-400/60 transition-colors">
+                <div className="flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-emerald-400/60 transition-colors">
                   <span className="material-symbols-outlined text-emerald-400 text-[16px]">receipt_long</span>
                   <span className="font-medium">100% Xuất VAT &amp; Hợp Đồng</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#fec971]/60 transition-colors">
+                <div className="flex items-center gap-1.5 bg-black/45 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs hover:border-[#fec971]/60 transition-colors">
                   <span className="material-symbols-outlined text-[#fec971] text-[16px]">local_shipping</span>
-                  <span className="font-medium">Giao PoD Toàn Quốc</span>
+                  <span className="font-medium">Giao Xe Lạnh PoD Toàn Quốc</span>
                 </div>
               </div>
 
-              {/* 2 Sleek Action Cards với hiệu ứng Hover Lift & Shimmer Button */}
-              <div className="mt-5 sm:mt-6 w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5 text-left">
+              {/* 2 Sleek Action Cards */}
+              <div className="mt-6 sm:mt-7 w-full grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 text-left max-w-3xl">
                 {/* Card 1: Hàng Sẵn Kho */}
                 <div
                   onClick={() => onNavigate?.('tim-kiem')}
-                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-md hover:shadow-2xl border border-white/80 hover:border-primary/30 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-primary/40 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300 group-hover:scale-105 shadow-xs">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300 group-hover:scale-105 shadow-xs">
                       <span className="material-symbols-outlined text-[24px]">inventory_2</span>
                     </div>
                     <div className="min-w-0">
@@ -138,7 +92,7 @@ export default function HomePage({ onNavigate }) {
                   </div>
                   <button
                     type="button"
-                    className="animate-shimmer px-3 sm:px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     <span>Mua Ngay</span>
                     <span className="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -148,10 +102,10 @@ export default function HomePage({ onNavigate }) {
                 {/* Card 2: Thiết Kế & Báo Giá RFQ */}
                 <div
                   onClick={() => onNavigate?.('yeu-cau-bao-gia')}
-                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-3.5 sm:p-4 shadow-md hover:shadow-2xl border border-white/80 hover:border-amber-400/50 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-amber-400/50 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center shrink-0 group-hover:bg-[#ffba00] group-hover:text-stone-950 transition-all duration-300 group-hover:scale-105 shadow-xs">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center shrink-0 group-hover:bg-[#ffba00] group-hover:text-stone-950 transition-all duration-300 group-hover:scale-105 shadow-xs">
                       <span className="material-symbols-outlined text-[24px]">draw</span>
                     </div>
                     <div className="min-w-0">
@@ -166,7 +120,7 @@ export default function HomePage({ onNavigate }) {
                         <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 50 hộp</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition-colors truncate">
-                        Báo Giá Xưởng
+                        Yêu Cầu Báo Giá Xưởng
                       </h3>
                       <p className="text-[11px] text-stone-600 truncate">
                         Khắc logo doanh nghiệp • Nhận 3–5 bản chào giá
@@ -175,9 +129,9 @@ export default function HomePage({ onNavigate }) {
                   </div>
                   <button
                     type="button"
-                    className="animate-shimmer px-3 sm:px-3.5 py-2 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 text-xs font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   >
-                    <span>Tạo báo giá</span>
+                    <span>Tạo RFQ</span>
                     <span className="material-symbols-outlined text-[15px] group-hover:rotate-12 transition-transform">gavel</span>
                   </button>
                 </div>
@@ -185,9 +139,9 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 2. THANH LOGO ĐỐI TÁC DOANH NGHIỆP CUỘN MARQUEE MƯỢT MÀ */}
-          <div className="w-full bg-[#f8ece4] border-y border-[#ebdcd5] py-2.5 sm:py-3 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-2.5 sm:gap-4">
+          {/* 2. LOGO MARQUEE */}
+          <div className="w-full bg-[#f8ece4] border-y border-[#ebdcd5] py-3 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-3">
               <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
                 <span className="material-symbols-outlined text-[16px] text-amber-600">stars</span>
                 <span>500+ Doanh nghiệp đã tin chọn:</span>
@@ -210,7 +164,59 @@ export default function HomePage({ onNavigate }) {
             </div>
           </div>
 
-          {/* 3. BỘ SƯU TẬP TIÊU BIỂU VỚI CARD HOVER MICRO-ANIMATIONS */}
+          {/* 3. NEW SECTION: LUCIAN B2B PRICE CALCULATOR (#278) & TEAR-OFF COUPON (#298) */}
+          <section className="w-full bg-gradient-to-b from-surface-container-low to-surface py-12 sm:py-16 px-gutter border-b border-stone-200/50">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center max-w-2xl mx-auto mb-10">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
+                  <span className="material-symbols-outlined text-[16px] text-amber-700">calculate</span>
+                  <span>Công Cụ Báo Giá Tức Thì</span>
+                </div>
+                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
+                  Dự Toán Ngân Sách &amp; Nhận Ưu Đãi Doanh Nghiệp
+                </h2>
+                <p className="text-sm text-stone-600 mt-2">
+                  Kéo thanh trượt để tính toán chiết khấu tự động theo số lượng hộp và nhận mã ưu đãi mùa vụ độc quyền.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left: Lucian #278 Seat-based price calculator adapted for Mooncake quantity */}
+                <div className="lg:col-span-7 flex flex-col items-center">
+                  <B2BPriceCalculator onNavigate={onNavigate} />
+                </div>
+
+                {/* Right: Lucian #298 Tear-off discount coupon & Corporate Perks */}
+                <div className="lg:col-span-5 flex flex-col gap-5 items-center">
+                  <TearOffCoupon />
+
+                  {/* Corporate perks callout */}
+                  <div className="w-full max-w-[440px] bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-primary tracking-wider">
+                      <span className="material-symbols-outlined text-[18px]">verified</span>
+                      <span>Đặc Quyền Khách Hàng Doanh Nghiệp</span>
+                    </div>
+                    <ul className="text-xs text-stone-600 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                        <span><strong>01 Hộp mẫu thử tận nơi:</strong> Trải nghiệm thực tế vị bánh &amp; bao bì trước khi chốt hợp đồng.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                        <span><strong>Bảo chứng SafeTrade:</strong> Tiền được giữ an toàn, chỉ giải ngân khi ký nghiệm thu PoD.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-emerald-600 text-[16px] shrink-0 mt-0.5">check_circle</span>
+                        <span><strong>Đội xe lạnh chuyên dụng:</strong> Đảm bảo 100% hộp bánh nguyên vẹn, không móp méo chảy dầu.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 4. FEATURED PRODUCTS COLLECTION */}
           <section className="w-full bg-surface py-space-xl px-gutter">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-space-lg">
@@ -232,7 +238,6 @@ export default function HomePage({ onNavigate }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-
                 {/* PRODUCT 1 */}
                 <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
                   <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
@@ -255,7 +260,7 @@ export default function HomePage({ onNavigate }) {
                         <span className="truncate font-medium">Kinh Đô B2B</span>
                         <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (1.2k)</span>
                       </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Hộp Thượng Hạng “Nguyệt Viên Tri Kỷ”
                       </h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh x 180g • Thập cẩm sò điệp, sen dừa</p>
@@ -282,7 +287,7 @@ export default function HomePage({ onNavigate }) {
                         </button>
                         <button
                           onClick={() => onNavigate?.('tim-kiem')}
-                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
                           Đặt ngay
@@ -314,7 +319,7 @@ export default function HomePage({ onNavigate }) {
                         <span className="truncate font-medium">Madame Hương</span>
                         <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 5.0 (860)</span>
                       </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Hộp Sơn Mài “Hoàng Kim Vọng Nguyệt”
                       </h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">6 bánh Lava trứng chảy + Hũ trà sen Tây Hồ</p>
@@ -341,7 +346,7 @@ export default function HomePage({ onNavigate }) {
                         </button>
                         <button
                           onClick={() => onNavigate?.('yeu-cau-bao-gia')}
-                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
                           Gửi RFQ
@@ -373,7 +378,7 @@ export default function HomePage({ onNavigate }) {
                         <span className="truncate font-medium">Nghệ Nhân Hữu Nghị</span>
                         <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.8 (950)</span>
                       </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Bánh Dưỡng Sinh “Thanh Nguyệt Yến”
                       </h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh yến sào hạt sen • Ít ngọt ăn kiêng</p>
@@ -400,7 +405,7 @@ export default function HomePage({ onNavigate }) {
                         </button>
                         <button
                           onClick={() => onNavigate?.('tim-kiem')}
-                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
                           Đặt ngay
@@ -432,7 +437,7 @@ export default function HomePage({ onNavigate }) {
                         <span className="truncate font-medium">Thu Hương Bakery</span>
                         <span className="flex items-center gap-0.5 text-secondary font-semibold"><span className="material-symbols-outlined text-[14px]" style={{ "fontVariationSettings": "'FILL' 1" }}>star</span> 4.9 (620)</span>
                       </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-1 group-hover:text-primary transition-colors">
+                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-primary transition-colors">
                         Set Quà “Đoàn Viên Phú Quý”
                       </h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh thượng hạng + 1 Chai vang cao cấp</p>
@@ -459,7 +464,7 @@ export default function HomePage({ onNavigate }) {
                         </button>
                         <button
                           onClick={() => onNavigate?.('yeu-cau-bao-gia')}
-                          className="animate-shimmer py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
+                          className="py-2 px-1 text-center font-label-md text-label-md rounded-lg bg-secondary text-on-secondary hover:opacity-95 transition-all shadow-sm cursor-pointer"
                           type="button"
                         >
                           Gửi RFQ
@@ -473,11 +478,51 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 4. BANNER DÀNH CHO NHÀ SẢN XUẤT CÓ ANIMATION TỎA SÁNG */}
+          {/* 5. NEW SECTION: LUCIAN TRUST & SECURITY BADGES (#243) */}
+          <section className="w-full bg-[#fbf5f2] py-12 sm:py-16 px-gutter border-y border-stone-200/60">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <div className="lg:col-span-5 space-y-4">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                    <span className="material-symbols-outlined text-[16px] text-emerald-700">security</span>
+                    <span>An Toàn &amp; Pháp Lý Tuyệt Đối</span>
+                  </div>
+
+                  <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
+                    Chuẩn Mực Vận Hành B2B Chuyên Nghiệp Hàng Đầu
+                  </h2>
+
+                  <p className="text-sm text-stone-600 leading-relaxed">
+                    Khác biệt với việc mua lẻ trôi nổi trên thị trường, Nguyệt Phố bảo vệ quyền lợi doanh nghiệp bằng hợp đồng ký số pháp lý, hóa đơn VAT điện tử, kiểm soát xe lạnh và bảo chứng dòng tiền SafeTrade.
+                  </p>
+
+                  <div className="pt-2 space-y-2.5">
+                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold">✓</div>
+                      <span><strong>Kiểm định xưởng nghiêm ngặt:</strong> 100% cơ sở sản xuất có giấy chứng nhận ISO / HACCP.</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold">✓</div>
+                      <span><strong>Không rủi ro thanh toán:</strong> Tiền được bảo chứng ký quỹ, giải ngân khi quý công ty nghiệm thu xong.</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold">✓</div>
+                      <span><strong>Cam kết thời gian:</strong> Đền bù thiệt hại và đổi 100% sản phẩm nếu chậm trễ tiến độ trao tặng.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-7 flex justify-center">
+                  <TrustSecurityBadges />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 6. BANNER DÀNH CHO NHÀ SẢN XUẤT */}
           <section className="w-full bg-surface py-space-lg px-gutter">
             <div className="max-w-7xl mx-auto">
               <div className="relative overflow-hidden bg-gradient-to-r from-[#7a0010] via-[#8f0e19] to-[#7a0010] text-on-primary rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-white/10">
-                {/* Background decorative glowing orb */}
                 <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#ffba00]/15 rounded-full blur-3xl pointer-events-none"></div>
 
                 <div className="relative z-10 max-w-2xl space-y-2 text-center md:text-left">
@@ -496,7 +541,7 @@ export default function HomePage({ onNavigate }) {
                   <button
                     type="button"
                     onClick={() => onNavigate?.('nha-cung-cap/thiet-lap-gian-hang')}
-                    className="animate-shimmer w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-[#fff8f5] font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-white text-primary hover:bg-[#fff8f5] font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap"
                   >
                     <span>Đăng ký mở gian hàng (Xét duyệt 24h)</span>
                     <span className="material-symbols-outlined text-[18px]">verified</span>
@@ -506,43 +551,87 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
+          {/* 7. LUCIAN FAQ ACCORDION (#044) */}
+          <section className="w-full bg-surface-container-low py-12 sm:py-16 px-gutter border-t border-stone-200/50">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
+                  <span className="material-symbols-outlined text-[16px] text-amber-700">help</span>
+                  <span>Giải Quyết Mọi Thắc Mắc Đặt Hàng</span>
+                </div>
+                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
+                  Câu Hỏi Thường Gặp Của Doanh Nghiệp (FAQ)
+                </h2>
+                <p className="text-sm text-stone-600 mt-2 max-w-xl mx-auto">
+                  Tất cả thông tin minh bạch về xuất hóa đơn VAT, nhận hộp mẫu thử, ký quỹ an toàn và cam kết giao vận PoD xe lạnh.
+                </p>
+              </div>
+
+              {/* Lucian Element #044: FAQ Accordion */}
+              <FaqAccordion onNavigate={onNavigate} />
+            </div>
+          </section>
+
+          {/* 8. CLOSING CTA SECTION */}
+          <section className="w-full bg-gradient-to-b from-stone-100 to-surface py-12 sm:py-16 px-gutter border-t border-stone-200/60">
+            <div className="max-w-5xl mx-auto text-center bg-gradient-to-br from-[#7a0010] via-[#541829] to-[#3c1723] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-amber-500/30">
+              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+              <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-[#ffba00]/60 text-[#fec971] text-xs font-bold uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[16px] text-[#ffba00]">verified</span>
+                  <span>Giải Pháp Quà Tặng Doanh Nghiệp 2025</span>
+                </div>
+
+                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
+                  Sẵn Sàng Chuẩn Bị Quà Tặng Trung Thu Cho Doanh Nghiệp?
+                </h2>
+
+                <p className="text-sm sm:text-base text-stone-200 leading-relaxed">
+                  Nhận trọn bộ catalog 120+ mẫu hộp cao cấp, bảng báo giá chiết khấu xưởng tới 35% và đăng ký nhận 01 hộp mẫu thử miễn phí tận nơi.
+                </p>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate?.('yeu-cau-bao-gia')}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#ffba00] hover:bg-[#f0af00] text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">gavel</span>
+                    <span>Tạo Yêu Cầu Báo Giá (RFQ)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onNavigate?.('tim-kiem')}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 flex items-center justify-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                    <span>Xem 120+ Mẫu Hộp 2025</span>
+                  </button>
+                </div>
+
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-300">
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-amber-400 text-[16px]">call</span>
+                    Hotline B2B: <strong className="text-white font-bold">1800 6886</strong> (Miễn phí)
+                  </span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-emerald-400 text-[16px]">verified_user</span>
+                    Ký quỹ SafeTrade 100% An Toàn
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
         </div>
       </main>
 
-      {/* 5. FLOATING LIVE SOCIAL PROOF TICKER (TOAST THÔNG BÁO HOẠT ĐỘNG THỜI GIAN THỰC) */}
-      {showNotice && (
-        <aside className="fixed bottom-5 left-5 z-40 max-w-sm hidden sm:flex items-center gap-3 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl shadow-[0_10px_35px_-5px_rgba(0,0,0,0.15)] border border-[#ebdcd5] animate-fade-in-up transition-all hover:scale-[1.02]">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-primary-container text-[#fec971] flex items-center justify-center shrink-0 shadow-xs">
-            <span className="material-symbols-outlined text-[19px]">
-              {currentNotice.icon}
-            </span>
-          </div>
-          <div className="min-w-0 pr-1">
-            <div className="flex items-center gap-1.5 leading-tight">
-              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${currentNotice.badgeColor}`}>
-                {currentNotice.badge}
-              </span>
-              <span className="text-[10px] text-stone-500">
-                • {currentNotice.time}
-              </span>
-            </div>
-            <p className="text-xs text-stone-800 font-medium truncate mt-0.5">
-              <strong className="text-stone-900 font-bold">
-                {currentNotice.company}
-              </strong>{' '}
-              {currentNotice.action}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowNotice(false)}
-            className="text-stone-400 hover:text-stone-700 shrink-0 p-1 cursor-pointer transition-colors"
-            title="Đóng thông báo"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-[15px]">close</span>
-          </button>
-        </aside>
-      )}
+      {/* 9. LUCIAN RECENT ORDER TOAST (#253) */}
+      <RecentOrderToast />
 
       {/* Standard E-Commerce Footer */}
       <Footer onNavigate={onNavigate} />
