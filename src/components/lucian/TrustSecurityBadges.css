@@ -1,0 +1,220 @@
+/* Lucian UX/UI Prompt #243 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#243 */
+.u243-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  min-height: 380px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 10px 40px -15px rgba(122, 0, 16, 0.12), 0 0 0 1px rgba(122, 0, 16, 0.1);
+  color: #1f1b18;
+  padding: 24px;
+  margin: 0 auto;
+}
+
+.u243-hd {
+  margin-bottom: 18px;
+}
+
+.u243-hd b {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1f1b18;
+}
+
+.u243-hd small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #8d706e;
+}
+
+.u243-gd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  perspective: 900px;
+  min-height: 270px;
+}
+
+.u243-bg {
+  position: relative;
+  height: 130px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.3, 1.2, 0.4, 1);
+}
+
+.u243-bg.is-flip {
+  transform: rotateY(180deg);
+}
+
+.u243-bg:focus-visible {
+  outline: 2px solid var(--c, #7a0010);
+  outline-offset: 3px;
+  border-radius: 16px;
+}
+
+.u243-f,
+.u243-b {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.u243-f {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #fff8f5;
+  box-shadow: inset 0 0 0 1px rgba(122, 0, 16, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.u243-f::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  transform: skewX(-12deg);
+  animation: u243-sh 5.5s ease-in-out infinite;
+  animation-delay: var(--d);
+}
+
+@keyframes u243-sh {
+  0%,
+  70% {
+    left: -60%;
+  }
+  90%,
+  100% {
+    left: 130%;
+  }
+}
+
+.u243-sd {
+  width: 36px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--c);
+}
+
+.u243-sd svg {
+  width: 36px;
+  height: 40px;
+}
+
+.u243-f b {
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+  color: #1f1b18;
+}
+
+.u243-f small {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8d706e;
+}
+
+.u243-b {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  text-align: left;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1.5px var(--c);
+}
+
+.u243-b b {
+  font-size: 11.5px;
+  font-weight: 850;
+  color: var(--c);
+}
+
+.u243-b span {
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #1f1b18;
+}
+
+.u243-b small {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #8d706e;
+  line-height: 1.25;
+}
+
+.u243-vf {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  height: 24px;
+  margin-top: auto;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: #1f1b18;
+  color: #ffffff;
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.u243-vf i {
+  display: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  animation: u243-sp 0.7s linear infinite;
+}
+
+.u243-vf.is-busy i {
+  display: block;
+}
+
+.u243-vf.is-ok {
+  background: #059669;
+}
+
+@keyframes u243-sp {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .u243-bg {
+    transition: none;
+  }
+  .u243-f::after,
+  .u243-vf i {
+    animation: none;
+  }
+}
