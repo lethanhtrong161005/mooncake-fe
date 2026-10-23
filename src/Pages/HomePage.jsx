@@ -1,27 +1,25 @@
-import { useState } from 'react';
-import { Button, Tag, Space, Typography } from 'antd';
 import {
   ArrowRightOutlined,
-  CheckCircleFilled,
-  CheckCircleOutlined,
-  SafetyCertificateOutlined,
-  ThunderboltOutlined,
-  ShopOutlined,
-  ShoppingOutlined,
   CarOutlined,
+  CheckCircleFilled,
   FileDoneOutlined,
-  StarFilled,
   PhoneOutlined,
   QuestionCircleOutlined,
+  SafetyCertificateOutlined,
+  ShopOutlined,
+  ShoppingOutlined,
+  StarFilled,
+  ThunderboltOutlined
 } from '@ant-design/icons';
-import CustomerHeader from '../components/layout/CustomerHeader';
+import { Button, Space, Tag } from 'antd';
 import CustomerFooter from '../components/layout/CustomerFooter';
+import CustomerHeader from '../components/layout/CustomerHeader';
 import AnnouncementPill from '../components/lucian/AnnouncementPill';
 import B2BPriceCalculator from '../components/lucian/B2BPriceCalculator';
-import TearOffCoupon from '../components/lucian/TearOffCoupon';
-import TrustSecurityBadges from '../components/lucian/TrustSecurityBadges';
 import FaqAccordion from '../components/lucian/FaqAccordion';
 import RecentOrderToast from '../components/lucian/RecentOrderToast';
+import TearOffCoupon from '../components/lucian/TearOffCoupon';
+import TrustSecurityBadges from '../components/lucian/TrustSecurityBadges';
 
 export default function HomePage({ onNavigate }) {
   const categories = [
@@ -306,7 +304,7 @@ export default function HomePage({ onNavigate }) {
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                     <span>Danh Mục Quà Tặng 2025</span>
                   </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Phân Loại Dòng Bánh B2B</h2>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Phân Loại Dòng Bánh</h2>
                 </div>
                 <Button
                   type="link"
@@ -442,7 +440,7 @@ export default function HomePage({ onNavigate }) {
                   <div className="p-space-md flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
-                        <span className="truncate font-medium">Kinh Đô B2B</span>
+                        <span className="truncate font-medium">Kinh Đô</span>
                         <span className="flex items-center gap-0.5 text-amber-600 font-semibold"><StarFilled /> 4.9 (1.2k)</span>
                       </div>
                       <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-[#8c1524] transition-colors">
@@ -845,7 +843,7 @@ export default function HomePage({ onNavigate }) {
                   GIẢI QUYẾT MỌI THẮC MẮC ĐẶT HÀNG
                 </Tag>
                 <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                  Câu Hỏi Thường Gặp Của Doanh Nghiệp (FAQ)
+                  Câu Hỏi Thường Gặp Của Doanh Nghiệp
                 </h2>
                 <p className="text-sm text-stone-600 mt-2 max-w-xl mx-auto">
                   Tất cả thông tin minh bạch về xuất hóa đơn VAT, nhận hộp mẫu thử, ký quỹ an toàn và cam kết giao vận PoD xe lạnh.
