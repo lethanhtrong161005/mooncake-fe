@@ -55,13 +55,13 @@ export default function HomePage({ onNavigate }) {
       name: 'Xưởng Bánh Tràng An',
       image: '/suppliers/xuong-trang-an.jpg',
       avatarText: 'TA',
-      desc: 'Nghề truyền thống gia truyền 4 đời tại Hà Nội. Năng lực sản xuất quy mô lớn, chuyên set quà doanh nghiệp thượng hạng.',
+      desc: 'Truyền thống 4 đời tại Hà Nội, chuyên set quà cao cấp theo yêu cầu.',
       badge: '★ Đối Tác Tiêu Biểu',
       location: 'Hà Nội',
       capacity: '50.000 hộp/vụ',
       rating: 4.9,
       reviewsCount: 128,
-      cert: 'Chuẩn An Toàn Thực Phẩm',
+      cert: 'Chuẩn ATTP',
       tags: ['Bánh nướng gia truyền', 'Hộp sơn mài', 'In logo riêng'],
     },
     {
@@ -69,13 +69,13 @@ export default function HomePage({ onNavigate }) {
       name: 'Xưởng Bánh Hữu Nghị',
       image: '/suppliers/xuong-huu-nghi.jpg',
       avatarText: 'HN',
-      desc: 'Thương hiệu lâu năm, dây chuyền sản xuất hiện đại, chuyên cung cấp các gói quà tặng số lượng lớn cho tập đoàn.',
+      desc: 'Dây chuyền hiện đại, đáp ứng đơn hàng lớn cho tập đoàn.',
       badge: '★ Đối Tác Tiêu Biểu',
       location: 'Hà Nội & TP. HCM',
       capacity: '120.000 hộp/vụ',
       rating: 4.8,
       reviewsCount: 215,
-      cert: 'Tiêu Chuẩn Xuất Khẩu',
+      cert: 'Chuẩn Xuất Khẩu',
       tags: ['Sản xuất số lượng lớn', 'Hộp cao cấp', 'Chiết khấu cao'],
     },
     {
@@ -83,13 +83,13 @@ export default function HomePage({ onNavigate }) {
       name: 'Xưởng Bánh Bảo Phương',
       image: '/suppliers/xuong-bao-phuong.jpg',
       avatarText: 'BP',
-      desc: 'Bánh tươi thủ công truyền thống phố cổ Thụy Khuê, hương vị sen nhài cốm non nguyên bản nổi tiếng thủ đô.',
+      desc: 'Bánh tươi thủ công phố cổ Thụy Khuê, hương vị truyền thống nguyên bản.',
       badge: '★ Đối Tác Tiêu Biểu',
       location: 'Hà Nội - Thụy Khuê',
       capacity: '35.000 hộp/vụ',
       rating: 4.9,
       reviewsCount: 96,
-      cert: 'Chứng Nhận Vệ Sinh An Toàn',
+      cert: 'Chứng Nhận ATTP',
       tags: ['Bánh dẻo cốm non', 'Bánh tươi thủ công', 'Quà biếu nghệ nhân'],
     },
   ];
@@ -118,11 +118,11 @@ export default function HomePage({ onNavigate }) {
               <AnnouncementPill onNavigate={onNavigate} />
 
               <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                Nền Tảng Cung Ứng Bánh Trung Thu Doanh Nghiệp
+                Bánh Trung Thu Doanh Nghiệp
               </h1>
 
               <p className="mt-3 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng ký số e-Contract &amp; 100% xuất hóa đơn VAT minh bạch.
+                50+ xưởng tuyển chọn • Chiết khấu tới 35% • Xuất hóa đơn VAT &amp; hợp đồng điện tử.
               </p>
 
               {/* 3 Trust Badges with Ant Design Icons */}
@@ -140,7 +140,7 @@ export default function HomePage({ onNavigate }) {
                   }}
                 >
                   <SafetyCertificateOutlined />
-                  <span>50+ Xưởng Đã Duyệt</span>
+                  <span>50+ Xưởng tuyển chọn</span>
                 </Tag>
                 <Tag
                   color="#237804"
@@ -155,7 +155,7 @@ export default function HomePage({ onNavigate }) {
                   }}
                 >
                   <FileDoneOutlined />
-                  <span>100% Xuất VAT &amp; Hợp Đồng</span>
+                  <span>100% Hóa đơn VAT</span>
                 </Tag>
                 <Tag
                   color="#8c1524"
@@ -170,7 +170,7 @@ export default function HomePage({ onNavigate }) {
                   }}
                 >
                   <CarOutlined />
-                  <span>Giao Xe Lạnh PoD Toàn Quốc</span>
+                  <span>Giao xe lạnh toàn quốc</span>
                 </Tag>
               </div>
 
@@ -196,10 +196,10 @@ export default function HomePage({ onNavigate }) {
                         <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 20 hộp</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-[#8c1524] transition-colors truncate">
-                        Bánh Sẵn Kho Giao Hỏa Tốc
+                        Bánh Sẵn Kho
                       </h3>
                       <p className="text-[11px] text-stone-600 truncate">
-                        Chiết khấu bậc thang tới 35% • Xuất VAT tức thì
+                        Giao trong 24h • Chiết khấu tới 35%
                       </p>
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export default function HomePage({ onNavigate }) {
                       borderRadius: 8,
                     }}
                   >
-                    Mua Ngay
+                    Đặt Ngay
                   </Button>
                 </div>
 
@@ -241,10 +241,10 @@ export default function HomePage({ onNavigate }) {
                         <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 50 hộp</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition-colors truncate">
-                        Yêu Cầu Báo Giá Xưởng
+                        Báo Giá Theo Yêu Cầu
                       </h3>
                       <p className="text-[11px] text-stone-600 truncate">
-                        Khắc logo doanh nghiệp • Nhận 3–5 bản chào giá
+                        In logo riêng • So sánh 3–5 xưởng
                       </p>
                     </div>
                   </div>
@@ -263,7 +263,7 @@ export default function HomePage({ onNavigate }) {
                       borderRadius: 8,
                     }}
                   >
-                    Tạo RFQ
+                    Nhận Báo Giá
                   </Button>
                 </div>
               </div>
@@ -275,7 +275,7 @@ export default function HomePage({ onNavigate }) {
             <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-3">
               <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
                 <StarFilled style={{ color: '#d48806' }} />
-                <span>500+ Doanh nghiệp đã tin chọn:</span>
+                <span>Khách hàng tiêu biểu:</span>
               </div>
               <div className="overflow-hidden relative w-full [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
                 <div className="animate-marquee flex items-center gap-8 text-xs font-semibold text-stone-600 uppercase tracking-wider select-none py-0.5">
@@ -302,9 +302,9 @@ export default function HomePage({ onNavigate }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Danh Mục Quà Tặng 2025</span>
+                    <span>Danh Mục</span>
                   </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Phân Loại Dòng Bánh</h2>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Dòng Bánh Tuyển Chọn</h2>
                 </div>
                 <Button
                   type="link"
@@ -312,7 +312,7 @@ export default function HomePage({ onNavigate }) {
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Khám phá toàn bộ danh mục
+                  Xem tất cả
                 </Button>
               </div>
 
@@ -356,13 +356,13 @@ export default function HomePage({ onNavigate }) {
               <div className="text-center max-w-2xl mx-auto mb-10">
                 <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', marginBottom: 8 }}>
                   <ThunderboltOutlined style={{ marginRight: 4 }} />
-                  CÔNG CỤ BÁO GIÁ TỨC THÌ
+                  Dự toán chi phí
                 </Tag>
                 <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                  Dự Toán Ngân Sách &amp; Nhận Ưu Đãi Doanh Nghiệp
+                  Tính Chiết Khấu Theo Số Lượng
                 </h2>
                 <p className="text-sm text-stone-600 mt-2">
-                  Kéo thanh trượt để tính toán chiết khấu tự động theo số lượng hộp và nhận mã ưu đãi mùa vụ độc quyền.
+                  Chọn số lượng để tính nhanh chiết khấu và đơn giá tức thì.
                 </p>
               </div>
 
@@ -377,20 +377,20 @@ export default function HomePage({ onNavigate }) {
                   <div className="w-full max-w-[440px] bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#8c1524] tracking-wider">
                       <SafetyCertificateOutlined style={{ fontSize: 16 }} />
-                      <span>Đặc Quyền Khách Hàng Doanh Nghiệp</span>
+                      <span>Cam kết doanh nghiệp</span>
                     </div>
                     <ul className="text-xs text-stone-600 space-y-2">
                       <li className="flex items-start gap-2">
                         <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>01 Hộp mẫu thử tận nơi:</strong> Trải nghiệm thực tế vị bánh &amp; bao bì trước khi chốt hợp đồng.</span>
+                        <span><strong>Mẫu thử miễn phí:</strong> Trải nghiệm thực tế vị bánh &amp; bao bì trước khi chốt hợp đồng.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>Bảo chứng SafeTrade:</strong> Tiền được giữ an toàn, chỉ giải ngân khi ký nghiệm thu PoD.</span>
+                        <span><strong>Bảo chứng SafeTrade:</strong> Giải ngân khi ký nghiệm thu PoD.</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>Đội xe lạnh chuyên dụng:</strong> Đảm bảo 100% hộp bánh nguyên vẹn, không móp méo chảy dầu.</span>
+                        <span><strong>Giao xe lạnh chuyên dụng:</strong> Bảo đảm bánh nguyên vẹn toàn quốc.</span>
                       </li>
                     </ul>
                   </div>
@@ -406,9 +406,9 @@ export default function HomePage({ onNavigate }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Sản phẩm nổi bật vụ mùa 2025</span>
+                    <span>Sản phẩm nổi bật</span>
                   </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bộ Sưu Tập Bánh Trung Thu Tiêu Biểu</h2>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Hộp Quà Tiêu Biểu</h2>
                 </div>
                 <Button
                   type="link"
@@ -416,7 +416,7 @@ export default function HomePage({ onNavigate }) {
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Xem tất cả 120+ mẫu hộp 2025
+                  Xem tất cả
                 </Button>
               </div>
 
@@ -672,9 +672,9 @@ export default function HomePage({ onNavigate }) {
                 <div>
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Mạng Lưới Sản Xuất B2B</span>
+                    <span>Đối tác xưởng</span>
                   </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Đối Tác Xưởng Bánh Tiêu Biểu</h2>
+                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Xưởng Bánh Tiêu Biểu</h2>
                 </div>
                 <Button
                   type="link"
@@ -682,7 +682,7 @@ export default function HomePage({ onNavigate }) {
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Xem tất cả 50+ xưởng đối tác
+                  Xem tất cả
                 </Button>
               </div>
 
@@ -760,29 +760,29 @@ export default function HomePage({ onNavigate }) {
                 <div className="lg:col-span-5 space-y-4">
                   <Tag color="#237804" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px' }}>
                     <SafetyCertificateOutlined style={{ marginRight: 4 }} />
-                    AN TOÀN &amp; PHÁP LÝ TUYỆT ĐỐI
+                    Pháp lý &amp; An toàn
                   </Tag>
 
                   <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                    Chuẩn Mực Vận Hành B2B Chuyên Nghiệp Hàng Đầu
+                    Minh Bạch &amp; An Toàn Tuyệt Đối
                   </h2>
 
                   <p className="text-sm text-stone-600 leading-relaxed">
-                    Khác biệt với việc mua lẻ trôi nổi trên thị trường, Nguyệt Phố bảo vệ quyền lợi doanh nghiệp bằng hợp đồng ký số pháp lý, hóa đơn VAT điện tử, kiểm soát xe lạnh và bảo chứng dòng tiền SafeTrade.
+                    Hợp đồng điện tử, 100% hóa đơn VAT, kiểm soát xe lạnh và bảo chứng thanh toán SafeTrade.
                   </p>
 
                   <div className="pt-2 space-y-2.5">
                     <div className="flex items-center gap-3 text-xs text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Kiểm định xưởng nghiêm ngặt:</strong> 100% cơ sở sản xuất có giấy chứng nhận ISO / HACCP.</span>
+                      <span><strong>Xưởng đạt chuẩn:</strong> 100% cơ sở có chứng nhận ISO / HACCP.</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Không rủi ro thanh toán:</strong> Tiền được bảo chứng ký quỹ, giải ngân khi quý công ty nghiệm thu xong.</span>
+                      <span><strong>Thanh toán an toàn:</strong> Tiền ký quỹ chỉ giải ngân khi khách hàng nghiệm thu.</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Cam kết thời gian:</strong> Đền bù thiệt hại và đổi 100% sản phẩm nếu chậm trễ tiến độ trao tặng.</span>
+                      <span><strong>Đúng tiến độ:</strong> Đổi mới 100% và đền bù nếu giao trễ hẹn.</span>
                     </div>
                   </div>
                 </div>
@@ -803,13 +803,13 @@ export default function HomePage({ onNavigate }) {
                 <div className="relative z-10 max-w-2xl space-y-2 text-center md:text-left">
                   <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', border: 'none' }}>
                     <ShopOutlined style={{ marginRight: 4 }} />
-                    DÀNH CHO NHÀ SẢN XUẤT &amp; NGHỆ NHÂN
+                    Dành cho xưởng bánh
                   </Tag>
                   <h3 className="font-headline-md text-headline-md font-bold text-white leading-tight">
-                    Bạn là xưởng sản xuất hoặc thương hiệu bánh Trung Thu uy tín?
+                    Hợp tác cung ứng cùng Nguyệt Phố
                   </h3>
                   <p className="font-body-md text-body-md text-rose-100/90 leading-relaxed">
-                    Gia nhập mạng lưới B2B Nguyệt Phố, tiếp cận hàng nghìn khách hàng doanh nghiệp trong mùa vụ 2025. Hỗ trợ hợp đồng e-Contract, ký quỹ và vận hành trọn gói.
+                    Tiếp cận hàng nghìn khách hàng doanh nghiệp mùa vụ 2025. Hỗ trợ hợp đồng, ký quỹ và vận hành trọn gói.
                   </p>
                 </div>
                 <div className="relative z-10 shrink-0 w-full md:w-auto">
@@ -827,7 +827,7 @@ export default function HomePage({ onNavigate }) {
                       padding: '0 24px',
                     }}
                   >
-                    Đăng ký mở gian hàng (Xét duyệt 24h)
+                    Đăng ký xưởng đối tác
                   </Button>
                 </div>
               </div>
@@ -840,13 +840,13 @@ export default function HomePage({ onNavigate }) {
               <div className="text-center mb-10">
                 <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', marginBottom: 8 }}>
                   <QuestionCircleOutlined style={{ marginRight: 4 }} />
-                  GIẢI QUYẾT MỌI THẮC MẮC ĐẶT HÀNG
+                  Hỏi đáp
                 </Tag>
                 <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                  Câu Hỏi Thường Gặp Của Doanh Nghiệp
+                  Câu Hỏi Thường Gặp
                 </h2>
                 <p className="text-sm text-stone-600 mt-2 max-w-xl mx-auto">
-                  Tất cả thông tin minh bạch về xuất hóa đơn VAT, nhận hộp mẫu thử, ký quỹ an toàn và cam kết giao vận PoD xe lạnh.
+                  Thông tin về hợp đồng, hóa đơn VAT, mẫu thử và giao vận xe lạnh.
                 </p>
               </div>
 
@@ -864,15 +864,15 @@ export default function HomePage({ onNavigate }) {
               <div className="relative z-10 max-w-2xl mx-auto space-y-4">
                 <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', border: 'none' }}>
                   <SafetyCertificateOutlined style={{ marginRight: 4 }} />
-                  GIẢI PHÁP QUÀ TẶNG DOANH NGHIỆP 2025
+                  Quà tặng Trung Thu 2025
                 </Tag>
 
                 <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-                  Sẵn Sàng Chuẩn Bị Quà Tặng Trung Thu Cho Doanh Nghiệp?
+                  Sẵn Sàng Chuẩn Bị Quà Trung Thu?
                 </h2>
 
                 <p className="text-sm sm:text-base text-stone-200 leading-relaxed">
-                  Nhận trọn bộ catalog 120+ mẫu hộp cao cấp, bảng báo giá chiết khấu xưởng tới 35% và đăng ký nhận 01 hộp mẫu thử miễn phí tận nơi.
+                  Catalog 120+ mẫu hộp, chiết khấu tới 35% và nhận mẫu thử miễn phí tận nơi.
                 </p>
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
@@ -890,7 +890,7 @@ export default function HomePage({ onNavigate }) {
                       padding: '0 24px',
                     }}
                   >
-                    Tạo Yêu Cầu Báo Giá (RFQ)
+                    Yêu Cầu Báo Giá (RFQ)
                   </Button>
 
                   <Button
@@ -907,19 +907,19 @@ export default function HomePage({ onNavigate }) {
                       color: '#ffffff',
                     }}
                   >
-                    Xem 120+ Mẫu Hộp 2025
+                    Khám Phá Sản Phẩm
                   </Button>
                 </div>
 
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-300">
                   <span className="flex items-center gap-1.5">
                     <PhoneOutlined style={{ color: '#d48806' }} />
-                    Hotline B2B: <strong className="text-white font-bold">1800 6886</strong> (Miễn phí)
+                    Hotline: <strong className="text-white font-bold">1800 6886</strong> (Miễn phí)
                   </span>
                   <span className="hidden sm:inline">•</span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircleFilled style={{ color: '#52c41a' }} />
-                    Ký quỹ SafeTrade 100% An Toàn
+                    Ký quỹ SafeTrade an toàn
                   </span>
                 </div>
               </div>

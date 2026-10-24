@@ -1,374 +1,572 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Card,
-  Row,
-  Col,
-  Radio,
-  InputNumber,
-  Button,
   Tag,
-  Descriptions,
-  Table,
-  Rate,
-  Upload,
   Divider,
   Space,
   message,
-  Typography,
-  Alert,
+  Tabs,
 } from 'antd';
 import {
   ShoppingOutlined,
   SolutionOutlined,
   SafetyCertificateOutlined,
-  UploadOutlined,
   CheckCircleOutlined,
-  ShopOutlined,
+  TruckOutlined,
+  PrinterOutlined,
+  GiftOutlined,
+  ShareAltOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
-
-const { Title, Text, Paragraph } = Typography;
+import VariantRadioCards from '../../components/lucian/VariantRadioCards';
+import ReviewFilterStars from '../../components/lucian/ReviewFilterStars';
+import { getMockProductById, DEFAULT_PRODUCT_ID } from '../../constants/mockProducts';
 
 export default function ProductInformation({ onNavigate }) {
-  const [selectedVariantSku, setSelectedVariantSku] = useState('SKU-TC-200');
-  const [quantity, setQuantity] = useState(100);
+  // Dynamically load product from mock data based on sessionStorage or fallback
+  const [selectedProductId, setSelectedProductId] = useState(() => {
+    return sessionStorage.getItem('selected_product_id') || DEFAULT_PRODUCT_ID;
+  });
 
-  const product = {
-    id: 'PRD-001',
-    name: 'Bánh Trung Thu Thập Cẩm Bát Bửu Thượng Hạng (Hoàng Kim Dạ Nguyệt)',
-    supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân',
-    reputationScore: 98,
-    badge: 'Đối Tác Vàng',
-    category: 'Bánh Nướng Truyền Thống',
-    description: 'Tuyệt phẩm bánh nướng gia truyền kết hợp 8 vị nhân quý: bào ngư, vi cá, lạp xưởng Mai Quế Lộ, hạt sen, hạt dưa, mứt bí, lá chanh và vừng rang. Vỏ bánh mỏng vàng óng, dập nổi hoa văn hoa sen cung đình.',
-    variants: [
-      {
-        sku: 'SKU-TC-150',
-        flavor: 'Thập Cẩm Bát Bửu (150g)',
-        crust: 'Vỏ Nướng Truyền Thống',
-        weight: 150,
-        price: 85000,
-        stock: 1200,
-      },
-      {
-        sku: 'SKU-TC-200',
-        flavor: 'Thập Cẩm Bát Bửu 2 Trứng Muối (200g)',
-        crust: 'Vỏ Nướng Hoàng Kim',
-        weight: 200,
-        price: 110000,
-        stock: 850,
-      },
-      {
-        sku: 'SKU-BOX-VIP4',
-        flavor: 'Set Hộp Sơn Mài VIP 4 Bánh + Trà Sen',
-        crust: 'Hộp Sơn Mài Khóa Đồng',
-        weight: 800,
-        price: 650000,
-        stock: 350,
-      },
-    ],
-    tieredPricing: [
-      { minQty: 50, maxQty: 99, discountText: 'Giảm 5%', rate: 0.05 },
-      { minQty: 100, maxQty: 499, discountText: 'Giảm 10%', rate: 0.10 },
-      { minQty: 500, maxQty: 9999, discountText: 'Giảm 18%', rate: 0.18 },
-    ],
-    reviews: [
-      {
-        user: 'Tập đoàn Vingroup (Chị Mai - HR)',
-        rating: 5,
-        variant: 'Set Hộp Sơn Mài VIP 4 Bánh',
-        date: '2025-08-10',
-        comment: 'Đã nhận 500 hộp đợt 1, bao bì sơn mài cực kỳ sang trọng, logo Vingroup dập nổi sắc nét. Bánh thơm và vừa vị.',
-      },
-      {
-        user: 'Công ty Cổ phần MISA (Anh Dũng)',
-        rating: 5,
-        variant: 'Thập Cẩm Bát Bửu 2 Trứng Muối (200g)',
-        date: '2025-08-08',
-        comment: 'Nhân bánh đầy đặn, trứng muối bùi béo. Đóng gói rất chắc chắn, giao xe lạnh đúng giờ cam kết.',
-      },
-    ],
+  const product = useMemo(() => {
+    return getMockProductById(selectedProductId);
+  }, [selectedProductId]);
+
+  const [selectedVariantSku, setSelectedVariantSku] = useState(
+    product.variants?.[0]?.sku || ''
+  );
+  const [quantity, setQuantity] = useState(product.minQty || 50);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [activeStarFilter, setActiveStarFilter] = useState(null);
+
+  // Sync state when product changes
+  useEffect(() => {
+    if (product.variants && product.variants.length > 0) {
+      const popular = product.variants.find((v) => v.isPopular) || product.variants[0];
+      setSelectedVariantSku(popular.sku);
+      if (typeof popular.imageIdx === 'number') {
+        setActiveImageIdx(popular.imageIdx);
+      } else {
+        setActiveImageIdx(0);
+      }
+    }
+    setQuantity(product.minQty || 50);
+  }, [product]);
+
+  const currentVariant = useMemo(() => {
+    return (
+      product.variants?.find((v) => v.sku === selectedVariantSku) ||
+      product.variants?.[0] || {
+        sku: 'DEFAULT',
+        flavor: product.name,
+        price: product.price || 0,
+        stock: 500,
+      }
+    );
+  }, [product, selectedVariantSku]);
+
+  const unitPrice = currentVariant.price || product.price || 0;
+
+  // Active pricing tier calculation
+  const currentTier = useMemo(() => {
+    if (!product.tieredPricing) return null;
+    return product.tieredPricing.find(
+      (t) => quantity >= t.minQty && quantity <= t.maxQty
+    );
+  }, [product.tieredPricing, quantity]);
+
+  const discountRate = currentTier ? currentTier.rate : 0;
+  const baseSubtotal = unitPrice * quantity;
+  const discountAmount = baseSubtotal * discountRate;
+  const finalTotal = baseSubtotal - discountAmount;
+  const discountedUnitPrice = unitPrice * (1 - discountRate);
+
+  const handleVariantChange = (sku) => {
+    setSelectedVariantSku(sku);
+    const v = product.variants?.find((item) => item.sku === sku);
+    if (v && typeof v.imageIdx === 'number' && product.images?.[v.imageIdx]) {
+      setActiveImageIdx(v.imageIdx);
+    }
   };
 
-  const currentVariant = product.variants.find((v) => v.sku === selectedVariantSku) || product.variants[0];
-  const unitPrice = currentVariant.price;
-  const currentTier = product.tieredPricing.find((t) => quantity >= t.minQty && quantity <= t.maxQty);
-  const discountRate = currentTier ? currentTier.rate : 0;
-  const subtotal = unitPrice * quantity;
-  const discountAmount = subtotal * discountRate;
-  const finalTotal = subtotal - discountAmount;
+  const handleQuickAddQty = (step) => {
+    setQuantity((prev) => Math.max(product.minQty || 20, prev + step));
+  };
+
+  const handleOrderClick = () => {
+    message.success(
+      `Đã chọn biến thể "${currentVariant.flavor}" với số lượng ${quantity} hộp.`
+    );
+    setTimeout(() => {
+      onNavigate?.('dat-hang-thiet-ke');
+    }, 400);
+  };
+
+  const handleRfqClick = () => {
+    message.info('Đang mở biểu mẫu RFQ mời báo giá với thông số sản phẩm đã chọn...');
+    setTimeout(() => {
+      onNavigate?.('so-sanh-bao-gia');
+    }, 300);
+  };
+
+  const handleSampleKitRequest = () => {
+    message.success('Đã gửi yêu cầu nhận Hộp Mẫu Thử (Sample Kit) miễn phí tới xưởng!');
+  };
+
+  const galleryImages =
+    product.images?.length > 0
+      ? product.images
+      : [
+          {
+            url: product.image || '/categories/banh-nuong.jpg',
+            title: product.name,
+            tag: 'Sản phẩm',
+          },
+        ];
 
   return (
-    <div style={{ background: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="min-h-screen bg-[#faf7f5] text-[#1f1b18] flex flex-col font-sans">
       <CustomerHeader activeKey="tim-kiem" onNavigate={onNavigate} />
 
-      <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
-        {/* Breadcrumb Context */}
-        <div style={{ marginBottom: 16 }}>
-          <Space>
-            <Button type="link" onClick={() => onNavigate?.('tim-kiem')} style={{ padding: 0 }}>
-              ← Quay lại danh mục B2B
-            </Button>
-            <span style={{ color: '#bbb' }}>/</span>
-            <span style={{ color: '#666' }}>{product.category}</span>
-            <span style={{ color: '#bbb' }}>/</span>
-            <strong style={{ color: '#1f1f1f' }}>{product.name}</strong>
-          </Space>
-        </div>
+      {/* Balanced Center Container (max-w-[1240px] avoids over-stretching horizontally) */}
+      <main className="max-w-[1240px] w-full mx-auto px-4 sm:px-6 py-3 flex-1">
+        {/* Breadcrumb & Navigation Bar */}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#8d706e] mb-3 pb-2 border-b border-[#7a0010]/10"
+        >
+          <div className="flex items-center gap-1.5 truncate">
+            <button
+              type="button"
+              onClick={() => onNavigate?.('tim-kiem')}
+              className="inline-flex items-center gap-1 font-semibold text-[#7a0010] hover:text-[#5a000c] transition-colors"
+            >
+              <ArrowLeftOutlined /> Danh sách sản phẩm
+            </button>
+            <span className="text-[#cbb8b3]">/</span>
+            <span
+              className="hover:text-[#1f1b18] cursor-pointer"
+              onClick={() => onNavigate?.('tim-kiem')}
+            >
+              {product.categoryName}
+            </span>
+            <span className="text-[#cbb8b3]">/</span>
+            <span className="font-semibold text-[#1f1b18] truncate max-w-[320px]">
+              {product.name}
+            </span>
+          </div>
 
-        <Row gutter={[24, 24]}>
-          {/* Left Column: Visual Gallery */}
-          <Col xs={24} lg={10}>
-            <Card bordered={false} style={{ borderRadius: 10, overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: 380,
-                  background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-                  borderRadius: 8,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative',
-                  border: '1px solid #ffd591',
-                }}
-              >
-                <div style={{ fontSize: 96 }}>🥮</div>
-                <div style={{ fontWeight: 700, fontSize: 18, color: '#8c1524', marginTop: 12 }}>
-                  {currentVariant.flavor}
+          <div className="flex items-center gap-2 flex-none">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Sẵn kho ({currentVariant.stock || 500} hộp)
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(window.location.href);
+                message.info('Đã sao chép liên kết');
+              }}
+              className="p-1.5 rounded-lg border border-[#7a0010]/15 text-[#59413f] hover:bg-[#fff5f2] transition-colors"
+              title="Chia sẻ sản phẩm"
+            >
+              <ShareAltOutlined className="text-xs" />
+            </button>
+          </div>
+        </nav>
+
+        {/* BALANCED 50/50 MAIN GRID (6 cols Left vs 6 cols Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          
+          {/* LEFT: Prominent Visual Gallery & Artisan Card (6 cols) */}
+          <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-24">
+            {/* Gallery Box */}
+            <div className="bg-white rounded-2xl p-3.5 border border-[#7a0010]/10 shadow-sm">
+              {/* Prominent High-Res Image (aspect-4/3 for rich food & luxury packaging appreciation) */}
+              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-[#f5ece7] shadow-inner group">
+                <img
+                  src={galleryImages[activeImageIdx]?.url}
+                  alt={galleryImages[activeImageIdx]?.title}
+                  className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                />
+
+                {/* Overlaid Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#7a0010] text-[#fbe8a6] shadow-sm">
+                    {product.badge}
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-black/65 text-white backdrop-blur-sm">
+                    {galleryImages[activeImageIdx]?.tag}
+                  </span>
                 </div>
-                <Tag color="gold" style={{ position: 'absolute', top: 12, left: 12, fontWeight: 700 }}>
-                  ★ {product.badge}
-                </Tag>
-                <Tag color="volcano" style={{ position: 'absolute', top: 12, right: 12 }}>
-                  Khắc Logo 48H
-                </Tag>
-              </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                {product.variants.map((v) => (
-                  <div
-                    key={v.sku}
-                    onClick={() => setSelectedVariantSku(v.sku)}
-                    style={{
-                      flex: 1,
-                      border: selectedVariantSku === v.sku ? '2px solid #8c1524' : '1px solid #eee',
-                      borderRadius: 6,
-                      padding: 8,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      background: '#ffffff',
-                    }}
-                  >
-                    <div style={{ fontSize: 20 }}>🥮</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 2 }}>{v.weight}g</div>
+                {product.packagingSupported && (
+                  <div className="absolute top-3 right-3">
+                    <span className="px-3 py-1 rounded-md text-xs font-bold bg-white/95 text-[#7a0010] shadow-sm border border-[#7a0010]/15">
+                      In Logo 48H
+                    </span>
                   </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Supplier Profile Box */}
-            <Card bordered={false} style={{ borderRadius: 10, marginTop: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 8,
-                    background: '#8c1524',
-                    color: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 24,
-                  }}
-                >
-                  <ShopOutlined />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#1f1f1f' }}>
-                    {product.supplierName}
-                  </div>
-                  <Space size={4}>
-                    <Tag color="gold" icon={<SafetyCertificateOutlined />}>
-                      {product.badge} ({product.reputationScore}/100)
-                    </Tag>
-                    <Tag color="green">✓ Đã xác thực ISO 22000</Tag>
-                  </Space>
-                </div>
-              </div>
-              <Divider style={{ margin: '14px 0' }} />
-              <Button
-                block
-                icon={<SolutionOutlined />}
-                onClick={() => onNavigate?.('so-sanh-bao-gia')}
-              >
-                Gửi Lời Mời Báo Giá RFQ Tới Xưởng Này
-              </Button>
-            </Card>
-          </Col>
-
-          {/* Right Column: Variant Selector & Tiered Pricing */}
-          <Col xs={24} lg={14}>
-            <Card bordered={false} style={{ borderRadius: 10 }}>
-              <Tag color="volcano" style={{ fontWeight: 600 }}>SẢN PHẨM B2B SỈ</Tag>
-              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1f1f1f', margin: '8px 0 12px' }}>
-                {product.name}
-              </h1>
-              <Paragraph style={{ color: '#666', fontSize: 14 }}>{product.description}</Paragraph>
-
-              <Divider style={{ margin: '16px 0' }} />
-
-              {/* Price Display */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
-                <span style={{ fontSize: 32, fontWeight: 800, color: '#8c1524' }}>
-                  {unitPrice.toLocaleString('vi-VN')} ₫
-                </span>
-                <span style={{ color: '#888', fontSize: 14 }}>/ cái hoặc hộp</span>
-                {discountRate > 0 && (
-                  <Tag color="success" style={{ fontWeight: 700, fontSize: 13, padding: '2px 8px' }}>
-                    Áp dụng mức sỉ: -{(discountRate * 100).toFixed(0)}%
-                  </Tag>
                 )}
               </div>
 
-              {/* Variant Selector (Module 3 - Feature #5) */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>
-                  Bắt buộc chọn Biến Thể Cụ Thể (Variant):
-                </label>
-                <Radio.Group
-                  value={selectedVariantSku}
-                  onChange={(e) => setSelectedVariantSku(e.target.value)}
-                  style={{ width: '100%' }}
-                >
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    {product.variants.map((v) => (
-                      <Radio
-                        key={v.sku}
-                        value={v.sku}
-                        style={{
-                          border: selectedVariantSku === v.sku ? '2px solid #8c1524' : '1px solid #eee',
-                          borderRadius: 8,
-                          padding: '10px 14px',
-                          background: selectedVariantSku === v.sku ? '#fff9f9' : '#ffffff',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                        }}
+              {/* Thumbnails Row */}
+              {galleryImages.length > 1 && (
+                <div className="grid grid-cols-4 gap-2.5 mt-3">
+                  {galleryImages.map((img, idx) => {
+                    const isActive = idx === activeImageIdx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveImageIdx(idx)}
+                        className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all p-0.5 bg-white ${
+                          isActive
+                            ? 'border-[#7a0010] ring-2 ring-[#7a0010]/20 scale-[1.02]'
+                            : 'border-transparent opacity-75 hover:opacity-100 hover:border-[#7a0010]/30'
+                        }`}
                       >
-                        <span style={{ fontWeight: 600 }}>{v.flavor} ({v.weight}g)</span>
-                        <span style={{ color: '#8c1524', fontWeight: 700, marginLeft: 20 }}>
-                          {v.price.toLocaleString('vi-VN')} ₫
-                        </span>
-                      </Radio>
-                    ))}
-                  </Space>
-                </Radio.Group>
+                        <img
+                          src={img.url}
+                          alt={img.title}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Artisan Credential Card */}
+            <div className="bg-white rounded-2xl p-4 border border-[#7a0010]/10 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={product.supplierAvatar || '/suppliers/xuong-trang-an.jpg'}
+                    alt={product.supplier}
+                    className="w-12 h-12 rounded-xl object-cover border border-[#7a0010]/15 shadow-xs flex-none"
+                  />
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-[#1f1b18] truncate">
+                      {product.supplier}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#8d706e] mt-0.5">
+                      <span className="text-[#b8860b] font-semibold flex items-center gap-1">
+                        <SafetyCertificateOutlined /> Tín nhiệm {product.reputationScore}/100
+                      </span>
+                      <span>•</span>
+                      <span className="text-emerald-700 font-medium">ISO 22000</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-none">
+                  <button
+                    type="button"
+                    onClick={handleRfqClick}
+                    className="px-3 py-2 rounded-xl border border-[#7a0010]/20 hover:border-[#7a0010] hover:bg-[#fff7f5] text-xs font-bold text-[#7a0010] transition-colors"
+                  >
+                    Báo Giá RFQ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSampleKitRequest}
+                    className="px-3 py-2 rounded-xl bg-[#fff7f5] hover:bg-[#ffece8] text-xs font-bold text-[#7a0010] transition-colors"
+                  >
+                    Mẫu Thử
+                  </button>
+                </div>
               </div>
 
-              {/* Tiered Pricing Table (Feature #8) */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>
-                  Bảng Giá Chiết Khấu Theo Số Lượng (Tiered Pricing Rules):
-                </label>
-                <Table
-                  size="small"
-                  pagination={false}
-                  dataSource={product.tieredPricing.map((t, i) => ({ ...t, key: i }))}
-                  columns={[
-                    {
-                      title: 'Khoảng Số Lượng Đặt',
-                      key: 'range',
-                      render: (_, t) => `${t.minQty} - ${t.maxQty >= 9999 ? 'Trở lên' : t.maxQty} hộp`,
-                    },
-                    {
-                      title: 'Mức Chiết Khấu',
-                      dataIndex: 'discountText',
-                      key: 'discountText',
-                      render: (d) => <Tag color="gold" style={{ fontWeight: 700 }}>{d}</Tag>,
-                    },
-                    {
-                      title: 'Giá Sau Chiết Khấu',
-                      key: 'netPrice',
-                      render: (_, t) => (
-                        <strong style={{ color: '#2e7d32' }}>
-                          {(unitPrice * (1 - t.rate)).toLocaleString('vi-VN')} ₫
-                        </strong>
-                      ),
-                    },
-                  ]}
+              {/* Assurance Trust Badges */}
+              <div className="grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-[#7a0010]/10 text-[11px] text-[#59413f] text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <CheckCircleOutlined className="text-emerald-600" />
+                  <span>Hóa đơn VAT</span>
+                </div>
+                <div className="flex items-center justify-center gap-1 border-x border-[#7a0010]/10">
+                  <TruckOutlined className="text-emerald-600" />
+                  <span>Xe lạnh toàn quốc</span>
+                </div>
+                <div className="flex items-center justify-center gap-1">
+                  <PrinterOutlined className="text-emerald-600" />
+                  <span>Maket 3D trong 4H</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Product Purchasing & Customization Module (6 cols) */}
+          <div className="lg:col-span-6 bg-white rounded-2xl p-4 sm:p-5 border border-[#7a0010]/10 shadow-sm space-y-3">
+            {/* Header info */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs text-[#8d706e]">Mã: {product.id}</span>
+                <span className="text-xs text-[#8d706e]">• Tối thiểu: {product.minQty} hộp</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-[#1f1b18] leading-tight m-0 tracking-tight">
+                {product.name}
+              </h1>
+              <p className="text-xs text-[#59413f] leading-relaxed mt-1.5 mb-0">
+                {product.description}
+              </p>
+            </div>
+
+            {/* Dynamic Unit Price Box */}
+            <div className="p-3.5 rounded-xl bg-[#fdf6f0] border border-[#7a0010]/15 flex flex-wrap items-baseline justify-between gap-2">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-xs text-[#8d706e] font-semibold uppercase tracking-wider">Đơn giá:</span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-[#7a0010] tracking-tight">
+                  {Math.round(discountedUnitPrice).toLocaleString('vi-VN')} ₫
+                </span>
+                {discountRate > 0 && (
+                  <span className="text-sm text-[#8d706e] line-through font-medium">
+                    {unitPrice.toLocaleString('vi-VN')} ₫
+                  </span>
+                )}
+                <span className="text-xs font-medium text-[#59413f]">/ hộp</span>
+              </div>
+
+              {discountRate > 0 ? (
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    -{(discountRate * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700">
+                    Tiết kiệm {((unitPrice - discountedUnitPrice) * quantity).toLocaleString('vi-VN')} ₫
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs text-[#8d706e]">Đặt ≥ 50 để nhận chiết khấu sỉ</span>
+              )}
+            </div>
+
+            {/* Variant Selector - Lucian #015 */}
+            {product.variants && product.variants.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#1f1b18]">
+                    Biến thể:
+                  </label>
+                  <span className="text-xs text-[#8d706e]">
+                    Đã chọn: <strong className="text-[#7a0010]">{currentVariant.flavor}</strong>
+                  </span>
+                </div>
+
+                <VariantRadioCards
+                  compact
+                  variants={product.variants}
+                  selectedSku={selectedVariantSku}
+                  onChange={handleVariantChange}
                 />
               </div>
+            )}
 
-              {/* Bulk Quantity Picker */}
-              <div style={{ background: '#fafafa', padding: 16, borderRadius: 8, marginBottom: 20 }}>
-                <Row gutter={16} align="middle">
-                  <Col span={8}>
-                    <label style={{ fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6 }}>
-                      Số Lượng Đặt (≥ 50):
-                    </label>
-                    <InputNumber
-                      min={50}
-                      max={10000}
-                      step={10}
-                      value={quantity}
-                      onChange={(v) => setQuantity(v || 50)}
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                  <Col span={16} style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 12, color: '#888' }}>
-                      Đơn giá: {unitPrice.toLocaleString('vi-VN')} ₫ x {quantity} hộp
-                      {discountAmount > 0 && ` (-${discountAmount.toLocaleString('vi-VN')} ₫)`}
-                    </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#8c1524' }}>
-                      Tổng: {finalTotal.toLocaleString('vi-VN')} ₫
-                    </div>
-                  </Col>
-                </Row>
+            {/* Tiered Pricing Rules Matrix */}
+            {product.tieredPricing && product.tieredPricing.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#1f1b18]">
+                    Chiết khấu số lượng:
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2.5">
+                  {product.tieredPricing.map((tier, idx) => {
+                    const isActive = quantity >= tier.minQty && quantity <= tier.maxQty;
+                    const tierNet = unitPrice * (1 - tier.rate);
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-2.5 rounded-xl border text-left transition-all relative ${
+                          isActive
+                            ? 'bg-[#fff7f5] border-[#7a0010] ring-2 ring-[#7a0010]/20 shadow-xs'
+                            : 'bg-white border-[#7a0010]/10 hover:border-[#7a0010]/30'
+                        }`}
+                      >
+                        {tier.isRecommended && (
+                          <span className="absolute -top-2 right-2 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#7a0010] text-[#fbe8a6] shadow-xs">
+                            Đề xuất
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-[#1f1b18]">{tier.label}</span>
+                          <span className="font-extrabold text-[#7a0010]">{tier.discountText}</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-[#7a0010] mt-1">
+                          {Math.round(tierNet).toLocaleString('vi-VN')} ₫
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity Stepper & Live Total Calculation */}
+            <div className="p-3 rounded-xl bg-[#faf2ec] border border-[#7a0010]/15 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#1f1b18]">Số lượng:</span>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAddQty(-10)}
+                  disabled={quantity <= (product.minQty || 20)}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#7a0010]/20 font-bold text-sm text-[#7a0010] hover:bg-[#fff0ed] disabled:opacity-40 transition-colors"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={product.minQty || 20}
+                  max={50000}
+                  step={10}
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(
+                      Math.max(product.minQty || 20, parseInt(e.target.value) || (product.minQty || 20))
+                    )
+                  }
+                  className="w-18 h-8 text-center font-bold text-sm bg-white rounded-lg border border-[#7a0010]/30 focus:outline-none focus:ring-2 focus:ring-[#7a0010]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleQuickAddQty(10)}
+                  className="w-8 h-8 rounded-lg bg-white border border-[#7a0010]/20 font-bold text-sm text-[#7a0010] hover:bg-[#fff0ed] transition-colors"
+                >
+                  +
+                </button>
+
+                <div className="flex items-center gap-1.5 ml-1">
+                  {[50, 100, 200, 500].map((step) => (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => setQuantity(step)}
+                      className={`px-2 py-1 rounded-md text-xs font-bold transition-colors ${
+                        quantity === step
+                          ? 'bg-[#7a0010] text-white shadow-xs'
+                          : 'bg-white border border-[#7a0010]/20 text-[#7a0010] hover:bg-[#fff0ed]'
+                      }`}
+                    >
+                      {step}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <Space size="middle" style={{ width: '100%' }}>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<ShoppingOutlined />}
-                  style={{ background: '#8c1524', borderColor: '#8c1524', fontWeight: 700, flex: 1 }}
-                  onClick={() => onNavigate?.('dat-hang-thiet-ke')}
-                >
-                  Đặt Hàng & In Logo Hộp Doanh Nghiệp
-                </Button>
-                <Button
-                  size="large"
-                  icon={<SolutionOutlined />}
-                  onClick={() => onNavigate?.('so-sanh-bao-gia')}
-                  style={{ fontWeight: 600 }}
-                >
-                  Tạo RFQ Mời Báo Giá
-                </Button>
-              </Space>
-            </Card>
+              {/* Total Price Display */}
+              <div className="text-right">
+                <span className="text-xs text-[#8d706e] mr-1">Tổng:</span>
+                <span className="text-xl sm:text-2xl font-extrabold text-[#7a0010]">
+                  {Math.round(finalTotal).toLocaleString('vi-VN')} ₫
+                </span>
+              </div>
+            </div>
 
-            {/* Verified Reviews Stream (Feature #22) */}
-            <Card title="Đánh Giá Thực Tế (Verified Purchases Review Stream)" bordered={false} style={{ borderRadius: 10, marginTop: 20 }}>
-              {product.reviews.map((rev, idx) => (
-                <div key={idx} style={{ padding: '12px 0', borderBottom: idx < product.reviews.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong>{rev.user}</strong>
-                      <Tag color="success" style={{ marginLeft: 8, fontSize: 10 }}>✓ Verified Buyer</Tag>
+            {/* Action CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleOrderClick}
+                className="flex-1 py-3 px-5 rounded-xl bg-[#7a0010] hover:bg-[#60000d] text-white font-extrabold text-sm sm:text-base tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ShoppingOutlined className="text-base" />
+                Đặt Hàng &amp; In Logo
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRfqClick}
+                className="py-3 px-5 rounded-xl bg-white border-2 border-[#7a0010] text-[#7a0010] hover:bg-[#fff7f5] font-extrabold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <SolutionOutlined /> Yêu Cầu Báo Giá (RFQ)
+              </button>
+            </div>
+
+            <div className="text-center text-xs text-[#8d706e]">
+              Nhận hợp đồng &amp; maket 3D trước khi tạm ứng
+            </div>
+          </div>
+        </div>
+
+        {/* FULL-WIDTH TABS: Specifications, Printing Policy & Customer Reviews */}
+        <div className="mt-8 bg-white rounded-2xl p-6 border border-[#7a0010]/10 shadow-sm">
+          <Tabs
+            defaultActiveKey="1"
+            items={[
+              {
+                key: '1',
+                label: (
+                  <span className="font-bold text-sm sm:text-base">
+                    Thông Số &amp; Quy Cách
+                  </span>
+                ),
+                children: (
+                  <div className="space-y-4 pt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-[#59413f]">
+                      {product.specs?.map((item, i) => (
+                        <div
+                          key={i}
+                          className="p-3 rounded-xl bg-[#faf7f5] border border-[#7a0010]/5 flex flex-col gap-1"
+                        >
+                          <span className="font-bold text-[#1f1b18]">{item.label}</span>
+                          <span className="text-[#59413f] leading-relaxed">{item.val}</span>
+                        </div>
+                      ))}
                     </div>
-                    <Rate disabled defaultValue={rev.rating} style={{ fontSize: 13, color: '#fadb14' }} />
+                    <p className="text-sm text-[#59413f] leading-relaxed pt-2 border-t border-[#7a0010]/10">
+                      {product.description}
+                    </p>
                   </div>
-                  <Tag color="purple" style={{ marginTop: 4, fontSize: 11 }}>Biến thể: {rev.variant}</Tag>
-                  <p style={{ margin: '8px 0 0', color: '#333' }}>"{rev.comment}"</p>
-                </div>
-              ))}
-            </Card>
-          </Col>
-        </Row>
+                ),
+              },
+              {
+                key: '2',
+                label: (
+                  <span className="font-bold text-sm sm:text-base">
+                    In Logo &amp; Mẫu Thử
+                  </span>
+                ),
+                children: (
+                  <div className="space-y-3 text-sm text-[#59413f] leading-relaxed pt-3">
+                    <p>
+                      <strong>Khắc laser &amp; Ép kim:</strong> Áp dụng công nghệ ép kim mạ vàng 24K hoặc khắc laser sắc nét lên nắp hộp sơn mài, hộp gỗ cho mọi đơn hàng từ {product.minQty} hộp trở lên.
+                    </p>
+                    <p>
+                      <strong>Đăng ký nhận mẫu thử:</strong> Hỗ trợ giao 01 Hộp Mẫu Thử (Sample Kit) miễn phí tận nơi để bộ phận Thu mua / Ban giám đốc kiểm tra chất lượng bánh và mẫu bao bì thực tế trước khi ký hợp đồng.
+                    </p>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSampleKitRequest}
+                        className="py-2.5 px-4 rounded-xl bg-[#7a0010] text-white font-bold text-xs hover:bg-[#60000d] transition-colors"
+                      >
+                        Đăng Ký Nhận Hộp Mẫu Thử Ngay
+                      </button>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: '3',
+                label: (
+                  <span className="font-bold text-sm sm:text-base">
+                    Đánh Giá ({product.reviews?.length || 0})
+                  </span>
+                ),
+                children: (
+                  <div className="pt-3">
+                    <ReviewFilterStars
+                      reviews={product.reviews || []}
+                      activeStar={activeStarFilter}
+                      onChangeStar={setActiveStarFilter}
+                    />
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
       </main>
     </div>
   );

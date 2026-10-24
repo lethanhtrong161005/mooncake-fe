@@ -34,7 +34,7 @@ const ACTIVITIES = [
     company: 'Vinamilk Corporation',
     action: 'vừa ký kết hợp đồng e-Contract 400 hộp',
     time: '9 phút trước',
-    badge: 'Ký Số B2B',
+    badge: 'Ký Số Trực Tuyến',
     badgeColor: 'bg-purple-100 text-purple-900',
     icon: 'draw',
     color: '#7a0010'
@@ -47,7 +47,8 @@ export default function RecentOrderToast() {
   const [isPaused, setIsPaused] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [showUndo, setShowUndo] = useState(false);
-  const [progress, setProgress] = useState(1);
+  const progressRef = useRef(null);
+  const progressValRef = useRef(1);
 
   const SHOW_DURATION = 4500;
   const GAP_DURATION = 1500;
@@ -66,7 +67,10 @@ export default function RecentOrderToast() {
       if (!isPaused) {
         if (state === 'show') {
           const remaining = Math.max(0, 1 - elapsed / SHOW_DURATION);
-          setProgress(remaining);
+          progressValRef.current = remaining;
+          if (progressRef.current) {
+            progressRef.current.style.transform = `scaleX(${remaining})`;
+          }
 
           if (elapsed >= SHOW_DURATION) {
             state = 'wait';
@@ -78,13 +82,16 @@ export default function RecentOrderToast() {
             state = 'show';
             setIndex((prev) => (prev + 1) % ACTIVITIES.length);
             setIsVisible(true);
-            setProgress(1);
+            progressValRef.current = 1;
+            if (progressRef.current) {
+              progressRef.current.style.transform = 'scaleX(1)';
+            }
             startTime = Date.now();
           }
         }
       } else {
         // adjust start time while paused so elapsed remains constant
-        startTime = now - (1 - progress) * SHOW_DURATION;
+        startTime = now - (1 - progressValRef.current) * SHOW_DURATION;
       }
 
       animId = requestAnimationFrame(tick);
@@ -106,7 +113,10 @@ export default function RecentOrderToast() {
     setShowUndo(false);
     setIsDismissed(false);
     setIsVisible(true);
-    setProgress(1);
+    progressValRef.current = 1;
+    if (progressRef.current) {
+      progressRef.current.style.transform = 'scaleX(1)';
+    }
   };
 
   const current = ACTIVITIES[index];
@@ -160,17 +170,18 @@ export default function RecentOrderToast() {
           </svg>
         </button>
 
-        {/* Progress bar timer */}
+        {/* Progress bar timer (DOM-driven without React state re-rendering at 60 FPS) */}
         <i
+          ref={progressRef}
           className="u253-tm"
-          style={{ transform: `scaleX(${progress})` }}
+          style={{ transform: 'scaleX(1)' }}
           aria-hidden="true"
         />
       </div>
 
       {/* Undo confirmation pill */}
       <div className={`u253-ok ${showUndo ? 'is-on' : ''}`} role="status">
-        <span>Đã tắt thông báo B2B</span>
+        <span>Đã tắt thông báo đơn hàng</span>
         <button type="button" className="u253-un" onClick={handleUndo}>
           Hoàn tác
         </button>

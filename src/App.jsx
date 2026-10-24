@@ -171,7 +171,7 @@ export default function App() {
       label: '🛒 KHÁCH HÀNG DOANH NGHIỆP (B2B)',
       children: [
         { key: 'trang-chu', label: '1. Trang chủ' },
-        { key: 'tim-kiem', label: '2. Khám phá sản phẩm B2B' },
+        { key: 'tim-kiem', label: '2. Khám phá sản phẩm' },
         { key: 'san-pham', label: '3. Chi tiết sản phẩm & Biến thể' },
         { key: 'dat-hang-thiet-ke', label: '4. Đặt hàng & In logo' },
         { key: 'in-an-bao-bi', label: '5. Tùy biến bao bì' },
