@@ -3,16 +3,38 @@
  * Standardized for ASP.NET Core 8 Web API backend (Clean Architecture)
  */
 
+export { VERIFICATION_HUB_URL } from './apiConfiguration';
+
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
 
 export const API_ENDPOINTS = {
+  SHOPS: {
+    MINE: `/${API_VERSION}/shops/me`,
+    MEDIA: `/${API_VERSION}/shops/me/media`,
+    APPEARANCE: `/${API_VERSION}/shops/me/appearance`,
+    VISIBILITY: `/${API_VERSION}/shops/me/visibility`,
+    PREVIEW: `/${API_VERSION}/shops/me/preview`,
+    TEMPLATES: `/${API_VERSION}/shop-templates`,
+    PUBLIC: (slug) => `/${API_VERSION}/shops/${encodeURIComponent(slug)}`,
+    PRODUCTS: (slug) => `/${API_VERSION}/shops/${encodeURIComponent(slug)}/products`,
+    CATEGORIES: (slug) => `/${API_VERSION}/shops/${encodeURIComponent(slug)}/categories`,
+    REVIEWS: (slug) => `/${API_VERSION}/shops/${encodeURIComponent(slug)}/reviews`,
+    ADMIN: `/${API_VERSION}/admin/shops`,
+    ADMIN_DETAIL: (id) => `/${API_VERSION}/admin/shops/${id}`,
+    MODERATE: (id) => `/${API_VERSION}/admin/shops/${id}/status`,
+    ADMIN_TEMPLATES: `/${API_VERSION}/admin/shop-templates`,
+    ADMIN_TEMPLATE: (id) => `/${API_VERSION}/admin/shop-templates/${id}`,
+    TEMPLATE_AVAILABILITY: (id) => `/${API_VERSION}/admin/shop-templates/${id}/availability`,
+    TEMPLATE_PREMIUM: (id) => `/${API_VERSION}/admin/shop-templates/${id}/premium`,
+    TEMPLATE_MEDIA: `/${API_VERSION}/admin/shop-templates/media`,
+  },
   // Authentication & Users
   AUTH: {
     LOGIN: `/${API_VERSION}/auth/login`,
     REGISTER: `/${API_VERSION}/auth/register`,
     LOGOUT: `/${API_VERSION}/auth/logout`,
-    SEND_OTP: `/${API_VERSION}/auth/send-otp`,
-    VERIFY_OTP: `/${API_VERSION}/auth/verify-otp`,
+    RESEND_VERIFICATION: `/${API_VERSION}/auth/resend-verification`,
+    VERIFY_EMAIL: `/${API_VERSION}/auth/verify-email`,
     FORGOT_PASSWORD: `/${API_VERSION}/auth/forgot-password`,
     GOOGLE_AUTHORIZATION_URL: `/${API_VERSION}/auth/google/authorization-url`,
     GOOGLE_LOGIN: `/${API_VERSION}/auth/google/login`,
@@ -25,9 +47,20 @@ export const API_ENDPOINTS = {
   PRODUCTS: {
     LIST: `/${API_VERSION}/products`,
     DETAILS: (id) => `/${API_VERSION}/products/${id}`,
-    FEATURED: `/${API_VERSION}/products/featured`,
+    AUTOCOMPLETE: `/${API_VERSION}/products/autocomplete`,
+    RECOMMENDATIONS: `/${API_VERSION}/products/recommendations`,
+    RELATED: (id) => `/${API_VERSION}/products/${id}/related`,
+    VIEW: (id) => `/${API_VERSION}/products/${id}/views`,
     CATEGORIES: `/${API_VERSION}/categories`,
-    SUPPLIER_PRODUCTS: (supplierId) => `/${API_VERSION}/suppliers/${supplierId}/products`,
+    REGIONS: `/${API_VERSION}/regions`,
+    MINE: `/${API_VERSION}/suppliers/me/products`,
+    MINE_DETAIL: (id) => `/${API_VERSION}/suppliers/me/products/${id}`,
+    VARIANTS: (id) => `/${API_VERSION}/suppliers/me/products/${id}/variants`,
+    VARIANT: (id, variantId) => `/${API_VERSION}/suppliers/me/products/${id}/variants/${variantId}`,
+    INVENTORY: (id, variantId) => `/${API_VERSION}/suppliers/me/products/${id}/variants/${variantId}/inventory-adjustments`,
+    GALLERY: (id) => `/${API_VERSION}/suppliers/me/products/${id}/gallery`,
+    PUBLICATION: (id) => `/${API_VERSION}/suppliers/me/products/${id}/publication`,
+    MEDIA: `/${API_VERSION}/suppliers/me/product-media`,
   },
 
   // B2B RFQ (Request for Quote) & Bidding
@@ -80,7 +113,19 @@ export const API_ENDPOINTS = {
     LIST: `/${API_VERSION}/suppliers`,
     DETAILS: (id) => `/${API_VERSION}/suppliers/${id}`,
     APPLY: `/${API_VERSION}/suppliers/me/apply`,
+    START_ONBOARDING: `/${API_VERSION}/suppliers/me/onboarding`,
     MY_PROFILE: `/${API_VERSION}/suppliers/me`,
+    DOCUMENTS: `/${API_VERSION}/suppliers/me/documents`,
+    DOCUMENT: (id) => `/${API_VERSION}/suppliers/me/documents/${id}`,
+    DOCUMENT_CONTENT: (id) => `/${API_VERSION}/suppliers/documents/${id}/content`,
+    APPLICATIONS: `/${API_VERSION}/suppliers/applications`,
+    VERIFICATION: (id) => `/${API_VERSION}/suppliers/${id}/verification`,
+    HISTORY: (id) => `/${API_VERSION}/suppliers/${id}/history`,
+    MY_HISTORY: `/${API_VERSION}/suppliers/me/history`,
+    SUBMISSION: (profileId, submissionId) => profileId ?
+      `/${API_VERSION}/suppliers/${profileId}/submissions/${submissionId}` :
+      `/${API_VERSION}/suppliers/me/submissions/${submissionId}`,
+    REVOKE: (id) => `/${API_VERSION}/suppliers/${id}/revoke`,
     PENDING: `/${API_VERSION}/suppliers/pending`,
     REVIEW: (profileId) => `/${API_VERSION}/suppliers/${profileId}/review`,
     PROMOTIONS: `/${API_VERSION}/supplier/promotions`,
@@ -88,6 +133,11 @@ export const API_ENDPOINTS = {
   },
 
   // Admin Portal & Oversight
+  NOTIFICATIONS: {
+    LIST: `/${API_VERSION}/notifications`,
+    READ: (id) => `/${API_VERSION}/notifications/${id}/read`,
+    READ_ALL: `/${API_VERSION}/notifications/read-all`,
+  },
   ADMIN: {
     DASHBOARD_STATS: `/${API_VERSION}/admin/dashboard`,
     SYSTEM_CONFIG: `/${API_VERSION}/admin/system-config`,

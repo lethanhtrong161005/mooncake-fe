@@ -19,12 +19,6 @@ export const adminService = {
   async listAuditLogs(params = {}) {
     return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.AUDIT_LOGS, { params }));
   },
-  async listShops() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.SHOPS));
-  },
-  async setShopStatus(shopId, status) {
-    return unwrap(await apiClient.patch(API_ENDPOINTS.ADMIN.SHOP_STATUS(shopId), { status }));
-  },
   async listDepositRules() {
     return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.CONTRACT_DEPOSIT_RULES));
   },
