@@ -1,373 +1,199 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Card,
-  Table,
-  Button,
-  Tag,
-  Space,
-  Input,
-  Modal,
-  Form,
-  Select,
-  InputNumber,
-  Switch,
-  Tabs,
-  message,
-  Typography,
-  Alert,
-  Divider,
+  Alert, Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch,
+  Table, Tag, Upload, message,
 } from 'antd';
 import {
-  AppstoreOutlined,
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-  PercentageOutlined,
-  TagOutlined,
+  DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import productService from '../../services/productService';
 
-const { Text } = Typography;
-const { TextArea } = Input;
+const key = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+const money = (value) => Number(value || 0).toLocaleString('vi-VN');
+
+function statusTag(status) {
+  const config = status === 'Active' ? ['success', 'Đang bán'] : status === 'OutOfStock'
+    ? ['warning', 'Hết hàng'] : ['default', 'Bản nháp'];
+  return <Tag color={config[0]}>{config[1]}</Tag>;
+}
 
 export default function ProductManage({ onNavigate }) {
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [productForm] = Form.useForm();
+  const [form] = Form.useForm();
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [uploads, setUploads] = useState([]);
 
-  // Products with Variants Mock Data
-  const [products, setProducts] = useState([
-    {
-      key: '1',
-      id: 'PRD-001',
-      name: 'Bánh Nướng Thập Cẩm Bát Bửu Thượng Hạng',
-      category: 'Bánh Nướng Truyền Thống',
-      basePrice: 85000,
-      minOrderQty: 50,
-      supportsCustomPackaging: true,
-      status: 'active',
-      variantsCount: 3,
-      variants: [
-        { sku: 'SKU-TC-150', flavor: 'Thập Cẩm Bát Bửu', crust: 'Vỏ Nướng', weight: 150, priceAdj: 0, stock: 1200 },
-        { sku: 'SKU-TC-200', flavor: 'Thập Cẩm Bát Bửu 2 Trứng', crust: 'Vỏ Nướng', weight: 200, priceAdj: 25000, stock: 800 },
-        { sku: 'SKU-TC-250', flavor: 'Thập Cẩm Vi Cá', crust: 'Vỏ Nướng', weight: 250, priceAdj: 45000, stock: 500 },
-      ],
-      tieredPricing: [
-        { minQty: 50, maxQty: 99, discount: '5%' },
-        { minQty: 100, maxQty: 499, discount: '10%' },
-        { minQty: 500, maxQty: 9999, discount: '18%' },
-      ],
-    },
-    {
-      key: '2',
-      id: 'PRD-002',
-      name: 'Bánh Dẻo Hạt Sen Hạt Dưa Hương Hoa Bưởi',
-      category: 'Bánh Dẻo Cổ Truyền',
-      basePrice: 75000,
-      minOrderQty: 50,
-      supportsCustomPackaging: true,
-      status: 'active',
-      variantsCount: 2,
-      variants: [
-        { sku: 'SKU-DS-150', flavor: 'Hạt Sen Hạt Dưa', crust: 'Vỏ Dẻo Trắng', weight: 150, priceAdj: 0, stock: 900 },
-        { sku: 'SKU-DS-200', flavor: 'Hạt Sen Trứng Muối', crust: 'Vỏ Dẻo Cốm', weight: 200, priceAdj: 20000, stock: 650 },
-      ],
-      tieredPricing: [
-        { minQty: 50, maxQty: 99, discount: '5%' },
-        { minQty: 100, maxQty: 499, discount: '12%' },
-        { minQty: 500, maxQty: 9999, discount: '20%' },
-      ],
-    },
-    {
-      key: '3',
-      id: 'PRD-003',
-      name: 'Hộp Quà Sơn Mài Doanh Nghiệp VIP (4 Bánh + Trà Ô Long)',
-      category: 'Hộp Quà Doanh Nghiệp',
-      basePrice: 650000,
-      minOrderQty: 20,
-      supportsCustomPackaging: true,
-      status: 'active',
-      variantsCount: 2,
-      variants: [
-        { sku: 'SKU-BOX-VIP4', flavor: 'Set 4 Bánh VIP + Trà', crust: 'Hộp Sơn Mài Đỏ', weight: 800, priceAdj: 0, stock: 300 },
-        { sku: 'SKU-BOX-VIP6', flavor: 'Set 6 Bánh VIP + Rượu Vang', crust: 'Hộp Sơn Mài Vàng Kim', weight: 1200, priceAdj: 350000, stock: 150 },
-      ],
-      tieredPricing: [
-        { minQty: 20, maxQty: 49, discount: '8%' },
-        { minQty: 50, maxQty: 199, discount: '15%' },
-        { minQty: 200, maxQty: 9999, discount: '25%' },
-      ],
-    },
-  ]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [catalog, categoryRows] = await Promise.all([
+        productService.mine({ page: 1, pageSize: 100, sort: 'updatedAtDesc' }),
+        productService.categories(),
+      ]);
+      setItems(catalog.items || []);
+      setCategories(categoryRows || []);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleOpenAdd = () => {
-    setEditingProduct(null);
-    productForm.resetFields();
-    setProductModalOpen(true);
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setUploads([]);
+    form.setFieldsValue({
+      unit: 'box', minOrderQty: 1, supportsCustomPackaging: false,
+      variants: [{ name: '', sku: '', priceAdjustment: 0, initialStockQty: 0, isGiftSet: false }],
+    });
+    setOpen(true);
   };
 
-  const handleSaveProduct = (values) => {
-    const newProduct = {
-      key: `${Date.now()}`,
-      id: `PRD-${Math.floor(100 + Math.random() * 900)}`,
-      name: values.name,
-      category: values.category,
-      basePrice: values.basePrice,
-      minOrderQty: values.minOrderQty,
-      supportsCustomPackaging: values.supportsCustomPackaging,
-      status: 'active',
-      variantsCount: 1,
-      variants: [
-        {
-          sku: `SKU-${Date.now().toString().slice(-4)}`,
-          flavor: values.variantFlavor || 'Nguyên bản',
-          crust: values.variantCrust || 'Vỏ nướng',
-          weight: values.variantWeight || 150,
-          priceAdj: 0,
-          stock: values.variantStock || 500,
-        },
-      ],
-      tieredPricing: [
-        { minQty: values.minOrderQty, maxQty: values.minOrderQty * 2, discount: '5%' },
-        { minQty: values.minOrderQty * 2 + 1, maxQty: 9999, discount: '12%' },
-      ],
-    };
+  const openEdit = async (row) => {
+    setSaving(true);
+    try {
+      const product = await productService.mineDetail(row.productId);
+      setEditing(product);
+      setUploads((product.images || []).map((image) => ({
+        uid: image.mediaAssetId, name: `Ảnh ${image.sortOrder + 1}`, status: 'done', url: image.imageUrl,
+        mediaAssetId: image.mediaAssetId, isPrimary: image.isPrimary,
+      })));
+      form.setFieldsValue({ ...product, variants: product.variants || [] });
+      setOpen(true);
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    setProducts((prev) => [newProduct, ...prev]);
-    message.success(`Đã thêm sản phẩm "${values.name}" kèm biến thể thành công!`);
-    setProductModalOpen(false);
+  const upload = async ({ file, onSuccess, onError }) => {
+    try {
+      const media = await productService.uploadMedia(file, 'ProductGallery', key());
+      setUploads((current) => [...current, {
+        uid: media.mediaAssetId || media.id, name: file.name, status: 'done', url: media.publicUrl,
+        mediaAssetId: media.mediaAssetId || media.id,
+      }]);
+      onSuccess?.(media);
+    } catch (error) {
+      onError?.(error);
+      message.error(error.message);
+    }
+  };
+
+  const save = async (values) => {
+    const mediaIds = uploads.map((file) => file.mediaAssetId).filter(Boolean);
+    if (!editing && mediaIds.length === 0) {
+      message.error('Cần tải lên ít nhất một ảnh sản phẩm.');
+      return;
+    }
+    setSaving(true);
+    try {
+      if (!editing) {
+        await productService.create({
+          ...values,
+          maxOrderQty: values.maxOrderQty || null,
+          variants: values.variants.map((variant) => ({ ...variant, imageAssetId: null })),
+          images: mediaIds.map((mediaAssetId, index) => ({ mediaAssetId, sortOrder: index, isPrimary: index === 0 })),
+        }, key());
+      } else {
+        const core = {
+          name: values.name, description: values.description || null, ingredients: values.ingredients || null, categoryId: values.categoryId,
+          basePrice: values.basePrice, minOrderQty: values.minOrderQty, maxOrderQty: values.maxOrderQty || null,
+          unit: values.unit, supportsCustomPackaging: values.supportsCustomPackaging,
+          expectedVersion: editing.version,
+        };
+        let updated = await productService.update(editing.productId, core, key());
+        if (mediaIds.length > 0) {
+          updated = await productService.gallery(editing.productId, {
+            expectedVersion: updated.version,
+            images: mediaIds.map((mediaAssetId, index) => ({ mediaAssetId, sortOrder: index, isPrimary: index === 0 })),
+          }, key());
+        }
+      }
+      message.success(editing ? 'Đã cập nhật sản phẩm.' : 'Đã tạo sản phẩm ở trạng thái bản nháp.');
+      setOpen(false);
+      await load();
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const publish = async (row, isPublished) => {
+    try {
+      await productService.publication(row.productId, { expectedVersion: row.version, isPublished }, key());
+      message.success(isPublished ? 'Sản phẩm đã được xuất bản.' : 'Sản phẩm đã được ẩn khỏi catalog.');
+      await load();
+    } catch (error) { message.error(error.message); }
+  };
+
+  const remove = async (row) => {
+    try {
+      await productService.remove(row.productId, row.version, key());
+      message.success('Đã xoá sản phẩm.');
+      await load();
+    } catch (error) { message.error(error.message); }
   };
 
   const columns = [
-    {
-      title: 'Mã SP',
-      dataIndex: 'id',
-      key: 'id',
-      width: 100,
-      render: (id) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{id}</span>,
-    },
-    {
-      title: 'Tên Sản Phẩm & Danh Mục',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <div>
-          <div style={{ fontWeight: 600, color: '#1f1f1f' }}>{text}</div>
-          <div style={{ fontSize: 12, color: '#888' }}>Danh mục: {record.category}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Giá Cơ Bản',
-      dataIndex: 'basePrice',
-      key: 'basePrice',
-      align: 'right',
-      render: (p) => <span style={{ fontWeight: 600, color: '#8c1524' }}>{p.toLocaleString('vi-VN')} ₫</span>,
-    },
-    {
-      title: 'Số Lượng Đặt Tối Thiểu (Min Qty)',
-      dataIndex: 'minOrderQty',
-      key: 'minOrderQty',
-      align: 'center',
-      render: (qty) => <Tag color="blue">≥ {qty} cái/hộp</Tag>,
-    },
-    {
-      title: 'Số Biến Thể',
-      dataIndex: 'variantsCount',
-      key: 'variantsCount',
-      align: 'center',
-      render: (cnt) => <Tag color="purple">{cnt} biến thể</Tag>,
-    },
-    {
-      title: 'In Logo Doanh Nghiệp',
-      dataIndex: 'supportsCustomPackaging',
-      key: 'supportsCustomPackaging',
-      align: 'center',
-      render: (supports) =>
-        supports ? <Tag color="green">✓ Có hỗ trợ</Tag> : <Tag color="default">Không</Tag>,
-    },
-    {
-      title: 'Trạng Thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) =>
-        status === 'active' ? <Tag color="success">Đang bán</Tag> : <Tag color="default">Tạm dừng</Tag>,
-    },
+    { title: 'Sản phẩm', dataIndex: 'name', render: (name, row) => <Space><img alt="" src={row.primaryImageUrl} style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, background: '#f5f5f5' }} /><div><strong>{name}</strong><br /><small>{row.variantCount} biến thể · tồn {row.totalStockQty}</small></div></Space> },
+    { title: 'Giá', render: (_, row) => `${money(row.minPrice)} – ${money(row.maxPrice)} đ` },
+    { title: 'Trạng thái', dataIndex: 'effectiveStatus', render: statusTag },
+    { title: 'Cập nhật', dataIndex: 'updatedAtUtc', render: (value) => new Date(value).toLocaleDateString('vi-VN') },
+    { title: '', width: 210, render: (_, row) => <Space>
+      <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>Sửa</Button>
+      <Button size="small" icon={<EyeOutlined />} onClick={() => publish(row, row.effectiveStatus === 'Inactive')}>
+        {row.effectiveStatus === 'Inactive' ? 'Đăng bán' : 'Ẩn'}
+      </Button>
+      <Popconfirm title="Xoá sản phẩm này?" onConfirm={() => remove(row)}><Button danger size="small" icon={<DeleteOutlined />} /></Popconfirm>
+    </Space> },
   ];
 
-  return (
-    <ColonyAdminLayout
-      role="Supplier"
-      activeKey="nha-cung-cap/quan-ly-san-pham"
-      onNavigate={onNavigate}
-      title="Quản Lý Sản Phẩm, Biến Thể & Chiết Khấu Bậc Thang"
-      subtitle="Thiết lập danh mục bánh, quản lý SKU biến thể độc lập và cấu hình bảng giá sỉ B2B"
-      extra={
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleOpenAdd}
-          style={{ background: '#8c1524', borderColor: '#8c1524' }}
-        >
-          Thêm Sản Phẩm Mới
-        </Button>
-      }
-    >
-      <Alert
-        message="Quy tắc bắt buộc Biến thể (Product Variants Rule)"
-        description="Mỗi sản phẩm B2B bắt buộc có ít nhất 1 biến thể (nhân, vỏ, trọng lượng, hộp quà) với SKU độc lập. Khi khách hàng B2B đặt hàng hoặc yêu cầu RFQ, họ sẽ chọn trực tiếp từng biến thể cụ thể."
-        type="info"
-        showIcon
-        style={{ marginBottom: 20 }}
-      />
-
-      <Card bordered={false} style={{ borderRadius: 10 }}>
-        <Table
-          columns={columns}
-          dataSource={products}
-          expandable={{
-            expandedRowRender: (record) => (
-              <div style={{ background: '#fafafa', padding: 16, borderRadius: 8 }}>
-                <Row gutter={24}>
-                  <Col span={14}>
-                    <Text strong style={{ display: 'block', marginBottom: 8, color: '#8c1524' }}>
-                      📋 Danh Sách Biến Thể Độc Lập (SKU Variants):
-                    </Text>
-                    <Table
-                      size="small"
-                      pagination={false}
-                      dataSource={record.variants.map((v, i) => ({ ...v, key: i }))}
-                      columns={[
-                        { title: 'SKU', dataIndex: 'sku', key: 'sku' },
-                        { title: 'Nhân Bánh', dataIndex: 'flavor', key: 'flavor' },
-                        { title: 'Vỏ Bánh', dataIndex: 'crust', key: 'crust' },
-                        { title: 'Trọng Lượng', dataIndex: 'weight', key: 'weight', render: (w) => `${w}g` },
-                        {
-                          title: 'Điều Chỉnh Giá',
-                          dataIndex: 'priceAdj',
-                          key: 'priceAdj',
-                          render: (adj) => (adj > 0 ? `+${adj.toLocaleString('vi-VN')} ₫` : '0 ₫'),
-                        },
-                        { title: 'Tồn Kho', dataIndex: 'stock', key: 'stock' },
-                      ]}
-                    />
-                  </Col>
-                  <Col span={10}>
-                    <Text strong style={{ display: 'block', marginBottom: 8, color: '#d48806' }}>
-                      🏷️ Bảng Giá Chiết Khấu Bậc Thang (Tiered Pricing):
-                    </Text>
-                    <Table
-                      size="small"
-                      pagination={false}
-                      dataSource={record.tieredPricing.map((t, i) => ({ ...t, key: i }))}
-                      columns={[
-                        {
-                          title: 'Khoảng Số Lượng',
-                          key: 'range',
-                          render: (_, t) => `${t.minQty} - ${t.maxQty >= 9999 ? 'Trở lên' : t.maxQty} hộp`,
-                        },
-                        {
-                          title: 'Chiết Khấu',
-                          dataIndex: 'discount',
-                          key: 'discount',
-                          render: (d) => <Tag color="gold" style={{ fontWeight: 700 }}>Giảm {d}</Tag>,
-                        },
-                      ]}
-                    />
-                  </Col>
-                </Row>
-              </div>
-            ),
-          }}
-        />
-      </Card>
-
-      {/* Modal Add Product & Variant */}
-      <Modal
-        title="Thêm Sản Phẩm B2B & Thiết Lập Biến Thể Ban Đầu"
-        open={productModalOpen}
-        onCancel={() => setProductModalOpen(false)}
-        onOk={() => productForm.submit()}
-        okText="Tạo Sản Phẩm & Biến Thể"
-        width={720}
-      >
-        <Form
-          form={productForm}
-          layout="vertical"
-          initialValues={{
-            category: 'Bánh Nướng Truyền Thống',
-            basePrice: 85000,
-            minOrderQty: 50,
-            variantWeight: 150,
-            variantStock: 1000,
-            supportsCustomPackaging: true,
-          }}
-          onFinish={handleSaveProduct}
-        >
-          <Form.Item name="name" label="Tên Sản Phẩm Bánh" rules={[{ required: true }]}>
-            <Input placeholder="VD: Bánh Nướng Thập Cẩm Gà Quay Xốt X.O" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="category" label="Danh Mục Bánh" rules={[{ required: true }]}>
-                <Select
-                  options={[
-                    { value: 'Bánh Nướng Truyền Thống', label: 'Bánh Nướng Truyền Thống' },
-                    { value: 'Bánh Dẻo Cổ Truyền', label: 'Bánh Dẻo Cổ Truyền' },
-                    { value: 'Bánh Tuyết Hiện Đại', label: 'Bánh Tuyết Hiện Đại' },
-                    { value: 'Hộp Quà Doanh Nghiệp', label: 'Hộp Quà Doanh Nghiệp' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item name="basePrice" label="Giá Cơ Bản (VNĐ)" rules={[{ required: true }]}>
-                <InputNumber min={10000} step={5000} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item name="minOrderQty" label="Số Lượng Min (B2B)" rules={[{ required: true }]}>
-                <InputNumber min={10} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider style={{ margin: '12px 0' }}>Biến Thể Mặc Định Đầu Tiên (Variant #1)</Divider>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item name="variantFlavor" label="Nhân Bánh" rules={[{ required: true }]}>
-                <Input placeholder="VD: Thập Cẩm Vi Cá" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="variantCrust" label="Loại Vỏ Bánh" rules={[{ required: true }]}>
-                <Input placeholder="VD: Vỏ Nướng Vàng" />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="variantWeight" label="Trọng Lượng (g)">
-                <InputNumber min={50} max={500} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={4}>
-              <Form.Item name="variantStock" label="Tồn Kho (cái)">
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="supportsCustomPackaging"
-            label="Hỗ Trợ In Logo Doanh Nghiệp Lên Hộp Quà (Custom Packaging)"
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </ColonyAdminLayout>
-  );
+  return <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/quan-ly-san-pham" onNavigate={onNavigate}
+    title="Sản phẩm và biến thể" subtitle="Quản lý catalog B2B, SKU, tồn kho và trạng thái xuất bản"
+    extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Thêm sản phẩm</Button>}>
+    <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Mỗi sản phẩm cần tối thiểu một biến thể và một ảnh trước khi xuất bản." />
+    <Card><Table rowKey="productId" loading={loading} columns={columns} dataSource={items} pagination={false} locale={{ emptyText: 'Chưa có sản phẩm. Hãy tạo sản phẩm đầu tiên.' }} /></Card>
+    <Modal title={editing ? 'Cập nhật sản phẩm' : 'Tạo sản phẩm'} open={open} width={900} destroyOnClose
+      onCancel={() => setOpen(false)} onOk={() => form.submit()} confirmLoading={saving} okText={editing ? 'Lưu thay đổi' : 'Tạo bản nháp'}>
+      <Form form={form} layout="vertical" onFinish={save} initialValues={{ unit: 'box' }}>
+        <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true, min: 2, max: 255 }]}><Input /></Form.Item>
+        <Form.Item name="description" label="Mô tả"><Input.TextArea rows={3} maxLength={10000} /></Form.Item>
+        <Form.Item name="ingredients" label="Thành phần nguyên liệu" extra="Nhập theo từng dòng hoặc phân tách bằng dấu phẩy để khách hàng dễ kiểm tra."><Input.TextArea rows={3} maxLength={10000} /></Form.Item>
+        <Space align="start" style={{ display: 'flex' }}>
+          <Form.Item name="categoryId" label="Danh mục" rules={[{ required: true }]}><Select style={{ width: 260 }} options={categories.map((x) => ({ value: x.id, label: x.name }))} /></Form.Item>
+          <Form.Item name="basePrice" label="Giá cơ bản" rules={[{ required: true }]}><InputNumber min={0} precision={0} style={{ width: 160 }} /></Form.Item>
+          <Form.Item name="unit" label="Đơn vị" rules={[{ required: true }]}><Select style={{ width: 120 }} options={['piece', 'box', 'set', 'tray'].map((x) => ({ value: x, label: x }))} /></Form.Item>
+          <Form.Item name="minOrderQty" label="Đặt tối thiểu" rules={[{ required: true }]}><InputNumber min={1} style={{ width: 130 }} /></Form.Item>
+          <Form.Item name="maxOrderQty" label="Đặt tối đa"><InputNumber min={1} style={{ width: 130 }} /></Form.Item>
+        </Space>
+        <Form.Item name="supportsCustomPackaging" label="Hỗ trợ bao bì tuỳ chỉnh" valuePropName="checked"><Switch /></Form.Item>
+        <Form.Item label="Ảnh sản phẩm" required={!editing} extra="Tối đa 10 ảnh; ảnh đầu tiên là ảnh chính.">
+          <Upload listType="picture-card" customRequest={upload} fileList={uploads} maxCount={10}
+            onRemove={(file) => setUploads((current) => current.filter((item) => item.uid !== file.uid))}>
+            {uploads.length < 10 && <div><UploadOutlined /><div>Tải ảnh</div></div>}
+          </Upload>
+        </Form.Item>
+        {!editing && <><strong>Biến thể ban đầu</strong><Form.List name="variants">
+          {(fields, { add, remove }) => <>{fields.map((field, index) => <Card size="small" key={field.key} style={{ marginTop: 8 }} extra={fields.length > 1 && <Button type="link" danger onClick={() => remove(field.name)}>Bỏ</Button>}>
+            <Space wrap><Form.Item {...field} name={[field.name, 'name']} label="Tên" rules={[{ required: true }]}><Input style={{ width: 190 }} /></Form.Item>
+              <Form.Item {...field} name={[field.name, 'sku']} label="SKU" rules={[{ required: true, pattern: /^[A-Za-z0-9._-]+$/ }]}><Input style={{ width: 150 }} /></Form.Item>
+              <Form.Item {...field} name={[field.name, 'priceAdjustment']} label="Chênh lệch giá" rules={[{ required: true }]}><InputNumber style={{ width: 140 }} /></Form.Item>
+              <Form.Item {...field} name={[field.name, 'initialStockQty']} label="Tồn kho" rules={[{ required: true }]}><InputNumber min={0} style={{ width: 110 }} /></Form.Item>
+              <Form.Item {...field} name={[field.name, 'weightGram']} label="Khối lượng (g)"><InputNumber min={1} style={{ width: 120 }} /></Form.Item>
+              <Form.Item {...field} name={[field.name, 'isGiftSet']} label="Hộp quà" valuePropName="checked"><Switch /></Form.Item>
+            </Space></Card>)}<Button style={{ marginTop: 10 }} onClick={() => add({ priceAdjustment: 0, initialStockQty: 0, isGiftSet: false })}>Thêm biến thể</Button></>}
+        </Form.List></>}
+      </Form>
+    </Modal>
+  </ColonyAdminLayout>;
 }

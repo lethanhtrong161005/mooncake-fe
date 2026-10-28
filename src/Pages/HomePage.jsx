@@ -12,6 +12,7 @@ import {
   ThunderboltOutlined
 } from '@ant-design/icons';
 import { Button, Space, Tag } from 'antd';
+import { useEffect, useState } from 'react';
 import CustomerFooter from '../components/layout/CustomerFooter';
 import CustomerHeader from '../components/layout/CustomerHeader';
 import AnnouncementPill from '../components/lucian/AnnouncementPill';
@@ -20,9 +21,24 @@ import FaqAccordion from '../components/lucian/FaqAccordion';
 import RecentOrderToast from '../components/lucian/RecentOrderToast';
 import TearOffCoupon from '../components/lucian/TearOffCoupon';
 import TrustSecurityBadges from '../components/lucian/TrustSecurityBadges';
+import productService from '../services/productService';
 
 export default function HomePage({ onNavigate }) {
-  const categories = [
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    productService.categories(controller.signal)
+      .then((items) => setCategories(Array.isArray(items) ? items : []))
+      .catch(() => setCategories([]))
+      .finally(() => setCategoriesLoading(false));
+    return () => controller.abort();
+  }, []);
+
+  /* Categories are managed in the catalog database and loaded through the public API. */
+  /* The legacy inline category array below is intentionally removed from rendering. */
+  const legacyCategories = [
     {
       key: 'nuong',
       image: '/categories/banh-nuong.jpg',
@@ -317,15 +333,18 @@ export default function HomePage({ onNavigate }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {categories.map((cat) => (
+                {categoriesLoading && [1, 2, 3, 4].map((item) => (
+                  <div key={item} className="animate-pulse rounded-2xl bg-stone-100 aspect-[4/3]" />
+                ))}
+                {!categoriesLoading && categories.map((cat) => (
                   <div
-                    key={cat.key}
+                    key={cat.id}
                     onClick={() => onNavigate?.('tim-kiem')}
                     className="group bg-surface-container-low rounded-2xl overflow-hidden border border-stone-200 hover:border-primary/40 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
                       <img
-                        src={cat.image}
+                        src={cat.iconUrl || '/categories/banh-nuong.jpg'}
                         alt={cat.title}
                         className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                       />
@@ -333,10 +352,10 @@ export default function HomePage({ onNavigate }) {
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <div>
                         <h3 className="text-base font-bold text-stone-900 group-hover:text-[#8c1524] transition-colors">
-                          {cat.title}
+                        {cat.name}
                         </h3>
                         <p className="text-xs text-stone-600 mt-1 line-clamp-2">
-                          {cat.desc}
+                          {cat.description || 'Khám phá các sản phẩm phù hợp cho doanh nghiệp.'}
                         </p>
                       </div>
                       <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#8c1524]">
@@ -346,6 +365,9 @@ export default function HomePage({ onNavigate }) {
                     </div>
                   </div>
                 ))}
+                {!categoriesLoading && categories.length === 0 && (
+                  <div className="col-span-full text-center text-stone-500 py-10">Danh mục đang được cập nhật.</div>
+                )}
               </div>
             </div>
           </section>
@@ -816,7 +838,7 @@ export default function HomePage({ onNavigate }) {
                   <Button
                     size="large"
                     icon={<ShopOutlined />}
-                    onClick={() => onNavigate?.('thiet-lap-gian-hang')}
+                    onClick={() => onNavigate?.('dang-ky-nha-cung-cap')}
                     style={{
                       borderRadius: 12,
                       fontWeight: 700,
@@ -827,7 +849,7 @@ export default function HomePage({ onNavigate }) {
                       padding: '0 24px',
                     }}
                   >
-                    Đăng ký mở gian hàng (Xét duyệt 24h)
+                    Đăng ký mở gian hàng
                   </Button>
                 </div>
               </div>

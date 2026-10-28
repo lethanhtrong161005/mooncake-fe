@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
 import storage from '../utils/storage';
 import AuthContext from './authContextStore';
@@ -7,6 +7,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => storage.get('auth_user', null));
   const [token, setToken] = useState(() => storage.get('auth_token', null));
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(() => !!storage.get('auth_token'));
+  const refreshCurrentUser = useCallback(async () => {
+    const expectedUserId = storage.get('auth_user')?.id;
+    if (!expectedUserId || !storage.get('auth_token')) return null;
+    const current = await authService.getMe();
+    if (storage.get('auth_user')?.id === expectedUserId && storage.get('auth_token')) {
+      storage.set('auth_user', current);
+      setUser(current);
+    }
+    return current;
+  }, []);
 
   const isLoggedIn = !!token && !!user && !!storage.get('auth_refresh_token');
 
@@ -27,16 +38,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!storage.get('auth_token') || !storage.get('auth_refresh_token')) return;
-    authService.getMe().then((currentUser) => {
-      if (!storage.get('auth_token') || !storage.get('auth_refresh_token')) return;
-      storage.set('auth_user', currentUser);
-      setUser(currentUser);
-      setToken(storage.get('auth_token'));
-    }).catch(() => {
+    if (!storage.get('auth_token') || !storage.get('auth_refresh_token')) {
+      queueMicrotask(() => setIsRestoring(false));
+      return;
+    }
+    Promise.resolve().then(refreshCurrentUser).catch(() => {
       // The client clears an expired session when refresh fails.
-    });
-  }, []);
+    }).finally(() => setIsRestoring(false));
+  }, [refreshCurrentUser]);
 
   const login = async (phone, password) => {
     setIsLoading(true);
@@ -76,6 +85,8 @@ export function AuthProvider({ children }) {
     token,
     isLoggedIn,
     isLoading,
+    isRestoring,
+    refreshCurrentUser,
     login,
     loginWithGoogle,
     logout,

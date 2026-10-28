@@ -1,4 +1,4 @@
-import { Row, Col, Space, Divider, Typography } from 'antd';
+import { Row, Col, Space, Divider } from 'antd';
 import {
   CarOutlined,
   SafetyCertificateOutlined,
@@ -9,8 +9,6 @@ import {
   EnvironmentOutlined,
 } from '@ant-design/icons';
 import AppLogo from './AppLogo';
-
-const { Text, Title, Link } = Typography;
 
 export default function CustomerFooter({ onNavigate }) {
   return (
@@ -253,7 +251,7 @@ export default function CustomerFooter({ onNavigate }) {
               <li>
                 <span
                   style={{ color: '#666', cursor: 'pointer' }}
-                  onClick={() => onNavigate?.('nha-cung-cap/thiet-lap-gian-hang')}
+                  onClick={() => onNavigate?.('dang-ky-nha-cung-cap')}
                 >
                   Dành cho xưởng: Mở gian hàng
                 </span>

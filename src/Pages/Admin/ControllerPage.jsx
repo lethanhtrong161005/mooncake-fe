@@ -1,30 +1,22 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import {
   Card,
   Tabs,
   Table,
   Tag,
   Button,
-  Space,
   Input,
-  Select,
-  Switch,
-  Modal,
+  Spin,
   message,
-  Typography,
 } from 'antd';
 import {
-  UserOutlined,
-  ShopOutlined,
   LockOutlined,
   UnlockOutlined,
   SearchOutlined,
-  StopOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+const ShopManagementPanel = lazy(() => import('./ShopManagement').then((module) => ({ default: module.ShopManagementPanel })));
 
-const { Text } = Typography;
 
 export default function ControllerPage({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('users');
@@ -73,53 +65,11 @@ export default function ControllerPage({ onNavigate }) {
     },
   ]);
 
-  // Shops Mock Data
-  const [shops, setShops] = useState([
-    {
-      key: '1',
-      id: 'SHP-001',
-      name: 'Gian Hàng Bánh Tràng An Nghệ Nhân',
-      slug: 'trang-an-bakery',
-      supplier: 'Trần Đức Thắng',
-      template: 'Hoàng Kim Cung Đình',
-      status: 'active',
-      productsCount: 16,
-    },
-    {
-      key: '2',
-      id: 'SHP-002',
-      name: 'Hữu Nghị Luxury Mooncake',
-      slug: 'huu-nghi-luxury',
-      supplier: 'Lê Hoàng Minh',
-      template: 'Đương Đại Minimalist',
-      status: 'active',
-      productsCount: 22,
-    },
-    {
-      key: '3',
-      id: 'SHP-003',
-      name: 'Xưởng Bánh Đậu Xanh Hải Dương',
-      slug: 'dau-xanh-hai-duong',
-      supplier: 'Vũ Đức Nam',
-      template: 'Tràng An Cổ Điển',
-      status: 'suspended',
-      productsCount: 8,
-    },
-  ]);
-
   const toggleUserStatus = (record) => {
     setUsers((prev) =>
       prev.map((u) => (u.key === record.key ? { ...u, isActive: !u.isActive } : u))
     );
     message.info(`Đã ${record.isActive ? 'khóa' : 'mở khóa'} tài khoản của ${record.fullName}.`);
-  };
-
-  const toggleShopStatus = (record) => {
-    const newStatus = record.status === 'active' ? 'suspended' : 'active';
-    setShops((prev) =>
-      prev.map((s) => (s.key === record.key ? { ...s, status: newStatus } : s))
-    );
-    message.warning(`Đã chuyển trạng thái gian hàng "${record.name}" sang ${newStatus}.`);
   };
 
   const userColumns = [
@@ -173,49 +123,6 @@ export default function ControllerPage({ onNavigate }) {
     },
   ];
 
-  const shopColumns = [
-    { title: 'Mã Shop', dataIndex: 'id', key: 'id', width: 100 },
-    {
-      title: 'Tên Gian Hàng',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name, r) => (
-        <div>
-          <strong>{name}</strong>
-          <div style={{ fontSize: 11, color: '#888' }}>URL: /{r.slug}</div>
-        </div>
-      ),
-    },
-    { title: 'Chủ Sở Hữu', dataIndex: 'supplier', key: 'supplier' },
-    { title: 'Mẫu Giao Diện', dataIndex: 'template', key: 'template', render: (t) => <Tag color="purple">{t}</Tag> },
-    { title: 'Sản Phẩm', dataIndex: 'productsCount', key: 'productsCount', align: 'right' },
-    {
-      title: 'Trạng Thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (s) => (
-        <Tag color={s === 'active' ? 'success' : 'error'}>
-          {s === 'active' ? 'Đang mở' : 'Bị đình chỉ'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Hành Động',
-      key: 'action',
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          danger={record.status === 'active'}
-          icon={record.status === 'active' ? <StopOutlined /> : <CheckCircleOutlined />}
-          onClick={() => toggleShopStatus(record)}
-        >
-          {record.status === 'active' ? 'Đình chỉ' : 'Kích hoạt'}
-        </Button>
-      ),
-    },
-  ];
-
   return (
     <ColonyAdminLayout
       role="Admin"
@@ -249,19 +156,7 @@ export default function ControllerPage({ onNavigate }) {
             {
               key: 'shops',
               label: '🏪 Quản Lý Gian Hàng (Shops)',
-              children: (
-                <div>
-                  <div style={{ marginBottom: 16 }}>
-                    <Input
-                      placeholder="Tìm kiếm theo Tên gian hàng, URL slug..."
-                      prefix={<SearchOutlined style={{ color: '#aaa' }} />}
-                      style={{ width: 320 }}
-                      allowClear
-                    />
-                  </div>
-                  <Table columns={shopColumns} dataSource={shops} pagination={false} />
-                </div>
-              ),
+              children: <Suspense fallback={<Spin />}><ShopManagementPanel /></Suspense>,
             },
           ]}
         />
