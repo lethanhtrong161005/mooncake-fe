@@ -9,7 +9,6 @@ import {
   Upload,
   Typography,
   Descriptions,
-  message,
   Space,
   Tag,
   Divider,
@@ -21,12 +20,12 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function PackagingAndLogoPrinting({ onNavigate }) {
   const [boxType, setBoxType] = useState('lacquer-4');
-  const [foilColor, setFoilColor] = useState('gold');
   const [technique, setTechnique] = useState('ep-kim');
   const [quantity, setQuantity] = useState(200);
 
@@ -58,16 +57,12 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
   const unitCost = currentBox.price + (technique === 'khac-laser' ? 25000 : 15000);
   const totalCost = unitCost * quantity;
 
-  const handleSubmit = () => {
-    message.success('Đã gửi yêu cầu in ấn bao bì logo thành công! Xưởng in sẽ gửi bản mockup 3D trong 24h.');
-    onNavigate?.('dat-hang-thiet-ke');
-  };
-
   return (
     <div style={{ background: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <CustomerHeader activeKey="dat-hang-thiet-ke" onNavigate={onNavigate} />
 
       <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
+        <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Tùy biến bao bì là trang minh họa cho tính năng chưa kết nối; không thể tải logo hoặc gửi yêu cầu." />
         <div
           style={{
             background: '#ffffff',
@@ -102,6 +97,7 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
           <Col xs={24} lg={15}>
             <Card title="1. Chọn Kiểu Dáng Hộp Quà Doanh Nghiệp" bordered={false} style={{ borderRadius: 10, marginBottom: 20 }}>
               <Radio.Group
+                disabled
                 value={boxType}
                 onChange={(e) => setBoxType(e.target.value)}
                 style={{ width: '100%' }}
@@ -143,7 +139,7 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
                   Kỹ Thuật In Ấn Logo:
                 </label>
-                <Radio.Group value={technique} onChange={(e) => setTechnique(e.target.value)}>
+                <Radio.Group disabled value={technique} onChange={(e) => setTechnique(e.target.value)}>
                   <Radio.Button value="ep-kim">Ép Kim Vàng 24K / Bạc</Radio.Button>
                   <Radio.Button value="khac-laser">Khắc Laser Chìm Vào Gỗ (+25.000₫)</Radio.Button>
                   <Radio.Button value="dap-noi">Dập Nổi Hoa Văn 3D</Radio.Button>
@@ -154,8 +150,8 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                 <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
                   Tải Lên File Vector Logo (AI, EPS, SVG, PNG):
                 </label>
-                <Upload maxCount={1}>
-                  <Button icon={<UploadOutlined />}>Tải Logo Doanh Nghiệp (≤ 5MB)</Button>
+                <Upload maxCount={1} disabled>
+                  <Button disabled icon={<UploadOutlined />}>Tải Logo Doanh Nghiệp (≤ 5MB)</Button>
                 </Upload>
               </div>
 
@@ -164,6 +160,7 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
                   Số Lượng Vỏ Hộp Cần Sản Xuất:
                 </label>
                 <InputNumber
+                  disabled
                   min={currentBox.minQty}
                   max={20000}
                   step={50}
@@ -195,13 +192,13 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
               <Divider style={{ margin: '16px 0' }} />
 
               <Button
+                disabled
                 type="primary"
                 block
                 size="large"
                 style={{ background: '#8c1524', borderColor: '#8c1524', fontWeight: 700 }}
-                onClick={handleSubmit}
               >
-                Gửi Yêu Cầu Chế Tác Mockup
+                Gửi Yêu Cầu Chế Tác Mockup · Minh họa
               </Button>
             </Card>
           </Col>

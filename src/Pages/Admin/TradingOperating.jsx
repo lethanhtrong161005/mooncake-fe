@@ -26,6 +26,7 @@ import {
   FileProtectOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -184,17 +185,7 @@ export default function TradingOperating({ onNavigate }) {
     {
       title: 'Hành Động',
       key: 'action',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          danger={record.status === 'pending'}
-          icon={<FileProtectOutlined />}
-          onClick={() => handleOpenDisputeModal(record)}
-        >
-          {record.status === 'pending' ? 'Phân Xử' : 'Xem Kết Quả'}
-        </Button>
-      ),
+      render: () => <Tag color="blue">Minh họa · Chỉ xem</Tag>,
     },
   ];
 
@@ -255,6 +246,7 @@ export default function TradingOperating({ onNavigate }) {
       subtitle="Giám sát dòng chảy đơn hàng B2B, xử lý vi phạm hợp đồng và bảo vệ nguồn quỹ Escrow sàn"
     >
       <Card bordered={false} style={{ borderRadius: 10 }}>
+        <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Tranh chấp và hợp đồng trong trang vận hành là dữ liệu minh họa; không thể phân xử hoặc thay đổi trạng thái." />
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

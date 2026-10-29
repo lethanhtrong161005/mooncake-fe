@@ -27,6 +27,7 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text } = Typography;
 
@@ -145,6 +146,7 @@ export default function DashBoard({ onNavigate }) {
       key: 'action',
       render: () => (
         <Button
+          disabled
           type="link"
           size="small"
           icon={<EyeOutlined />}
@@ -248,8 +250,9 @@ export default function DashBoard({ onNavigate }) {
       subtitle="Giám sát bảo chứng giao dịch Escrow, năng lực chuỗi cung ứng xưởng bánh và dòng chảy hợp đồng B2B Mùa Vụ Trung Thu 2025"
       extra={
         <Space>
-          <Button icon={<FilePdfOutlined />}>Xuất Báo Cáo PDF</Button>
+          <Button disabled icon={<FilePdfOutlined />}>Xuất Báo Cáo PDF</Button>
           <Button
+            disabled
             type="primary"
             icon={<ThunderboltOutlined />}
             style={{ background: '#8c1524', borderColor: '#8c1524' }}
@@ -260,6 +263,7 @@ export default function DashBoard({ onNavigate }) {
         </Space>
       }
     >
+      <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Số liệu dashboard, nhà cung cấp và ký quỹ là dữ liệu minh họa; không phản ánh database hiện tại và không mở thao tác trên bản ghi mẫu." />
       {/* Alert Banner for Operations */}
       <Alert
         message="Hệ thống vận hành an toàn 99.98% • Quỹ Escrow Pool bảo chứng 42.8 Tỷ VNĐ"
@@ -335,9 +339,7 @@ export default function DashBoard({ onNavigate }) {
             </div>
             <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: '#cf1322', fontWeight: 600 }}>Cần xử lý trong 24h</span>
-              <Button type="link" size="small" style={{ padding: 0 }} onClick={() => onNavigate?.('admin/phe-duyet')}>
-                Thẩm định ngay →
-              </Button>
+              <Tag color="blue">Minh họa</Tag>
             </div>
           </Card>
         </Col>
@@ -405,9 +407,7 @@ export default function DashBoard({ onNavigate }) {
             </div>
             <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: '#cf1322' }}>Đóng băng 1.25 Tỷ Escrow</span>
-              <Button type="link" size="small" style={{ padding: 0 }} onClick={() => onNavigate?.('admin/van-hanh-giao-dich')}>
-                Phân xử →
-              </Button>
+              <Tag color="blue">Minh họa</Tag>
             </div>
           </Card>
         </Col>
@@ -426,7 +426,7 @@ export default function DashBoard({ onNavigate }) {
                 <div>
                   <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                     <Text strong>Top 4 nhà cung cấp dẫn đầu doanh số & tỷ lệ giao đúng hạn</Text>
-                    <Button type="primary" size="small" onClick={() => onNavigate?.('admin/dieu-khien')}>
+                    <Button type="primary" size="small" disabled onClick={() => onNavigate?.('admin/dieu-khien')}>
                       Xem toàn bộ 158 NCC
                     </Button>
                   </div>

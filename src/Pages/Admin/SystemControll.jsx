@@ -24,6 +24,7 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text } = Typography;
 
@@ -57,7 +58,7 @@ export default function SystemControll({ onNavigate }) {
       title: 'Hiển Thị',
       dataIndex: 'status',
       key: 'status',
-      render: (st) => <Switch defaultChecked={st} size="small" />,
+      render: (st) => <Switch defaultChecked={st} size="small" disabled />,
     },
   ];
 
@@ -75,7 +76,7 @@ export default function SystemControll({ onNavigate }) {
       title: 'Kích Hoạt',
       dataIndex: 'status',
       key: 'status',
-      render: (st) => <Switch defaultChecked={st} size="small" />,
+      render: (st) => <Switch defaultChecked={st} size="small" disabled />,
     },
   ];
 
@@ -91,6 +92,7 @@ export default function SystemControll({ onNavigate }) {
       title="Kiểm Soát Hệ Thống, Catalog & Quy Tắc Nền Tảng"
       subtitle="Thiết lập tham số ký quỹ M1, quy tắc tính điểm uy tín và quản lý danh mục phân cấp"
     >
+      <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Quy tắc, danh mục và mẫu giao diện trên trang này là dữ liệu minh họa; không thể lưu hoặc thay đổi." />
       <Card bordered={false} style={{ borderRadius: 10 }}>
         <Tabs
           defaultActiveKey="deposit-rules"
@@ -111,6 +113,7 @@ export default function SystemControll({ onNavigate }) {
                   <Form
                     form={form}
                     layout="vertical"
+                    disabled
                     initialValues={{
                       defaultDepositPercent: 30,
                       largeOrderDepositPercent: 40,
@@ -178,6 +181,7 @@ export default function SystemControll({ onNavigate }) {
                     </Form.Item>
 
                     <Button
+                      disabled
                       type="primary"
                       icon={<SaveOutlined />}
                       htmlType="submit"
@@ -230,7 +234,7 @@ export default function SystemControll({ onNavigate }) {
               children: (
                 <div>
                   <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button type="primary" icon={<PlusOutlined />} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
+                    <Button disabled type="primary" icon={<PlusOutlined />} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
                       Thêm Danh Mục Mới
                     </Button>
                   </div>
@@ -244,7 +248,7 @@ export default function SystemControll({ onNavigate }) {
               children: (
                 <div>
                   <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button type="primary" icon={<PlusOutlined />} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
+                    <Button disabled type="primary" icon={<PlusOutlined />} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
                       Thêm Mẫu Template Mới
                     </Button>
                   </div>

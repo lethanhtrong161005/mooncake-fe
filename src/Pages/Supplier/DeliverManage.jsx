@@ -23,6 +23,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text } = Typography;
 
@@ -144,17 +145,7 @@ export default function DeliverManage({ onNavigate }) {
     {
       title: 'Thao Tác',
       key: 'action',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<CameraOutlined />}
-          style={{ background: '#8c1524', borderColor: '#8c1524' }}
-          onClick={() => handleOpenPod(record)}
-        >
-          Ảnh PoD
-        </Button>
-      ),
+      render: () => <Tag color="blue">Minh họa · Chỉ xem</Tag>,
     },
   ];
 
@@ -170,12 +161,15 @@ export default function DeliverManage({ onNavigate }) {
           type="primary"
           icon={<PlusOutlined />}
           style={{ background: '#8c1524', borderColor: '#8c1524' }}
+          disabled
+          title="Dữ liệu giao nhận chỉ là minh họa"
           onClick={() => setCreateDeliveryModalOpen(true)}
         >
           Tạo Chuyến Giao Mới
         </Button>
       }
     >
+      <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Chuyến giao bên dưới là dữ liệu minh họa; không thể tạo chuyến giao mới, tải PoD hay cập nhật trạng thái." />
       <Alert
         message="Giá trị pháp lý của Ảnh PoD (Module 7 - Feature #20)"
         description="Ảnh chụp kiện hàng nguyên vẹn kèm chữ ký bên nhận có gắn nhãn thời gian timestamp tự động là bằng chứng pháp lý giải phóng tiền ký quỹ Escrow và bảo vệ nhà cung cấp trước các khiếu nại trễ hạn."

@@ -1,270 +1,57 @@
-import { useState } from 'react';
-import {
-  Card,
-  Table,
-  Button,
-  Tag,
-  Space,
-  Modal,
-  Upload,
-  Descriptions,
-  message,
-  Typography,
-  Alert,
-  Tabs,
-} from 'antd';
-import {
-  ShoppingOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  UploadOutlined,
-  EyeOutlined,
-  PictureOutlined,
-} from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { Button, Card, Input, Space, Table, Tag, message } from 'antd';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
-
-const { Text } = Typography;
+import { orderService } from '../../services/orderService';
+import { DEMO_ORDERS } from '../../constants/demoMarketplaceData';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 export default function OrderManage({ onNavigate }) {
-  const [activeTab, setActiveTab] = useState('orders');
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [mockupModalOpen, setMockupModalOpen] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
 
-  // Orders Mock Data
-  const [orders, setOrders] = useState([
-    {
-      key: '1',
-      orderNo: 'ORD-2025-001',
-      customerName: 'Công ty Cổ phần MISA',
-      productName: 'Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)',
-      quantity: 350,
-      totalAmount: '29.750.000 ₫',
-      status: 'pending',
-      customPackaging: {
-        hasPackaging: true,
-        logoFile: 'logo_misa.svg',
-        boxStyle: 'Hộp Sơn Mài 4 Bánh',
-        greeting: 'Kính Chúc Quý Khách Vạn Sự Như Ý - MISA',
-        mockupStatus: 'design_review', // 'pending' | 'design_review' | 'approved'
-      },
-      deliveryAddress: 'Tòa nhà Technosoft, Duy Tân, Cầu Giấy, Hà Nội',
-      deliveryDate: '2025-08-22',
-    },
-    {
-      key: '2',
-      orderNo: 'ORD-2025-002',
-      customerName: 'Ngân hàng Thương mại Cổ phần Quân Đội (MB)',
-      productName: 'Hộp Quà Sơn Mài Doanh Nghiệp VIP (SKU-BOX-VIP4)',
-      quantity: 120,
-      totalAmount: '78.000.000 ₫',
-      status: 'confirmed',
-      customPackaging: {
-        hasPackaging: true,
-        logoFile: 'logo_mb.png',
-        boxStyle: 'Hộp Sơn Mài Cao Cấp',
-        greeting: 'Ngân Hàng MB - Chúc Mừng Trung Thu Đoàn Viên',
-        mockupStatus: 'approved',
-      },
-      deliveryAddress: '18 Lê Văn Lương, Cầu Giấy, Hà Nội',
-      deliveryDate: '2025-08-25',
-    },
-    {
-      key: '3',
-      orderNo: 'ORD-2025-003',
-      customerName: 'Tập đoàn Hòa Phát',
-      productName: 'Bánh Dẻo Hạt Sen Hương Bưởi (SKU-DS-150)',
-      quantity: 500,
-      totalAmount: '37.500.000 ₫',
-      status: 'processing',
-      customPackaging: {
-        hasPackaging: false,
-      },
-      deliveryAddress: 'KCN Phố Nối A, Hưng Yên',
-      deliveryDate: '2025-08-28',
-    },
-  ]);
-
-  const handleConfirmOrder = (record) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.key === record.key ? { ...o, status: 'confirmed' } : o))
-    );
-    message.success(`Đã xác nhận đơn hàng ${record.orderNo}! Xưởng có thể bắt đầu lên kế hoạch sản xuất.`);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const result = await orderService.listSupplierOrders();
+      const live = result.items ?? result ?? [];
+      setOrders(live.length ? live : DEMO_ORDERS);
+    } catch (error) {
+      message.error(error.message || 'Không thể tải đơn hàng.');
+    } finally { setLoading(false); }
   };
 
-  const handleOpenMockup = (record) => {
-    setSelectedOrder(record);
-    setMockupModalOpen(true);
-  };
+  useEffect(() => { load(); }, []);
 
-  const handleUploadMockup = () => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.key === selectedOrder.key
-          ? {
-              ...o,
-              customPackaging: {
-                ...o.customPackaging,
-                mockupStatus: 'approved',
-              },
-            }
-          : o
-      )
-    );
-    message.success('Đã tải lên bản thiết kế Mockup 3D hộp quà! Khách hàng đã được gửi thông báo phê duyệt.');
-    setMockupModalOpen(false);
+  const run = async (record, action) => {
+    setBusyId(record.id);
+    try {
+      if (action === 'confirm') await orderService.confirm(record.id);
+      if (action === 'reject') await orderService.reject(record.id, 'Supplier rejected this order.');
+      if (action === 'processing') await orderService.startProcessing(record.id);
+      if (action === 'ship') await orderService.ship(record.id);
+      message.success('Đã cập nhật trạng thái đơn hàng.');
+      await load();
+    } catch (error) { message.error(error.message || 'Không thể cập nhật đơn hàng.'); }
+    finally { setBusyId(null); }
   };
 
   const columns = [
-    {
-      title: 'Mã Đơn Hàng',
-      dataIndex: 'orderNo',
-      key: 'orderNo',
-      width: 140,
-      render: (no) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{no}</span>,
-    },
-    {
-      title: 'Khách Hàng Doanh Nghiệp',
-      dataIndex: 'customerName',
-      key: 'customerName',
-      render: (c, r) => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{c}</div>
-          <div style={{ fontSize: 11, color: '#888' }}>{r.deliveryAddress}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Sản Phẩm & Biến Thể Cụ Thể',
-      dataIndex: 'productName',
-      key: 'productName',
-      render: (p) => <span style={{ color: '#1f1f1f' }}>{p}</span>,
-    },
-    {
-      title: 'Số Lượng',
-      dataIndex: 'quantity',
-      key: 'quantity',
-      align: 'center',
-      render: (q) => <Tag color="blue">{q} hộp</Tag>,
-    },
-    {
-      title: 'Tổng Giá Trị',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
-      align: 'right',
-      render: (amt) => <span style={{ fontWeight: 600, color: '#8c1524' }}>{amt}</span>,
-    },
-    {
-      title: 'In Logo / Đóng Hộp',
-      key: 'packaging',
-      render: (_, r) => {
-        if (!r.customPackaging?.hasPackaging) return <Tag color="default">Không in logo</Tag>;
-        const st = r.customPackaging.mockupStatus;
-        if (st === 'approved') return <Tag color="success">✓ Mockup đã duyệt</Tag>;
-        return <Tag color="warning">⏳ Chờ duyệt mockup</Tag>;
-      },
-    },
-    {
-      title: 'Trạng Thái Đơn',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        if (status === 'pending') return <Tag color="orange">Chờ xác nhận</Tag>;
-        if (status === 'confirmed') return <Tag color="blue">Đã xác nhận</Tag>;
-        if (status === 'processing') return <Tag color="purple">Đang sản xuất</Tag>;
-        if (status === 'shipped') return <Tag color="cyan">Đang giao hàng</Tag>;
-        return <Tag color="success">Đã hoàn thành</Tag>;
-      },
-    },
-    {
-      title: 'Thao Tác',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="small">
-          {record.status === 'pending' && (
-            <Button
-              type="primary"
-              size="small"
-              style={{ background: '#2e7d32', borderColor: '#2e7d32' }}
-              onClick={() => handleConfirmOrder(record)}
-            >
-              Xác Nhận Đơn
-            </Button>
-          )}
-          {record.customPackaging?.hasPackaging && (
-            <Button
-              type="link"
-              size="small"
-              icon={<PictureOutlined />}
-              onClick={() => handleOpenMockup(record)}
-            >
-              Mockup Bao Bì
-            </Button>
-          )}
-        </Space>
-      ),
-    },
+    { title: 'Mã đơn', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Khách hàng', dataIndex: 'customerName', key: 'customerName' },
+    { title: 'Sản phẩm', dataIndex: 'items', key: 'items', render: (items) => items?.map((item) => `${item.productName} × ${item.quantity}`).join(', ') || '—' },
+    { title: 'Tổng tiền', dataIndex: 'totalAmount', key: 'totalAmount', render: (amount) => `${amount?.toLocaleString('vi-VN')} ₫` },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: (status) => <Tag>{status}</Tag> },
+    { title: 'Thao tác', key: 'actions', render: (_, record) => record.isDemo ? <Tag color="blue">Chỉ xem</Tag> : <Space wrap>
+      {record.status === 'Pending' && <><Button loading={busyId === record.id} onClick={() => run(record, 'confirm')}>Xác nhận</Button><Button danger loading={busyId === record.id} onClick={() => run(record, 'reject')}>Từ chối</Button></>}
+      {record.status === 'Confirmed' && <Button loading={busyId === record.id} onClick={() => run(record, 'processing')}>Bắt đầu xử lý</Button>}
+      {record.status === 'Processing' && <Button loading={busyId === record.id} onClick={() => run(record, 'ship')}>Đánh dấu đã gửi</Button>}
+    </Space> },
   ];
 
-  return (
-    <ColonyAdminLayout
-      role="Supplier"
-      activeKey="nha-cung-cap/quan-ly-don-hang"
-      onNavigate={onNavigate}
-      title="Quản Lý Đơn Hàng Sỉ B2B & Thiết Kế Đóng Gói Doanh Nghiệp"
-      subtitle="Theo dõi tiến độ đơn hàng số lượng lớn, tải file logo doanh nghiệp và phản hồi bản vẽ mockup duyệt mẫu"
-    >
-      <Alert
-        message="Quy trình xử lý Thiết Kế Bao Bì (Feature #9 - Custom Packaging Loop)"
-        description="Khách hàng doanh nghiệp tải lên file logo công ty (SVG/PNG) và câu chúc Tết. Xưởng tải lên file Mockup thiết kế hộp bánh để khách hàng bấm duyệt trước khi đưa vào dây chuyền in ấn hàng loạt."
-        type="info"
-        showIcon
-        style={{ marginBottom: 20 }}
-      />
-
-      <Card bordered={false} style={{ borderRadius: 10 }}>
-        <Table columns={columns} dataSource={orders} pagination={{ pageSize: 6 }} />
-      </Card>
-
-      {/* Modal Review Packaging & Upload Mockup */}
-      {selectedOrder && (
-        <Modal
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <PictureOutlined style={{ color: '#8c1524' }} />
-              <span>Yêu Cầu In Logo Doanh Nghiệp: Đơn #{selectedOrder.orderNo}</span>
-            </div>
-          }
-          open={mockupModalOpen}
-          onCancel={() => setMockupModalOpen(false)}
-          onOk={handleUploadMockup}
-          okText="Gửi Bản Vẽ Mockup Cho Khách Duyệt"
-          width={650}
-        >
-          <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
-            <Descriptions.Item label="Khách Hàng">{selectedOrder.customerName}</Descriptions.Item>
-            <Descriptions.Item label="Quy Cách Hộp">{selectedOrder.customPackaging.boxStyle}</Descriptions.Item>
-            <Descriptions.Item label="File Logo Tải Lên" span={2}>
-              <Tag color="blue">{selectedOrder.customPackaging.logoFile}</Tag>
-              <Button type="link" size="small">Tải File Vector Gốc</Button>
-            </Descriptions.Item>
-            <Descriptions.Item label="Câu Chúc Tết Doanh Nghiệp" span={2}>
-              <em>"{selectedOrder.customPackaging.greeting}"</em>
-            </Descriptions.Item>
-          </Descriptions>
-
-          <div style={{ marginTop: 20, background: '#fafafa', padding: 16, borderRadius: 8 }}>
-            <Text strong style={{ display: 'block', marginBottom: 8 }}>
-              Tải Lên Bản Vẽ Mockup 3D Mẫu Hộp Bánh Đã Gắn Logo:
-            </Text>
-            <Upload maxCount={1}>
-              <Button icon={<UploadOutlined />}>Tải Lên File Mockup Thiết Kế (PNG/PDF)</Button>
-            </Upload>
-            <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-              Sau khi tải lên, khách hàng sẽ nhận được thông báo để bấm duyệt hoặc yêu cầu chỉnh sửa màu sắc.
-            </div>
-          </div>
-        </Modal>
-      )}
-    </ColonyAdminLayout>
-  );
+  return <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/quan-ly-don-hang" onNavigate={onNavigate}
+    title="Quản lý đơn hàng B2B" subtitle="Xử lý đơn hàng và cập nhật trạng thái trực tiếp qua hệ thống.">
+    {orders.some((order) => order.isDemo) && <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Database chưa có đơn hàng. Các đơn dưới đây chỉ minh họa bố cục và không thể xác nhận, từ chối hoặc cập nhật." />}
+    <Card title="Đơn hàng nhận được" extra={<Button onClick={load}>Tải lại</Button>}><Table rowKey="id" loading={loading} columns={columns} dataSource={orders} pagination={{ pageSize: 10 }} /></Card>
+  </ColonyAdminLayout>;
 }

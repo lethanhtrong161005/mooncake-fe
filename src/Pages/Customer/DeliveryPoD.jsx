@@ -19,6 +19,7 @@ import {
   StarOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text } = Typography;
 
@@ -115,29 +116,7 @@ export default function DeliveryPoD({ onNavigate }) {
     {
       title: 'Hành Động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            icon={<CameraOutlined />}
-            style={{ background: '#8c1524', borderColor: '#8c1524' }}
-            onClick={() => handleOpenPod(record)}
-          >
-            Ảnh PoD & Ký Nhận
-          </Button>
-          {record.status === 'delivered' && (
-            <Button
-              type="default"
-              size="small"
-              icon={<StarOutlined />}
-              onClick={() => onNavigate?.('thanh-toan-danh-gia')}
-            >
-              Đánh Giá
-            </Button>
-          )}
-        </Space>
-      ),
+      render: () => <Tag color="blue">Minh họa · Chỉ xem</Tag>,
     },
   ];
 
@@ -163,6 +142,7 @@ export default function DeliveryPoD({ onNavigate }) {
           </p>
         </div>
 
+        <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Thông tin chuyến giao và ảnh PoD bên dưới là dữ liệu minh họa; không thể mở, xác nhận nhận hàng hoặc kích hoạt thanh toán." />
         <Alert
           message="Bằng chứng giao nhận an toàn (PoD - Proof of Delivery)"
           description="Ảnh chụp thực tế tại điểm giao hàng kèm chữ ký đại diện doanh nghiệp được mã hóa bảo mật. Quý khách vui lòng kiểm tra kỹ số lượng hộp trước khi xác nhận nghiệm thu."

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Card,
   Descriptions,
@@ -9,7 +8,6 @@ import {
   Input,
   Space,
   Divider,
-  message,
   Typography,
 } from 'antd';
 import {
@@ -19,21 +17,13 @@ import {
   SaveOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Title, Text } = Typography;
 
 export default function AdminProfile({ onNavigate }) {
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
-
-  const handleUpdateProfile = () => {
-    message.success('Đã cập nhật thông tin quản trị viên thành công!');
-  };
-
-  const handleChangePassword = () => {
-    message.success('Đã đổi mật khẩu quản trị cấp cao thành công!');
-    passwordForm.resetFields();
-  };
 
   return (
     <ColonyAdminLayout
@@ -43,6 +33,7 @@ export default function AdminProfile({ onNavigate }) {
       title="Hồ Sơ Quản Trị Viên Cấp Cao (Super Admin)"
       subtitle="Quản lý thông tin xác thực bảo mật, quyền điều hành hệ thống sàn B2B và nhật ký truy cập"
     >
+      <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Thông tin quản trị viên là dữ liệu minh họa; các biểu mẫu đang ở chế độ chỉ xem." />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
         {/* Left Profile Card */}
         <Card bordered={false} style={{ borderRadius: 10, textAlign: 'center' }}>
@@ -71,13 +62,13 @@ export default function AdminProfile({ onNavigate }) {
             <Form
               form={profileForm}
               layout="vertical"
+              disabled
               initialValues={{
                 fullName: 'Trần Minh Quân',
                 email: 'quan.tm@moonmarket.vn',
                 phone: '0901234567',
                 title: 'Head of Platform Operations',
               }}
-              onFinish={handleUpdateProfile}
             >
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="fullName" label="Họ và Tên" rules={[{ required: true }]}>
@@ -93,14 +84,14 @@ export default function AdminProfile({ onNavigate }) {
                   <Input />
                 </Form.Item>
               </div>
-              <Button type="primary" icon={<SaveOutlined />} htmlType="submit" style={{ background: '#8c1524', borderColor: '#8c1524' }}>
+              <Button disabled type="primary" icon={<SaveOutlined />} htmlType="submit" style={{ background: '#8c1524', borderColor: '#8c1524' }}>
                 Lưu Thay Đổi
               </Button>
             </Form>
           </Card>
 
           <Card title="Đổi Mật Khẩu Đăng Nhập" bordered={false} style={{ borderRadius: 10 }}>
-            <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword}>
+            <Form form={passwordForm} layout="vertical" disabled>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Form.Item name="currentPassword" label="Mật Khẩu Hiện Tại" rules={[{ required: true }]}>
                   <Input.Password placeholder="••••••••" />
@@ -109,7 +100,7 @@ export default function AdminProfile({ onNavigate }) {
                   <Input.Password placeholder="••••••••" />
                 </Form.Item>
               </div>
-              <Button icon={<KeyOutlined />} htmlType="submit">
+              <Button disabled icon={<KeyOutlined />} htmlType="submit">
                 Cập Nhật Mật Khẩu
               </Button>
             </Form>

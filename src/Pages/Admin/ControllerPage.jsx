@@ -15,6 +15,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 const ShopManagementPanel = lazy(() => import('./ShopManagement').then((module) => ({ default: module.ShopManagementPanel })));
 
 
@@ -109,17 +110,7 @@ export default function ControllerPage({ onNavigate }) {
     {
       title: 'Hành Động',
       key: 'action',
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          danger={record.isActive}
-          icon={record.isActive ? <LockOutlined /> : <UnlockOutlined />}
-          onClick={() => toggleUserStatus(record)}
-        >
-          {record.isActive ? 'Khóa' : 'Mở khóa'}
-        </Button>
-      ),
+      render: () => <Tag color="blue">Minh họa · Chỉ xem</Tag>,
     },
   ];
 
@@ -132,6 +123,7 @@ export default function ControllerPage({ onNavigate }) {
       subtitle="Quản lý danh sách tài khoản đa vai trò, mở/khóa truy cập và giám sát gian hàng vi phạm chính sách"
     >
       <Card bordered={false} style={{ borderRadius: 10 }}>
+        {activeTab === 'users' && <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Tài khoản trong bảng là dữ liệu minh họa; không thể khóa hoặc mở khóa." />}
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

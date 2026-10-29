@@ -20,6 +20,7 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Title, Text } = Typography;
 
@@ -35,6 +36,7 @@ export default function CustomerProfile({ onNavigate }) {
       <CustomerHeader activeKey="ho-so-khach-hang" onNavigate={onNavigate} />
 
       <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
+        <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Hồ sơ doanh nghiệp bên dưới là dữ liệu minh họa; database chưa có API hồ sơ Customer và biểu mẫu đang ở chế độ chỉ xem." />
         <div
           style={{
             background: '#ffffff',
@@ -80,6 +82,7 @@ export default function CustomerProfile({ onNavigate }) {
               <Form
                 form={form}
                 layout="vertical"
+                disabled
                 initialValues={{
                   companyName: 'Tập Đoàn Vingroup - Công Ty Cổ Phần',
                   taxCode: '0101245486',
@@ -130,6 +133,7 @@ export default function CustomerProfile({ onNavigate }) {
                 </Form.Item>
 
                 <Button
+                  disabled
                   type="primary"
                   icon={<SaveOutlined />}
                   htmlType="submit"

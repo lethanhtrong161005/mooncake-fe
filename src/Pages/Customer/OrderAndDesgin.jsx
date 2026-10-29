@@ -1,275 +1,104 @@
-import { useState } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Form,
-  Input,
-  Select,
-  InputNumber,
-  Button,
-  Upload,
-  Switch,
-  Radio,
-  Tag,
-  Descriptions,
-  message,
-  Typography,
-  Alert,
-  Divider,
-} from 'antd';
-import {
-  ShoppingOutlined,
-  UploadOutlined,
-  CheckCircleOutlined,
-  PictureOutlined,
-} from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { Alert, Button, Card, Form, Input, InputNumber, Select, Space, Spin, Table, Typography, message } from 'antd';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import { productService } from '../../services/productService';
+import { orderService } from '../../services/orderService';
+import { DEMO_ORDERS } from '../../constants/demoMarketplaceData';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 export default function OrderAndDesgin({ onNavigate }) {
   const [form] = Form.useForm();
-  const [hasCustomPackaging, setHasCustomPackaging] = useState(true);
-  const [selectedVariant, setSelectedVariant] = useState('SKU-TC-200');
-  const [quantity, setQuantity] = useState(100);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const variants = [
-    { sku: 'SKU-TC-150', name: 'Bánh Nướng Thập Cẩm Bát Bửu (150g)', price: 85000 },
-    { sku: 'SKU-TC-200', name: 'Bánh Nướng Thập Cẩm Bát Bửu 2 Trứng (200g)', price: 110000 },
-    { sku: 'SKU-BOX-VIP4', name: 'Set Hộp Sơn Mài 4 Bánh Thượng Hạng + Trà', price: 650000 },
-  ];
-
-  const currentVariant = variants.find((v) => v.sku === selectedVariant) || variants[0];
-  const unitPrice = currentVariant.price;
-  const discountRate = quantity >= 500 ? 0.18 : quantity >= 100 ? 0.10 : quantity >= 50 ? 0.05 : 0;
-  const totalRaw = unitPrice * quantity;
-  const discountAmount = totalRaw * discountRate;
-  const packagingFee = hasCustomPackaging ? 15000 * quantity : 0;
-  const finalTotal = totalRaw - discountAmount + packagingFee;
-
-  const handlePlaceOrder = (values) => {
-    message.success('Đã gửi đơn đặt hàng số lượng lớn kèm yêu cầu thiết kế bao bì tới Xưởng Bánh! Đang chờ xưởng phản hồi mockup.');
-    onNavigate?.('hop-dong-tien-do');
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [catalog, orderRows] = await Promise.all([
+        productService.search({ page: 1, pageSize: 50, sort: 'newest', inStockOnly: true }),
+        orderService.listMine(),
+      ]);
+      setProducts(catalog.items ?? []);
+      const liveOrders = orderRows.items ?? orderRows ?? [];
+      setOrders(liveOrders.length ? liveOrders : DEMO_ORDERS);
+    } catch (error) {
+      message.error(error.message || 'Không thể tải sản phẩm và đơn hàng.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div style={{ background: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <CustomerHeader activeKey="dat-hang-thiet-ke" onNavigate={onNavigate} />
+  useEffect(() => { load(); }, []);
 
-      <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
-        <div
-          style={{
-            background: '#ffffff',
-            padding: '20px 24px',
-            borderRadius: 10,
-            marginBottom: 20,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1f1f1f' }}>
-            Đặt Hàng Số Lượng Lớn (Bulk Order) & In Logo Doanh Nghiệp
-          </h1>
-          <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>
-            Chọn quy cách biến thể bánh, cấu hình số lượng hưởng chiết khấu bậc thang và gửi file vector logo in ấn
-          </p>
-        </div>
+  const submit = async (values) => {
+    if (!selectedProduct) return message.error('Vui lòng chọn sản phẩm.');
+    setSaving(true);
+    try {
+      await orderService.create({
+        shopId: selectedProduct.shop.shopId,
+        items: [{ productId: selectedProduct.productId, variantId: values.variantId, quantity: values.quantity }],
+        deliveryAddress: values.deliveryAddress,
+        recipientName: values.recipientName,
+        recipientPhone: values.recipientPhone,
+        notes: values.notes || null,
+        deliveryDateExpected: values.deliveryDateExpected || null,
+      });
+      message.success('Đã gửi đơn hàng tới nhà cung cấp.');
+      form.resetFields();
+      setSelectedProduct(null);
+      await load();
+    } catch (error) {
+      message.error(error.message || 'Không thể tạo đơn hàng.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-        <Row gutter={[20, 20]}>
-          {/* Form Left */}
-          <Col xs={24} lg={15}>
-            <Card title="1. Chọn Biến Thể Bánh & Số Lượng Đặt Hàng" bordered={false} style={{ borderRadius: 10, marginBottom: 20 }}>
-              <Form
-                form={form}
-                layout="vertical"
-                initialValues={{
-                  variant: 'SKU-TC-200',
-                  quantity: 100,
-                  deliveryAddress: 'Tòa nhà Landmark 81, Quận Bình Thạnh, TP. Hồ Chí Minh',
-                  recipientName: 'Trần Minh Quân (Khối Hành chính)',
-                  recipientPhone: '0901234567',
-                }}
-                onFinish={handlePlaceOrder}
-              >
-                <Form.Item label="Chọn Biến Thể Cụ Thể (Bắt buộc theo Module 4 - Feature #7)" required>
-                  <Radio.Group
-                    value={selectedVariant}
-                    onChange={(e) => setSelectedVariant(e.target.value)}
-                    style={{ width: '100%' }}
-                  >
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      {variants.map((v) => (
-                        <Radio
-                          key={v.sku}
-                          value={v.sku}
-                          style={{
-                            display: 'flex',
-                            border: selectedVariant === v.sku ? '1px solid #8c1524' : '1px solid #eee',
-                            borderRadius: 8,
-                            padding: '10px 14px',
-                            background: selectedVariant === v.sku ? '#fff9f9' : '#ffffff',
-                            width: '100%',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <span><strong>{v.name}</strong> <span style={{ color: '#888' }}>({v.sku})</span></span>
-                            <span style={{ fontWeight: 700, color: '#8c1524', marginLeft: 16 }}>
-                              {v.price.toLocaleString('vi-VN')} ₫
-                            </span>
-                          </div>
-                        </Radio>
-                      ))}
-                    </Space>
-                  </Radio.Group>
-                </Form.Item>
+  const columns = [
+    { title: 'Mã đơn', dataIndex: 'orderNumber', key: 'orderNumber' },
+    { title: 'Sản phẩm', dataIndex: 'items', key: 'items', render: (items) => items?.map((item) => item.productName).join(', ') || '—' },
+    { title: 'Tổng tiền', dataIndex: 'totalAmount', key: 'totalAmount', render: (amount) => amount?.toLocaleString('vi-VN') + ' ₫' },
+    { title: 'Trạng thái', dataIndex: 'status', key: 'status' },
+    { title: 'Ngày giao dự kiến', dataIndex: 'deliveryDateExpected', key: 'deliveryDateExpected', render: (value) => value || '—' },
+  ];
 
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item label="Số Lượng Đặt Hàng (≥ 50 cái/hộp)" required>
-                      <InputNumber
-                        min={50}
-                        max={50000}
-                        step={10}
-                        value={quantity}
-                        onChange={(val) => setQuantity(val || 50)}
-                        style={{ width: '100%' }}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '10px 14px', borderRadius: 8, marginTop: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>Tỷ lệ chiết khấu theo số lượng:</Text>
-                      <div style={{ fontWeight: 700, color: '#d48806' }}>
-                        {discountRate > 0 ? `Áp dụng giảm ${(discountRate * 100).toFixed(0)}% (${discountAmount.toLocaleString('vi-VN')} ₫)` : 'Chưa đạt mức chiết khấu'}
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item name="recipientName" label="Người Nhận Hàng" rules={[{ required: true }]}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="recipientPhone" label="Số Điện Thoại Nhận Hàng" rules={[{ required: true }]}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <Form.Item name="deliveryAddress" label="Địa Chỉ Giao Hàng Doanh Nghiệp" rules={[{ required: true }]}>
-                  <Input />
-                </Form.Item>
-              </Form>
-            </Card>
-
-            {/* Custom Packaging Section */}
-            <Card
-              title={
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>2. Đóng Gói & In Logo Doanh Nghiệp (Custom Packaging)</span>
-                  <Switch checked={hasCustomPackaging} onChange={setHasCustomPackaging} />
-                </div>
-              }
-              bordered={false}
-              style={{ borderRadius: 10 }}
-            >
-              {hasCustomPackaging ? (
-                <div>
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
-                        Kiểu Hộp Quà Doanh Nghiệp:
-                      </label>
-                      <Select
-                        defaultValue="box_lacquer_vip"
-                        style={{ width: '100%' }}
-                        options={[
-                          { value: 'box_lacquer_vip', label: 'Hộp Sơn Mài 4 Bánh Khóa Đồng VIP' },
-                          { value: 'box_paper_luxury', label: 'Hộp Giấy Mỹ Thuật Ép Kim 4 Bánh' },
-                          { value: 'box_double_gift', label: 'Hộp Đôi 2 Bánh Thanh Lịch' },
-                        ]}
-                      />
-                    </Col>
-                    <Col span={12}>
-                      <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
-                        Tải Logo Doanh Nghiệp (PNG / SVG):
-                      </label>
-                      <Upload maxCount={1}>
-                        <Button icon={<UploadOutlined />}>Tải Logo Công Ty (≤ 5MB)</Button>
-                      </Upload>
-                    </Col>
-                  </Row>
-
-                  <div style={{ marginTop: 16 }}>
-                    <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 8 }}>
-                      Lời Chúc Tết Trung Thu In Trên Nắp Hộp:
-                    </label>
-                    <Input defaultValue="Kính Chúc Quý Khách Hàng & Đối Tác Trung Thu An Khang Thịnh Vượng" />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ color: '#888', fontStyle: 'italic' }}>
-                  Sản phẩm sẽ được đóng trong hộp tiêu chuẩn của xưởng bánh (không in thêm logo doanh nghiệp).
-                </div>
-              )}
-            </Card>
-          </Col>
-
-          {/* Summary Right */}
-          <Col xs={24} lg={9}>
-            <Card
-              title="Tổng Giá Trị Đơn Hàng Dự Kiến"
-              bordered={false}
-              style={{ borderRadius: 10, position: 'sticky', top: 84 }}
-            >
-              <Descriptions size="small" column={1} bordered>
-                <Descriptions.Item label="Biến Thể Đã Chọn">
-                  <strong>{currentVariant.name}</strong>
-                </Descriptions.Item>
-                <Descriptions.Item label="Số Lượng">
-                  <strong>{quantity} hộp</strong>
-                </Descriptions.Item>
-                <Descriptions.Item label="Đơn Giá Cơ Bản">
-                  {unitPrice.toLocaleString('vi-VN')} ₫ / hộp
-                </Descriptions.Item>
-                <Descriptions.Item label="Chiết Khấu Bậc Thang">
-                  <span style={{ color: '#2e7d32', fontWeight: 600 }}>
-                    -{discountAmount.toLocaleString('vi-VN')} ₫ ({(discountRate * 100).toFixed(0)}%)
-                  </span>
-                </Descriptions.Item>
-                {hasCustomPackaging && (
-                  <Descriptions.Item label="Phí In Logo & Bao Bì">
-                    +{packagingFee.toLocaleString('vi-VN')} ₫
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
-
-              <div style={{ marginTop: 20, textAlign: 'right' }}>
-                <div style={{ fontSize: 13, color: '#888' }}>Tổng cộng thanh toán:</div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: '#8c1524' }}>
-                  {finalTotal.toLocaleString('vi-VN')} ₫
-                </div>
-              </div>
-
-              <Divider style={{ margin: '16px 0' }} />
-
-              <Button
-                type="primary"
-                block
-                size="large"
-                style={{ background: '#8c1524', borderColor: '#8c1524', fontWeight: 700 }}
-                onClick={() => form.submit()}
-              >
-                Gửi Đơn Hàng & Yêu Cầu Mockup
-              </Button>
-            </Card>
-          </Col>
-        </Row>
-      </main>
-    </div>
-  );
+  return <div style={{ minHeight: '100vh', background: '#faf8f6' }}>
+    <CustomerHeader activeKey="dat-hang-thiet-ke" onNavigate={onNavigate} />
+    <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 20px' }}>
+      <Title level={2}>Đặt hàng số lượng lớn</Title>
+      <Alert showIcon type="info" message="Chọn biến thể cụ thể và số lượng theo mức đặt tối thiểu của sản phẩm. Yêu cầu đóng gói tùy chỉnh chưa được kết nối." style={{ marginBottom: 16 }} />
+      {loading ? <Spin /> : <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {products.length > 0 ? <Card title="Tạo đơn hàng">
+          <Form form={form} layout="vertical" onFinish={submit} initialValues={{ quantity: 1 }}>
+            <Form.Item label="Sản phẩm" name="productId" rules={[{ required: true }]}>
+              <Select showSearch optionFilterProp="label" options={products.map((product) => ({ value: product.productId, label: product.name }))}
+                onChange={async (id) => { form.setFieldValue('variantId', undefined); try { setSelectedProduct(await productService.detail(id)); } catch (error) { setSelectedProduct(null); message.error(error.message || 'Không thể tải biến thể.'); } }} />
+            </Form.Item>
+            {selectedProduct && <Text type="secondary">Đặt tối thiểu {selectedProduct.minOrderQty} {selectedProduct.unit || 'đơn vị'} · giá cơ bản {selectedProduct.basePrice?.toLocaleString('vi-VN')} ₫</Text>}
+            <Form.Item label="Biến thể" name="variantId" rules={[{ required: true }]}>
+              <Select disabled={!selectedProduct} options={(selectedProduct?.variants ?? []).map((variant) => ({ value: variant.id, label: `${variant.name} · ${variant.sku} · tồn ${variant.stockQty}` }))} />
+            </Form.Item>
+            <Form.Item label="Số lượng" name="quantity" rules={[{ required: true }]}><InputNumber min={selectedProduct?.minOrderQty || 1} max={selectedProduct?.maxOrderQty || 1000000} style={{ width: '100%' }} /></Form.Item>
+            <Form.Item label="Tên người nhận" name="recipientName" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item label="Số điện thoại" name="recipientPhone" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item label="Địa chỉ giao hàng" name="deliveryAddress" rules={[{ required: true }]}><Input /></Form.Item>
+            <Form.Item label="Ngày cần giao (YYYY-MM-DD)" name="deliveryDateExpected"><Input placeholder="2026-11-15" /></Form.Item>
+            <Form.Item label="Ghi chú" name="notes"><Input.TextArea rows={3} /></Form.Item>
+            <Button type="primary" htmlType="submit" loading={saving} disabled={!products.length}>Gửi đơn hàng</Button>
+          </Form>
+        </Card> : <Card><DemoIllustrationNotice description="Database chưa có sản phẩm để đặt. Bên dưới là ví dụ giao diện đơn hàng; bản ghi mẫu không thể đặt, sửa hoặc xác nhận." />
+          <Card type="inner" title="Ví dụ sản phẩm" style={{ marginTop: 16 }}><Space direction="vertical"><Text strong>Bánh Nướng Thập Cẩm Bát Bửu · SKU-TC-200</Text><Text type="secondary">110.000 ₫ / hộp · Đặt tối thiểu 50 hộp · Xưởng Tràng An</Text><Button disabled>Chọn sản phẩm mẫu</Button></Space></Card>
+        </Card>}
+        <Card title="Đơn hàng của tôi" extra={orders.some((order) => order.isDemo) && <Tag color="blue">Minh họa · Chỉ xem</Tag>}>
+          {orders.some((order) => order.isDemo) && <DemoIllustrationNotice style={{ marginBottom: 16 }} description="Database chưa có đơn hàng; các dòng này chỉ trình bày giao diện và không thể thao tác." />}
+          <Table rowKey="id" columns={columns} dataSource={orders} pagination={{ pageSize: 8 }} />
+        </Card>
+      </Space>}
+    </main>
+  </div>;
 }

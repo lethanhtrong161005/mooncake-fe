@@ -27,6 +27,7 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import DemoIllustrationNotice from '../../components/DemoIllustrationNotice';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -154,20 +155,7 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Thao Tác',
       key: 'action',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={record.myBidStatus === 'submitted' ? <EyeOutlined /> : <SendOutlined />}
-          style={{
-            background: record.myBidStatus === 'submitted' ? '#2c3e50' : '#8c1524',
-            borderColor: record.myBidStatus === 'submitted' ? '#2c3e50' : '#8c1524',
-          }}
-          onClick={() => handleOpenBid(record)}
-        >
-          {record.myBidStatus === 'submitted' ? 'Xem Báo Giá' : 'Soạn Báo Giá'}
-        </Button>
-      ),
+      render: () => <Tag color="blue">Minh họa · Chỉ xem</Tag>,
     },
   ];
 
@@ -179,6 +167,7 @@ export default function BiddingPage({ onNavigate }) {
       title="Đấu Thầu RFQ, Hộp Thư Lời Mời & Soạn Báo Giá (Bidding)"
       subtitle="Tham gia các gói thầu bánh trung thu doanh nghiệp lớn, gửi báo giá niêm phong và theo dõi kết quả trúng thầu"
     >
+      <DemoIllustrationNotice style={{ marginBottom: 16 }} description="RFQ và báo giá bên dưới là dữ liệu mẫu để trình bày giao diện; không thể mở hồ sơ, gửi bid hay thay đổi trạng thái." />
       <Alert
         message="Cơ chế Bảo mật Báo giá Niêm phong (Sealed Bid)"
         description="Mọi báo giá của xưởng được mã hóa và bảo mật tuyệt đối, các nhà cung cấp khác không thể xem được giá của nhau. Khi Bên Mua accept báo giá, hệ thống sẽ tự động kích hoạt luồng Ký Hợp Đồng Điện Tử và đặt cọc M1."
