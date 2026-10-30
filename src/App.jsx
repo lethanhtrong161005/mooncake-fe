@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
-import { ConfigProvider, FloatButton, Dropdown } from 'antd';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { App as AntApp, Button, ConfigProvider, FloatButton, Dropdown, Result, Spin } from 'antd';
+import { useAuth } from './hooks/useAuth';
+import { hasSupplierWorkspace } from './utils/supplierAccess';
+import SupplierRegistration from './Pages/Customer/SupplierRegistration';
 import { CompassOutlined } from '@ant-design/icons';
 import antdTheme from './theme/antdTheme';
 
@@ -13,11 +16,12 @@ import PackagingAndLogoPrinting from './Pages/Customer/PackagingAndLogoPrinting'
 import BiddingAndQuoteComparison from './Pages/Customer/BiddingAndQuoteComparison';
 import ContractsAndMilestone from './Pages/Customer/ContractsAndMilestone';
 import DeliveryPoD from './Pages/Customer/DeliveryPoD';
+import DriverMobileView from './Pages/Delivery/DriverMobileView';
 import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
 
 // Supplier Pages
-import StoreSetUp from './Pages/Supplier/StoreSetUp';
+import { currentRoute, routeUrl } from './utils/shopRoutes';
 import ProductManage from './Pages/Supplier/ProductManage';
 import BiddingPage from './Pages/Supplier/BiddingPage';
 import OrderManage from './Pages/Supplier/OrderManage';
@@ -37,12 +41,18 @@ import AdminProfile from './Pages/Admin/AdminProfile';
 import LoginPopup from './Pages/LoginPopup';
 import RegisterPopup from './Pages/RegisterPopup';
 import GoogleCallbackPage from './Pages/Auth/GoogleCallbackPage';
+import AiChatWidget from './components/ai/AiChatWidget';
+import PaymentResultView from './components/payment/PaymentResultView';
+
+const StoreSetUp = lazy(() => import('./Pages/Supplier/StoreSetUp'));
+const ShopAppearance = lazy(() => import('./Pages/Supplier/ShopAppearance'));
+const PublicShopPage = lazy(() => import('./Pages/PublicShopPage'));
+const ShopManagement = lazy(() => import('./Pages/Admin/ShopManagement'));
+const ShopTemplates = lazy(() => import('./Pages/Admin/ShopTemplates'));
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState(() => {
-    const hash = window.location.hash.replace('#', '');
-    return hash || 'trang-chu';
-  });
+  const { user, isLoggedIn, isRestoring } = useAuth();
+  const [currentPage, setCurrentPage] = useState(currentRoute);
 
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
@@ -52,6 +62,7 @@ export default function App() {
     let target = pageKey;
 
     // Normalizations & aliases
+    if (pageKey === 'thiet-lap-gian-hang') target = 'dang-ky-nha-cung-cap';
     if (pageKey === 'bo-suu-tap-banh' || pageKey === 'san-pham-co-san') target = 'tim-kiem';
     if (pageKey === 'dat-hang-doanh-nghiep') target = 'dat-hang-thiet-ke';
     if (pageKey === 'yeu-cau-bao-gia') target = 'in-an-bao-bi';
@@ -68,15 +79,21 @@ export default function App() {
       return;
     }
 
-    setCurrentPage(target);
-    window.history.pushState(null, '', `/#${encodeURI(target)}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const proceed = () => {
+      setCurrentPage(target);
+      window.history.pushState(null, '', routeUrl(target));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    if (window.dispatchEvent(new CustomEvent('app:before-navigate', { cancelable: true, detail: { proceed } }))) proceed();
   };
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash) setCurrentPage(hash);
+      const target = currentRoute();
+      if (target === currentPage) return;
+      const proceed = () => { setCurrentPage(target); window.history.replaceState(null, '', routeUrl(target)); };
+      if (window.dispatchEvent(new CustomEvent('app:before-navigate', { cancelable: true, detail: { proceed } }))) proceed();
+      else window.history.replaceState(null, '', routeUrl(currentPage));
     };
     window.addEventListener('hashchange', handleHashChange);
     window.addEventListener('popstate', handleHashChange);
@@ -84,7 +101,7 @@ export default function App() {
       window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('popstate', handleHashChange);
     };
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     const handleExpiredSession = () => setShowLogin(true);
@@ -93,6 +110,7 @@ export default function App() {
   }, []);
 
   const renderPage = () => {
+    if (currentPage.startsWith('shop/')) return <PublicShopPage key={currentPage} slug={currentPage.slice(5)} onNavigate={navigateTo} />;
     switch (currentPage) {
       // Role 1: Customer (Khách hàng doanh nghiệp B2B)
       case 'trang-chu':
@@ -115,22 +133,41 @@ export default function App() {
       case 'hop-dong-dien-tu':
         return <ContractsAndMilestone onNavigate={navigateTo} />;
       case 'giao-hang-pod':
+      case 'van-chuyen-pod':
         return <DeliveryPoD onNavigate={navigateTo} />;
+      case 'driver-delivery-view':
+      case 'driver-pod':
+        return (
+          <DriverMobileView
+            onBack={() => navigateTo('giao-hang-pod')}
+            onComplete={() => navigateTo('giao-hang-pod')}
+          />
+        );
       case 'thanh-toan-danh-gia':
       case 'danh-gia-va-phe-duyet-mau-thu':
         return <PaymentAndRate onNavigate={navigateTo} />;
+      case 'thanh-toan/ket-qua':
+      case 'ket-qua-thanh-toan':
+        return <PaymentResultView onNavigate={navigateTo} />;
       case 'ho-so-khach-hang':
         return <CustomerProfile onNavigate={navigateTo} />;
       case 'thong-bao':
         return <Notification onNavigate={navigateTo} />;
 
       // Role 2: Supplier (Nhà cung cấp / Xưởng bánh B2B)
+      case 'dang-ky-nha-cung-cap':
+      case 'nha-cung-cap/xac-minh':
+        return hasSupplierWorkspace(user) ? <SuppilerProfile onNavigate={navigateTo} /> :
+          <SupplierRegistration onNavigate={navigateTo} />;
       case 'nha-cung-cap/thiet-lap-gian-hang':
         return <StoreSetUp onNavigate={navigateTo} />;
+      case 'nha-cung-cap/giao-dien-gian-hang':
+        return <ShopAppearance onNavigate={navigateTo} />;
       case 'nha-cung-cap/quan-ly-san-pham':
         return <ProductManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/dau-thau':
         return <BiddingPage onNavigate={navigateTo} />;
+      case 'nha-cung-cap/don-hang':
       case 'nha-cung-cap/quan-ly-don-hang':
         return <OrderManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/quan-ly-hop-dong':
@@ -138,7 +175,8 @@ export default function App() {
       case 'nha-cung-cap/quan-ly-giao-hang':
         return <DeliverManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/ho-so':
-        return <SuppilerProfile onNavigate={navigateTo} />;
+        return hasSupplierWorkspace(user) ? <SuppilerProfile onNavigate={navigateTo} /> :
+          <SupplierRegistration onNavigate={navigateTo} />;
 
       // Role 3: Admin (Quản trị viên sàn B2B)
       case 'admin/dashboard':
@@ -151,10 +189,17 @@ export default function App() {
         return <SystemControll onNavigate={navigateTo} />;
       case 'admin/dieu-khien':
         return <ControllerPage onNavigate={navigateTo} />;
+      case 'admin/gian-hang':
+        return <ShopManagement onNavigate={navigateTo} />;
+      case 'admin/mau-gian-hang':
+        return <ShopTemplates onNavigate={navigateTo} />;
       case 'admin/ho-so':
         return <AdminProfile onNavigate={navigateTo} />;
 
       default:
+        if (currentPage.startsWith('san-pham/')) {
+          return <ProductInformation onNavigate={navigateTo} productId={currentPage.slice('san-pham/'.length)} />;
+        }
         return <HomePage onNavigate={navigateTo} />;
     }
   };
@@ -164,6 +209,31 @@ export default function App() {
   }
 
   // Quick Navigator Menu Items for testing & preview
+  const renderAuthorizedPage = () => {
+    const admin = currentPage.startsWith('admin/');
+    const supplier = currentPage.startsWith('nha-cung-cap/');
+    const registration = currentPage === 'dang-ky-nha-cung-cap';
+    if (!admin && !supplier && !registration && currentPage !== 'thong-bao') return renderPage();
+    if (isRestoring) return <Spin fullscreen description="Đang kiểm tra phiên đăng nhập…" />;
+    if (!isLoggedIn) return <Result status="403" title="Vui lòng đăng nhập để tiếp tục"
+      extra={<Button type="primary" onClick={() => setShowLogin(true)}>Đăng nhập</Button>} />;
+    if (admin && user?.role !== 'Admin') return <Result status="403" title="Trang này dành cho quản trị viên" />;
+    if (registration && !['Customer', 'Supplier'].includes(user?.role)) {
+      return <Result status="403" title="Trang đăng ký nhà cung cấp dành cho tài khoản khách hàng" />;
+    }
+    if (supplier) {
+      const onboarding = currentPage === 'nha-cung-cap/ho-so' || currentPage === 'nha-cung-cap/xac-minh';
+      const eligible = user?.capabilities?.canReadSupplierVerification;
+      const fulfillment = user?.capabilities?.canFulfillExistingOrders &&
+        ['nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang'].includes(currentPage);
+      const canStartOnboarding = onboarding && user?.role === 'Customer';
+      if ((!eligible && !canStartOnboarding) || (!onboarding && !user?.capabilities?.canCreateShop && !fulfillment)) {
+        return <Result status="403" title="Hoàn tất xác minh doanh nghiệp để sử dụng chức năng này"
+          extra={eligible && <Button type="primary" onClick={() => navigateTo('nha-cung-cap/ho-so')}>Xem hồ sơ xác minh</Button>} />;
+      }
+    }
+    return renderPage();
+  };
   const quickNavMenuItems = [
     {
       key: 'grp-customer',
@@ -178,7 +248,9 @@ export default function App() {
         { key: 'so-sanh-bao-gia', label: '6. Yêu cầu báo giá (RFQ)' },
         { key: 'hop-dong-tien-do', label: '7. Hợp đồng & Cọc M1' },
         { key: 'giao-hang-pod', label: '8. Giao nhận PoD' },
+        { key: 'driver-delivery-view', label: '8b. Tài xế Mobile PoD (Web View)' },
         { key: 'thanh-toan-danh-gia', label: '9. Thanh toán & Đánh giá' },
+        { key: 'thanh-toan/ket-qua', label: '9b. Biên lai VNPay (E-Receipt)' },
         { key: 'ho-so-khach-hang', label: '10. Hồ sơ doanh nghiệp' },
       ],
     },
@@ -239,14 +311,15 @@ export default function App() {
 
   return (
     <ConfigProvider theme={antdTheme}>
+      <AntApp>
       <div style={{ minHeight: '100vh', background: '#f5f5f7', display: 'flex', flexDirection: 'column' }}>
         {/* Dynamic Render of Active Page */}
         <div style={{ flex: 1, width: '100%' }}>
-          {renderPage()}
+          <Suspense fallback={<Spin fullscreen description="Đang tải trang…" />}>{renderAuthorizedPage()}</Suspense>
         </div>
 
         {/* Floating Quick Navigation Hub */}
-        <Dropdown
+        {import.meta.env.DEV && <Dropdown
           menu={{
             items: quickNavMenuItems,
             onClick: ({ key }) => {
@@ -271,7 +344,7 @@ export default function App() {
             }}
             tooltip="Điều Hướng Nhanh 3 Roles (Customer - Supplier - Admin)"
           />
-        </Dropdown>
+        </Dropdown>}
 
         {/* Popups (Preserved Auth Flow) */}
         <LoginPopup
@@ -279,6 +352,7 @@ export default function App() {
           onClose={() => setShowLogin(false)}
           onNavigate={navigateTo}
           initialPhone={prefilledPhone}
+          returnPage={['dang-ky-nha-cung-cap', 'nha-cung-cap/xac-minh', 'nha-cung-cap/ho-so'].includes(currentPage) ? currentPage : undefined}
           onSwitchToRegister={() => {
             setShowLogin(false);
             setShowRegister(true);
@@ -295,7 +369,11 @@ export default function App() {
             setShowLogin(true);
           }}
         />
+
+        {/* Global AI Chatbot Concierge Widget */}
+        <AiChatWidget onNavigate={navigateTo} />
       </div>
+      </AntApp>
     </ConfigProvider>
   );
 }

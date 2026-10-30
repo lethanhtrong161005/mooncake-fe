@@ -4,6 +4,13 @@ import { API_ENDPOINTS } from '../constants/apiEndpoints';
 const unwrap = (response) => response?.data ?? response;
 
 export const orderService = {
+  async previewQuote(request, signal) {
+    return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.QUOTE_PREVIEW, request, {
+      signal,
+      skipAuthHeader: true,
+      skipAuthRefresh: true,
+    }));
+  },
   async create(request, idempotencyKey = crypto.randomUUID()) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.CREATE, request, {
       headers: { 'Idempotency-Key': idempotencyKey },

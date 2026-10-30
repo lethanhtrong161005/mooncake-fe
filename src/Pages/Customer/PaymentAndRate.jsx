@@ -10,22 +10,18 @@ import {
   Upload,
   Table,
   Tag,
-  Descriptions,
   message,
   Typography,
   Alert,
-  Tabs,
 } from 'antd';
 import {
-  StarOutlined,
   UploadOutlined,
-  DollarOutlined,
-  SafetyCertificateOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import ReputationBadge from '../../components/reviews/ReputationBadge';
+import reviewService from '../../services/reviewService';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 export default function PaymentAndRate({ onNavigate }) {
@@ -49,24 +45,40 @@ export default function PaymentAndRate({ onNavigate }) {
     },
   ]);
 
-  const handleSubmitReview = (values) => {
-    const newRev = {
-      key: `${Date.now()}`,
-      contractNo: 'HD-2025-08910',
-      supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân',
-      variant: 'Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)',
-      qualityRating: values.quality || 5,
-      deliveryRating: values.delivery || 5,
-      serviceRating: values.service || 5,
-      overallRating: values.overall || 5,
-      comment: values.comment || 'Chất lượng xuất sắc, đóng gói cẩn thận, in logo sắc nét.',
-      supplierResponse: null,
-      reviewedAt: 'Vừa xong',
-    };
+  const handleSubmitReview = async (values) => {
+    try {
+      const payload = {
+        orderId: 'ord-202610-001',
+        qualityRating: values.quality || 5,
+        deliveryRating: values.delivery || 5,
+        serviceRating: values.service || 5,
+        overallRating: values.overall || 5,
+        comment: values.comment || 'Chất lượng xuất sắc, đóng gói cẩn thận, in logo sắc nét.',
+        isAnonymous: false,
+      };
 
-    setReviews([newRev, ...reviews]);
-    setHasSubmittedReview(true);
-    message.success('Đã gửi đánh giá thành công! Xưởng Bánh Tràng An được cộng +3 điểm uy tín nhờ đánh giá 5 sao từ quý khách.');
+      const result = await reviewService.submitTransactionReview(payload);
+
+      const newRev = {
+        key: `${Date.now()}`,
+        contractNo: 'HD-2025-08910',
+        supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân',
+        variant: 'Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)',
+        qualityRating: values.quality || 5,
+        deliveryRating: values.delivery || 5,
+        serviceRating: values.service || 5,
+        overallRating: values.overall || 5,
+        comment: values.comment || 'Chất lượng xuất sắc, đóng gói cẩn thận, in logo sắc nét.',
+        supplierResponse: null,
+        reviewedAt: 'Vừa xong',
+      };
+
+      setReviews([newRev, ...reviews]);
+      setHasSubmittedReview(true);
+      message.success(`Đã gửi đánh giá thành công! Xưởng Bánh Tràng An được cộng ${result.reputationScoreDelta > 0 ? `+${result.reputationScoreDelta}` : result.reputationScoreDelta} điểm uy tín nhờ đánh giá 5 sao từ quý khách.`);
+    } catch (err) {
+      message.error(err.message || 'Không thể gửi đánh giá.');
+    }
   };
 
   const columns = [
@@ -162,9 +174,22 @@ export default function PaymentAndRate({ onNavigate }) {
                 }}
                 onFinish={handleSubmitReview}
               >
+                {hasSubmittedReview && (
+                  <Alert
+                    type="success"
+                    showIcon
+                    message="Cảm ơn Quý doanh nghiệp đã gửi đánh giá!"
+                    description="Nhận xét của bạn đã được ghi nhận vào lịch sử giao dịch và cộng điểm uy tín cho xưởng bánh."
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+
                 <div style={{ background: '#fff9f9', padding: 14, borderRadius: 8, marginBottom: 16 }}>
                   <Text strong style={{ color: '#8c1524' }}>Hợp đồng #HD-2025-08910</Text>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Xưởng Bánh Tràng An Nghệ Nhân</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Xưởng Bánh Tràng An Nghệ Nhân</span>
+                    <ReputationBadge score={88.5} />
+                  </div>
                   <Tag color="purple" style={{ marginTop: 4 }}>Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)</Tag>
                 </div>
 

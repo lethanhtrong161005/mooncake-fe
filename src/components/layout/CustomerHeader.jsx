@@ -1,13 +1,15 @@
+import VerificationBell from '../supplier-verification/VerificationBell';
+import NotificationBell from '../notification/NotificationBell';
 import { useState } from 'react';
 import {
   Menu,
   Input,
-  Badge,
   Dropdown,
   Avatar,
   Space,
   Button,
   Divider,
+  Grid,
 } from 'antd';
 import {
   ShopOutlined,
@@ -17,13 +19,13 @@ import {
   CarOutlined,
   StarOutlined,
   UserOutlined,
-  BellOutlined,
   LogoutOutlined,
   HomeOutlined,
   LoginOutlined,
   UserAddOutlined,
   SearchOutlined,
   ArrowRightOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import AppLogo from './AppLogo';
@@ -33,6 +35,8 @@ export default function CustomerHeader({
   onNavigate,
 }) {
   const { isLoggedIn, user, logout } = useAuth();
+  const screens = Grid.useBreakpoint();
+  const compact = !screens.lg;
   const [searchValue, setSearchValue] = useState('');
 
   const menuItems = [
@@ -77,37 +81,30 @@ export default function CustomerHeader({
     onNavigate?.(key);
   };
 
-  const handleSearch = (val) => {
+  const handleSearch = () => {
     onNavigate?.('tim-kiem');
   };
 
-  const notificationItems = [
-    {
-      key: '1',
-      label: (
-        <div style={{ maxWidth: 280, padding: 4 }}>
-          <div style={{ fontWeight: 600, color: '#8c1524' }}>Báo giá mới cho RFQ-2025-08910</div>
-          <div style={{ fontSize: 12, color: '#666' }}>Xưởng Tràng An đã gửi bảng chào giá chi tiết cho 500 hộp quà VIP.</div>
-          <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>10 phút trước</div>
-        </div>
-      ),
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: '2',
-      label: (
-        <div style={{ maxWidth: 280, padding: 4 }}>
-          <div style={{ fontWeight: 600, color: '#2e7d32' }}>Chuyến giao hàng thành công (PoD xác minh)</div>
-          <div style={{ fontSize: 12, color: '#666' }}>Đơn hàng #DH-2025-772 đã được ký nhận tại toà nhà Landmark 81.</div>
-          <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>1 giờ trước</div>
-        </div>
-      ),
-    },
-  ];
 
   const userMenuItems = [
+    ...(user?.role === 'Customer' && !user?.capabilities?.canReadSupplierVerification ? [{
+      key: 'supplier-onboarding',
+      icon: <ShopOutlined />,
+      label: 'Đăng ký mở gian hàng',
+      onClick: () => onNavigate?.('dang-ky-nha-cung-cap'),
+    }] : []),
+    ...(user?.role === 'Admin' ? [{
+      key: 'admin-verification',
+      icon: <ShopOutlined />,
+      label: 'Duyệt nhà cung cấp',
+      onClick: () => onNavigate?.('admin/phe-duyet'),
+    }] : []),
+    ...(user?.capabilities?.canReadSupplierVerification ? [{
+      key: 'supplier-verification',
+      icon: <ShopOutlined />,
+      label: 'Hồ sơ xác minh nhà cung cấp',
+      onClick: () => onNavigate?.(user?.role === 'Supplier' ? 'nha-cung-cap/ho-so' : 'dang-ky-nha-cung-cap'),
+    }] : []),
     {
       key: 'profile',
       icon: <UserOutlined />,
@@ -156,7 +153,7 @@ export default function CustomerHeader({
         style={{
           maxWidth: 1440,
           margin: '0 auto',
-          padding: '0 20px',
+          padding: compact ? '0 12px' : '0 20px',
           height: 64,
           display: 'flex',
           alignItems: 'center',
@@ -165,14 +162,14 @@ export default function CustomerHeader({
       >
         {/* Brand Logo */}
         <AppLogo
-          size="default"
-          subtitle="Bánh Trung Thu Cao Cấp"
+          size={compact ? 'small' : 'default'}
+          subtitle={compact ? '' : 'Bánh Trung Thu Cao Cấp'}
           onClick={() => onNavigate?.('trang-chu')}
           style={{ marginRight: 16 }}
         />
 
         {/* Navigation Menu */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {!compact && <div style={{ flex: 1, minWidth: 0 }}>
           <Menu
             mode="horizontal"
             selectedKeys={[activeKey]}
@@ -185,12 +182,15 @@ export default function CustomerHeader({
               justifyContent: 'flex-start',
             }}
           />
-        </div>
+        </div>}
 
         {/* Right Section: Search, Role Switcher, Notifications, Auth */}
-        <Space size="middle" align="center" style={{ flexShrink: 0 }}>
+        <Space size={compact ? 'small' : 'middle'} align="center" style={{ flexShrink: 0 }}>
+          {compact && <Dropdown menu={{ items: menuItems, onClick: handleMenuClick }} trigger={['click']}>
+            <Button icon={<MenuOutlined />} aria-label="Mở điều hướng" />
+          </Dropdown>}
           {/* Luxury Search Pill */}
-          <Input
+          {!compact && <Input
             placeholder="Tìm bánh, xưởng, set quà VIP..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
@@ -228,53 +228,34 @@ export default function CustomerHeader({
               fontSize: 13,
               boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)',
             }}
-          />
+          />}
 
           {/* Notifications */}
-          <Dropdown menu={{ items: notificationItems }} placement="bottomRight" arrow>
-            <Badge count={2} size="small" offset={[-2, 3]} color="#cf1322">
-              <Button
-                type="text"
-                shape="circle"
-                style={{
-                  width: 38,
-                  height: 38,
-                  background: '#f7f2ef',
-                  border: '1px solid #ebdcd5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                icon={<BellOutlined style={{ fontSize: 18, color: '#8c1524' }} />}
-                title="Thông báo hệ thống & đơn hàng"
-              />
-            </Badge>
-          </Dropdown>
+          <NotificationBell onNavigate={onNavigate} />
+          <VerificationBell onNavigate={onNavigate} />
 
-          <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />
+          {!compact && <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />}
 
           {/* Auth: Logged In or Login/Register Buttons */}
           {isLoggedIn ? (
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-              <Space style={{ cursor: 'pointer' }}>
+              <Button type="text" aria-label="Tài khoản" style={{ height: 44, padding: compact ? 4 : 8 }}><Space>
                 <Avatar style={{ backgroundColor: '#8c1524' }}>
                   {user?.fullName ? user.fullName[0].toUpperCase() : 'KH'}
                 </Avatar>
-                <div style={{ lineHeight: 1.2, textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ lineHeight: 1.2, textAlign: 'left', display: compact ? 'none' : 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
                     {user?.fullName || 'Khách Doanh Nghiệp'}
                   </span>
-                  <span style={{ fontSize: 11, color: '#888' }}>Tập đoàn Vingroup</span>
+                  <span style={{ fontSize: 11, color: '#888' }}>Tài khoản doanh nghiệp</span>
                 </div>
-              </Space>
+              </Space></Button>
             </Dropdown>
           ) : (
             <Space size="small">
               <Button
                 type="text"
-                icon={<LoginOutlined />}
+                icon={compact ? undefined : <LoginOutlined />}
                 onClick={() => onNavigate?.('dang-nhap')}
                 style={{ fontWeight: 600, color: '#8c1524' }}
               >
@@ -283,6 +264,7 @@ export default function CustomerHeader({
               <Button
                 type="primary"
                 icon={<UserAddOutlined />}
+                aria-label="Đăng ký"
                 onClick={() => onNavigate?.('dang-ky')}
                 style={{
                   background: '#8c1524',
@@ -290,7 +272,7 @@ export default function CustomerHeader({
                   fontWeight: 600,
                 }}
               >
-                Đăng ký
+                {!compact && 'Đăng ký'}
               </Button>
             </Space>
           )}

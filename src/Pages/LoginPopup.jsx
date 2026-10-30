@@ -17,6 +17,7 @@ function LoginPopupContent({
   onNavigate,
   onSwitchToRegister,
   initialPhone = '',
+  returnPage,
 }) {
   // Form states
   const [phone, setPhone] = useState(initialPhone);
@@ -69,11 +70,14 @@ function LoginPopupContent({
 
     setIsLoading(true);
     try {
-      await login(cleanPhone, password);
+      const response = await login(cleanPhone, password);
       setSuccessMsg('Đăng nhập thành công');
       setPassword('');
       onClose?.();
-      onNavigate?.('trang-chu');
+      const account = response?.data?.user;
+      onNavigate?.(account?.role === 'Admin' ? 'admin/phe-duyet' :
+        account?.role === 'Supplier' && account?.capabilities?.canCreateShop ? 'nha-cung-cap/ho-so' :
+          returnPage || (account?.requestedRole === 'Supplier' ? 'dang-ky-nha-cung-cap' : 'trang-chu'));
     } catch (error) {
       setErrorMsg(error.message || 'Số điện thoại hoặc mật khẩu không chính xác.');
     } finally {

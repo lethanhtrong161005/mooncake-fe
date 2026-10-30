@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Tabs,
@@ -24,29 +24,53 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import productService from '../../services/productService';
+import shopService from '../../services/shopService';
 
 const { Text } = Typography;
 
 export default function SystemControll({ onNavigate }) {
   const [form] = Form.useForm();
+  const [categories, setCategories] = useState([]);
+  const [shopTemplates, setShopTemplates] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Categories Mock Data
-  const categoriesData = [
-    { key: '1', id: 'CAT-01', name: 'Bánh Nướng Truyền Thống', slug: 'banh-nuong-truyen-thong', count: 48, status: true },
-    { key: '2', id: 'CAT-02', name: 'Bánh Dẻo Hương Cốm & Sen', slug: 'banh-deo-huong-com-sen', count: 32, status: true },
-    { key: '3', id: 'CAT-03', name: 'Bánh Tuyết Hiện Đại (Snow Skin)', slug: 'banh-tuyet-snow-skin', count: 24, status: true },
-    { key: '4', id: 'CAT-04', name: 'Hộp Quà Doanh Nghiệp Sơn Mài VIP', slug: 'hop-qua-son-mai-vip', count: 18, status: true },
-    { key: '5', id: 'CAT-05', name: 'Bánh Healthy Đường Ăn Kiêng Isomalt', slug: 'banh-healthy-isomalt', count: 15, status: true },
-  ];
-
-  // Shop Templates Mock Data
-  const shopTemplatesData = [
-    { key: '1', id: 'TPL-01', name: 'Hoàng Kim Cung Đình', style: 'Luxury Gold & Crimson', badge: 'VIP Khuyên dùng', status: true },
-    { key: '2', id: 'TPL-02', name: 'Tràng An Cổ Điển', style: 'Vintage Hà Nội Phố', badge: 'Truyền Thống', status: true },
-    { key: '3', id: 'TPL-03', name: 'Đương Đại Minimalist', style: 'Modern Slate & Amber', badge: 'Hiện Đại', status: true },
-    { key: '4', id: 'TPL-04', name: 'Nguyệt Dạ Rằm Tháng Tám', style: 'Deep Midnight Indigo', badge: 'Mùa Vụ', status: true },
-    { key: '5', id: 'TPL-05', name: 'Sơn Mài Thượng Phẩm', style: 'Lacquer Artisan Style', badge: 'Nghệ Nhân', status: true },
-  ];
+  useEffect(() => {
+    const loadSystemData = async () => {
+      try {
+        setLoading(true);
+        const [catsRes, tmplsRes] = await Promise.allSettled([
+          productService.getCategories(),
+          shopService.getTemplates(),
+        ]);
+        if (catsRes.status === 'fulfilled' && catsRes.value) {
+          const raw = catsRes.value;
+          const list = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
+          setCategories(list.map((c, idx) => ({
+            ...c,
+            key: c.id || `${idx}`,
+            count: c.productCount || 0,
+            status: c.isActive ?? true,
+          })));
+        }
+        if (tmplsRes.status === 'fulfilled' && tmplsRes.value) {
+          const raw = tmplsRes.value;
+          const list = Array.isArray(raw) ? raw : (raw.items || raw.data || []);
+          setShopTemplates(list.map((t, idx) => ({
+            ...t,
+            key: t.id || `${idx}`,
+            badge: t.badge || 'VIP',
+            status: t.isActive ?? true,
+          })));
+        }
+      } catch (err) {
+        console.warn('SystemControll load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSystemData();
+  }, []);
 
   const categoryColumns = [
     { title: 'Mã', dataIndex: 'id', key: 'id', width: 90 },
@@ -234,7 +258,7 @@ export default function SystemControll({ onNavigate }) {
                       Thêm Danh Mục Mới
                     </Button>
                   </div>
-                  <Table columns={categoryColumns} dataSource={categoriesData} pagination={false} />
+                  <Table columns={categoryColumns} dataSource={categories} loading={loading} pagination={false} />
                 </div>
               ),
             },
@@ -248,7 +272,7 @@ export default function SystemControll({ onNavigate }) {
                       Thêm Mẫu Template Mới
                     </Button>
                   </div>
-                  <Table columns={templateColumns} dataSource={shopTemplatesData} pagination={false} />
+                  <Table columns={templateColumns} dataSource={shopTemplates} loading={loading} pagination={false} />
                 </div>
               ),
             },

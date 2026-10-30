@@ -2,9 +2,9 @@
 
 import axios from 'axios';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { API_BASE_URL } from '../constants/apiConfiguration';
 import storage from '../utils/storage';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8089/api';
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 15000;
 const IS_DEBUG = import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true';
 const AUTH_PATHS = [
@@ -12,8 +12,8 @@ const AUTH_PATHS = [
   API_ENDPOINTS.AUTH.REGISTER,
   API_ENDPOINTS.AUTH.REFRESH_TOKEN,
   API_ENDPOINTS.AUTH.LOGOUT,
-  API_ENDPOINTS.AUTH.SEND_OTP,
-  API_ENDPOINTS.AUTH.VERIFY_OTP,
+  API_ENDPOINTS.AUTH.RESEND_VERIFICATION,
+  API_ENDPOINTS.AUTH.VERIFY_EMAIL,
   API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
   API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
   API_ENDPOINTS.AUTH.GOOGLE_AUTHORIZATION_URL,
@@ -49,7 +49,7 @@ const saveTokenPair = ({ accessToken, refreshToken }) => {
   window.dispatchEvent(new CustomEvent('auth:changed'));
 };
 
-const refreshAccessToken = () => {
+export const refreshAccessToken = () => {
   if (refreshPromise) return refreshPromise;
 
   const currentRefreshToken = storage.get('auth_refresh_token');
@@ -75,6 +75,7 @@ const refreshAccessToken = () => {
 };
 
 axiosInstance.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) config.headers.delete('Content-Type');
   if (!config.skipAuthHeader && !AUTH_PATHS.includes(config.url)) {
     const token = storage.get('auth_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -117,7 +118,11 @@ axiosInstance.interceptors.response.use(
       clearAuthSession();
     }
 
-    let message = response?.data?.message || response?.data?.errors?.[0];
+    let responseData = response?.data;
+    if (responseData instanceof Blob && responseData.type.includes('json')) {
+      try { responseData = JSON.parse(await responseData.text()); } catch { /* Keep the generic transport error. */ }
+    }
+    let message = responseData?.message || responseData?.errors?.[0];
     if (!message && response?.status === 401) {
       message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
     }
@@ -129,6 +134,8 @@ axiosInstance.interceptors.response.use(
     }
     const normalized = new Error(message || 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.');
     normalized.status = response?.status;
+    normalized.errorCode = responseData?.errorCode;
+    normalized.retryAfter = response?.headers?.['retry-after'];
     normalized.data = response?.data;
     normalized.originalError = error;
     return Promise.reject(normalized);
@@ -162,4 +169,14 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+export const getValidAccessToken = async () => {
+  const token = storage.get('auth_token');
+  if (!token || !storage.get('auth_refresh_token')) throw new Error('Session ended.');
+  try {
+    const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const expires = JSON.parse(atob(encoded)).exp;
+    if (Number(expires) * 1000 > Date.now() + 30000) return token;
+  } catch { /* Refresh an unreadable or expiring token through the regular single-flight request. */ }
+  return refreshAccessToken();
+};
 export default apiClient;

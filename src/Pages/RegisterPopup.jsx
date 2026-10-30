@@ -1,304 +1,98 @@
-import { useEffect, useState, useRef } from 'react';
-import { Modal, Steps, Alert } from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Button, Checkbox, Form, Input, Modal, Result, Space, Steps, Typography } from 'antd';
 import AppLogo from '../components/layout/AppLogo';
-import RegisterPhoneStep from './Auth/RegisterPhoneStep';
-import RegisterOtpStep from './Auth/RegisterOtpStep';
-import RegisterPasswordStep from './Auth/RegisterPasswordStep';
-import RegisterSuccessStep from './Auth/RegisterSuccessStep';
+import authService from '../services/authService';
 
-export default function RegisterPopup({
-  isOpen = true,
-  onClose,
-  onNavigate,
-  onSwitchToLogin,
-}) {
-  // Steps: 1: 'phone' -> 2: 'otp' -> 3: 'password' -> 4: 'success'
-  const [step, setStep] = useState(1);
-
-  // Form states
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(true);
-
-  // Feedback & Loading
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Countdown timer for OTP resend (60s)
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
-  const timerRef = useRef(null);
-
-  // Start countdown when entering step 2
+function RegistrationFlow({ onClose, onNavigate, onSwitchToLogin }) {
+  const [step, setStep] = useState(0);
+  const [account, setAccount] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(Date.now);
+  const submitting = useRef(false);
+  const remaining = Math.max(0, Math.ceil((resendAt - now) / 1000));
   useEffect(() => {
-    if (step === 2 && isOpen) {
-      setCountdown(60);
-      setCanResend(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            setCanResend(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [step, isOpen]);
-
-  // Handle ESC key to close
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose?.();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Reset modal when opened
-  useEffect(() => {
-    if (isOpen) {
+    if (step !== 1) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [step]);
+  const run = async (action) => {
+    if (submitting.current) return;
+    submitting.current = true;
+    setBusy(true);
+    setError('');
+    try { await action(); }
+    catch (failure) { setError(failure.message); }
+    finally { submitting.current = false; setBusy(false); }
+  };
+  const login = () => {
+    if (onSwitchToLogin) onSwitchToLogin(account?.phone || '');
+    else { onClose?.(); onNavigate?.('dang-nhap'); }
+  };
+  const cooldown = () => { setNow(Date.now()); setResendAt(Date.now() + 60000); };
+  return <Modal open centered width={520} footer={null} destroyOnHidden
+    onCancel={busy ? undefined : onClose} closable={!busy} maskClosable={!busy} keyboard={!busy}>
+    <AppLogo subtitle="Đăng ký tài khoản Mooncake" style={{ marginBottom: 24 }} />
+    <Steps size="small" current={step === 3 ? 1 : step} style={{ marginBottom: 24 }} items={[
+      { title: 'Thông tin' }, { title: 'Xác minh email' }, { title: 'Hoàn tất' },
+    ]} />
+    {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 16 }} />}
+    {step === 0 && <Form layout="vertical" disabled={busy}
+      onFinish={(values) => run(async () => {
+        await authService.register(values);
+        // Passwords are only passed to the API, never stored in browser storage.
+        setAccount({ email: values.email.trim(), phone: values.phone });
+        cooldown();
+        setStep(1);
+      })}>
+      <Alert type="info" showIcon title="Tạo tài khoản khách hàng. Sau khi đăng nhập, bạn có thể đăng ký mở gian hàng và gửi hồ sơ xét duyệt."
+        style={{ marginBottom: 16 }} />
+      <Form.Item name="fullName" label="Họ và tên" rules={[{ required: true, whitespace: true, max: 100 }]}><Input maxLength={100} autoComplete="name" /></Form.Item>
+      <Form.Item name="email" label="Email nhận mã xác minh" rules={[{ required: true }, { type: 'email', max: 255 }]}><Input autoComplete="email" /></Form.Item>
+      <Form.Item name="phone" label="Số điện thoại đăng nhập" rules={[{ required: true },
+        { pattern: /^(?:0[35789]\d{8}|(?:\+?84)[35789]\d{8})$/, message: 'Nhập số điện thoại di động hợp lệ.' }]}><Input autoComplete="tel" maxLength={20} /></Form.Item>
+      <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 8, max: 100 }]}><Input.Password autoComplete="new-password" /></Form.Item>
+      <Form.Item name="confirmPassword" label="Xác nhận mật khẩu" dependencies={['password']} rules={[{ required: true },
+        ({ getFieldValue }) => ({ validator: (_, value) => !value || value === getFieldValue('password') ?
+          Promise.resolve() : Promise.reject(new Error('Mật khẩu xác nhận không khớp.')) })]}><Input.Password autoComplete="new-password" /></Form.Item>
+      <Form.Item name="agreeTerms" valuePropName="checked" rules={[{ validator: (_, value) => value ?
+        Promise.resolve() : Promise.reject(new Error('Vui lòng đồng ý với điều khoản dịch vụ.')) }]}>
+        <Checkbox>Tôi đồng ý với điều khoản dịch vụ và chính sách bảo mật</Checkbox>
+      </Form.Item>
+      <Button block type="primary" htmlType="submit" loading={busy}>Đăng ký & nhận mã email</Button>
+      <Button block type="link" onClick={login}>Đã có tài khoản? Đăng nhập</Button>
+      <Button block type="link" onClick={() => setStep(3)}>Đã đăng ký? Tiếp tục xác minh email</Button>
+    </Form>}
+    {step === 1 && <Space orientation="vertical" style={{ width: '100%' }}>
+      <Typography.Paragraph>Nhập mã 6 số của <strong>{account.email}</strong>. Mã có hiệu lực 10 phút; nếu chưa nhận được, hãy gửi lại mã.</Typography.Paragraph>
+      <Form layout="vertical" disabled={busy} onFinish={({ code }) => run(async () => {
+        await authService.verifyEmail(account.email, code);
+        setStep(2);
+      })}>
+        <Form.Item name="code" label="Mã xác minh email" rules={[{ required: true },
+          { pattern: /^[0-9]{6}$/, message: 'Nhập đủ 6 chữ số.' }]}><Input autoComplete="one-time-code" inputMode="numeric" maxLength={6} /></Form.Item>
+        <Button block type="primary" htmlType="submit" loading={busy}>Xác minh email</Button>
+      </Form>
+      <Button disabled={remaining > 0 || busy} onClick={() => run(async () => {
+        await authService.resendVerification(account.email);
+        cooldown();
+      })}>{remaining > 0 ? 'Gửi lại sau ' + remaining + 's' : 'Gửi lại mã xác minh'}</Button>
+      <Button type="link" disabled={busy} onClick={login}>Đăng nhập hoặc tiếp tục xác minh sau</Button>
+    </Space>}
+    {step === 2 && <Result status="success" title="Email đã được xác minh"
+      subTitle="Đăng nhập để mua hàng hoặc đăng ký mở gian hàng từ trang chủ."
+      extra={<Button type="primary" onClick={login}>Đăng nhập ngay</Button>} />}
+    {step === 3 && <Form layout="vertical" onFinish={({ email }) => {
+      setAccount({ email: email.trim() });
       setStep(1);
-      setOtp('');
-      setPassword('');
-      setConfirmPassword('');
-      setErrorMsg('');
-      setSuccessMsg('');
-      setIsLoading(false);
-    }
-  }, [isOpen]);
+    }}>
+      <Form.Item name="email" label="Email đã đăng ký" rules={[{ required: true }, { type: 'email' }]}><Input autoComplete="email" /></Form.Item>
+      <Button block type="primary" htmlType="submit">Tiếp tục xác minh</Button>
+    </Form>}
+  </Modal>;
+}
 
-  if (!isOpen) return null;
-
-  // BƯỚC 1: Xử lý nhập SĐT -> Gửi OTP -> Chuyển sang Bước 2
-  const handlePhoneSubmit = (e) => {
-    e?.preventDefault?.();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const cleanPhone = phone.trim().replace(/\s+/g, '');
-    if (!cleanPhone) {
-      setErrorMsg('Vui lòng nhập số điện thoại');
-      return;
-    }
-
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-    if (!phoneRegex.test(cleanPhone)) {
-      setErrorMsg('Số điện thoại không đúng định dạng di động (VD: 0912 345 678)');
-      return;
-    }
-
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(2);
-      setSuccessMsg(`Mã xác thực OTP đã được gửi đến số ${cleanPhone}`);
-    }, 600);
-  };
-
-  // BƯỚC 2: Xử lý Gửi lại OTP
-  const handleResendOtp = () => {
-    if (!canResend) return;
-    setErrorMsg('');
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setCountdown(60);
-      setCanResend(false);
-      setSuccessMsg('Đã gửi lại mã OTP mới. Vui lòng kiểm tra tin nhắn!');
-
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            setCanResend(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, 600);
-  };
-
-  // BƯỚC 2: Xử lý Xác nhận OTP -> Chuyển sang Bước 3
-  const handleOtpSubmit = (e) => {
-    e?.preventDefault?.();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const cleanOtp = otp.trim();
-    if (!cleanOtp) {
-      setErrorMsg('Vui lòng nhập mã OTP gồm 6 chữ số');
-      return;
-    }
-    if (cleanOtp.length < 6) {
-      setErrorMsg('Mã OTP phải có đủ 6 chữ số');
-      return;
-    }
-
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(3);
-      setSuccessMsg('Xác thực số điện thoại thành công!');
-    }, 600);
-  };
-
-  // BƯỚC 3: Xử lý Điền mật khẩu -> Hoàn tất đăng ký -> Quay về Login
-  const handlePasswordSubmit = (e) => {
-    e?.preventDefault?.();
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    if (!password) {
-      setErrorMsg('Vui lòng nhập mật khẩu');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMsg('Mật khẩu phải có ít nhất 6 ký tự');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrorMsg('Mật khẩu xác nhận không khớp');
-      return;
-    }
-    if (!agreeTerms) {
-      setErrorMsg('Vui lòng đồng ý với Điều khoản dịch vụ');
-      return;
-    }
-
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep(4); // Màn hình thành công
-      // Tự động chuyển về popup login sau 1.8 giây
-      setTimeout(() => {
-        handleRedirectToLogin();
-      }, 1800);
-    }, 800);
-  };
-
-  // Chuyển sang Popup Login
-  const handleRedirectToLogin = () => {
-    if (onSwitchToLogin) {
-      onSwitchToLogin(phone.trim().replace(/\s+/g, ''));
-    } else {
-      onClose?.();
-      onNavigate?.('dang-nhap');
-    }
-  };
-
-  return (
-    <Modal
-      open={isOpen}
-      onCancel={onClose}
-      footer={null}
-      centered
-      width={460}
-      styles={{
-        content: {
-          padding: 0,
-          borderRadius: 20,
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
-        },
-      }}
-    >
-      <div style={{ padding: '24px 28px 28px' }}>
-        {/* Brand Header */}
-        <AppLogo
-          size="default"
-          subtitle="Tạo Tài Khoản Khách Hàng Doanh Nghiệp"
-          style={{ marginBottom: 18 }}
-        />
-
-        {/* Stepper (3 Bước) */}
-        {step <= 3 && (
-          <div style={{ marginBottom: 20 }}>
-            <Steps
-              size="small"
-              current={step - 1}
-              items={[
-                { title: 'Nhập SĐT' },
-                { title: 'Nhận OTP' },
-                { title: 'Tạo Mật Khẩu' },
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Feedback Notifications */}
-        {errorMsg && (
-          <Alert message={errorMsg} type="error" showIcon style={{ marginBottom: 14, borderRadius: 8 }} />
-        )}
-        {successMsg && (
-          <Alert message={successMsg} type="success" showIcon style={{ marginBottom: 14, borderRadius: 8 }} />
-        )}
-
-        {/* Step 1: Nhập Số Điện Thoại */}
-        {step === 1 && (
-          <RegisterPhoneStep
-            phone={phone}
-            setPhone={setPhone}
-            onSubmit={handlePhoneSubmit}
-            onGoToLogin={handleRedirectToLogin}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Step 2: Xác Thực Mã OTP */}
-        {step === 2 && (
-          <RegisterOtpStep
-            phone={phone}
-            otp={otp}
-            setOtp={setOtp}
-            onSubmit={handleOtpSubmit}
-            onResendOtp={handleResendOtp}
-            onBackToPhone={() => {
-              setStep(1);
-              setErrorMsg('');
-              setSuccessMsg('');
-            }}
-            canResend={canResend}
-            countdown={countdown}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Step 3: Thiết Lập Mật Khẩu */}
-        {step === 3 && (
-          <RegisterPasswordStep
-            phone={phone}
-            password={password}
-            setPassword={setPassword}
-            confirmPassword={confirmPassword}
-            setConfirmPassword={setConfirmPassword}
-            agreeTerms={agreeTerms}
-            setAgreeTerms={setAgreeTerms}
-            onSubmit={handlePasswordSubmit}
-            isLoading={isLoading}
-          />
-        )}
-
-        {/* Step 4: Hoàn Tất Đăng Ký */}
-        {step === 4 && (
-          <RegisterSuccessStep
-            phone={phone}
-            onRedirectToLogin={handleRedirectToLogin}
-          />
-        )}
-      </div>
-    </Modal>
-  );
+export default function RegisterPopup({ isOpen = true, ...props }) {
+  return isOpen ? <RegistrationFlow {...props} /> : null;
 }

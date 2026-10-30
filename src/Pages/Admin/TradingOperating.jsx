@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   Table,
@@ -26,6 +26,8 @@ import {
   FileProtectOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import { adminService } from '../../services/adminService';
+import { contractService } from '../../services/contractService';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -37,68 +39,59 @@ export default function TradingOperating({ onNavigate }) {
   const [resolveAction, setResolveAction] = useState('penalty');
   const [penaltyPoints, setPenaltyPoints] = useState(20);
   const [resolutionNote, setResolutionNote] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Disputes Mock Data
-  const [disputes, setDisputes] = useState([
-    {
-      key: '1',
-      disputeId: 'DISP-7702',
-      contractNo: 'HD-2025-008',
-      buyer: 'Tập đoàn Masan Consumer',
-      seller: 'Xưởng Bánh Kinh Đô Vina',
-      reason: 'Trễ hạn mốc giao hàng M2 quá 5 ngày so với thỏa thuận (SLA giao hàng 15/08)',
-      escrowAmount: '450.000.000 ₫',
-      status: 'pending',
-      severity: 'high',
-      createdAt: '2025-08-11 08:30',
-    },
-    {
-      key: '2',
-      disputeId: 'DISP-7705',
-      contractNo: 'HD-2025-015',
-      buyer: 'FPT Software Hà Nội',
-      seller: 'Bảo Phương Nghệ Nhân',
-      reason: 'Sai lệch màu in logo doanh nghiệp trên nắp hộp sơn mài (vàng đồng thay vì đỏ đô)',
-      escrowAmount: '280.000.000 ₫',
-      status: 'pending',
-      severity: 'medium',
-      createdAt: '2025-08-11 10:15',
-    },
-  ]);
+  const [disputes, setDisputes] = useState([]);
+  const [contracts, setContracts] = useState([]);
 
-  // Contracts Monitoring Mock Data
-  const contracts = [
-    {
-      key: '1',
-      contractNo: 'HD-2025-001',
-      buyer: 'Tập đoàn Vingroup',
-      seller: 'Xưởng Tràng An',
-      value: '1.250.000.000 ₫',
-      progress: 'M2: Giao hàng 50%',
-      escrowStatus: 'Bảo chứng an toàn',
-      status: 'active',
-    },
-    {
-      key: '2',
-      contractNo: 'HD-2025-002',
-      buyer: 'Techcombank AMC',
-      seller: 'Hữu Nghị Luxury',
-      value: '890.000.000 ₫',
-      progress: 'M3: Nghiệm thu hoàn tất',
-      escrowStatus: 'Chuẩn bị giải ngân',
-      status: 'completed',
-    },
-    {
-      key: '3',
-      contractNo: 'HD-2025-003',
-      buyer: 'Vietnam Airlines',
-      seller: 'Bảo Phương Gia Truyền',
-      value: '2.100.000.000 ₫',
-      progress: 'M1: Chờ đặt cọc',
-      escrowStatus: 'Chưa nạp quỹ',
-      status: 'pending_deposit',
-    },
-  ];
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [disputeData, contractData] = await Promise.allSettled([
+        adminService.getDisputes(),
+        contractService.listMine(),
+      ]);
+      if (disputeData.status === 'fulfilled' && disputeData.value) {
+        const raw = disputeData.value;
+        const list = Array.isArray(raw) ? raw : (raw.items || []);
+        setDisputes(list.map((d, idx) => ({
+          key: d.id || `${idx}`,
+          id: d.id,
+          disputeId: d.disputeId || (d.id ? `DISP-${d.id.slice(0, 8)}` : `DISP-${idx + 1}`),
+          contractNo: d.contractNumber || d.contractNo || 'HĐ-B2B',
+          buyer: d.customerName || d.buyer || 'Bên mua',
+          seller: d.supplierName || d.seller || 'Bên bán',
+          reason: d.disputeReason || d.reason || 'Tranh chấp hợp đồng',
+          escrowAmount: typeof d.heldEscrowAmount === 'number' ? `${d.heldEscrowAmount.toLocaleString('vi-VN')} ₫` : d.escrowAmount || '0 ₫',
+          status: (d.status || 'pending').toLowerCase(),
+          severity: d.severity || 'high',
+          createdAt: d.createdAt || d.raisedAt || new Date().toISOString(),
+        })));
+      }
+      if (contractData.status === 'fulfilled' && contractData.value) {
+        const raw = contractData.value;
+        const list = Array.isArray(raw) ? raw : (raw.items || []);
+        setContracts(list.map((c, idx) => ({
+          key: c.id || `${idx}`,
+          contractNo: c.contractNumber || c.contractNo || `HD-2025-${idx + 1}`,
+          buyer: c.customerName || c.buyer || 'Khách hàng',
+          seller: c.supplierName || c.seller || 'Xưởng Bánh',
+          value: typeof c.totalAmount === 'number' ? `${c.totalAmount.toLocaleString('vi-VN')} ₫` : c.value || '0 ₫',
+          progress: c.status || 'Active',
+          escrowStatus: c.escrowStatus || 'Bảo chứng an toàn',
+          status: (c.status || 'active').toLowerCase(),
+        })));
+      }
+    } catch (err) {
+      console.warn('TradingOperating load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleOpenDisputeModal = (record) => {
     setSelectedDispute(record);
@@ -108,20 +101,33 @@ export default function TradingOperating({ onNavigate }) {
     setDisputeModalOpen(true);
   };
 
-  const handleConfirmResolution = () => {
+  const handleConfirmResolution = async () => {
     if (!resolutionNote.trim()) {
       message.error('Vui lòng nhập biên bản phán quyết phân xử.');
       return;
     }
 
-    setDisputes((prev) =>
-      prev.map((d) => (d.key === selectedDispute.key ? { ...d, status: 'resolved' } : d))
-    );
+    try {
+      if (selectedDispute?.id) {
+        await adminService.resolveDispute(selectedDispute.id, {
+          resolutionType: resolveAction === 'penalty' ? 'SupplierAtFault' : 'MutualAgreement',
+          refundAmount: 0,
+          adminVerdict: resolutionNote.trim(),
+          deductReputationPoints: penaltyPoints,
+        });
+      }
 
-    message.success(
-      `Đã giải quyết xong tranh chấp ${selectedDispute.disputeId}! Áp dụng chế tài: Trừ ${penaltyPoints} điểm uy tín NCC và giải ngân Escrow bảo vệ người mua.`
-    );
-    setDisputeModalOpen(false);
+      setDisputes((prev) =>
+        prev.map((d) => (d.key === selectedDispute.key ? { ...d, status: 'resolved' } : d))
+      );
+
+      message.success(
+        `Đã giải quyết xong tranh chấp ${selectedDispute.disputeId}! Áp dụng chế tài: Trừ ${penaltyPoints} điểm uy tín NCC và giải ngân Escrow bảo vệ người mua.`
+      );
+      setDisputeModalOpen(false);
+    } catch (err) {
+      message.error(err.message || 'Không thể cập nhật phân xử.');
+    }
   };
 
   const disputeColumns = [
@@ -264,9 +270,11 @@ export default function TradingOperating({ onNavigate }) {
               label: (
                 <span>
                   ⚖️ Hàng Đợi Tranh Chấp Cần Phân Xử{' '}
-                  <Tag color="red" style={{ marginLeft: 4 }}>
-                    2
-                  </Tag>
+                  {disputes.length > 0 && (
+                    <Tag color="red" style={{ marginLeft: 4 }}>
+                      {disputes.length}
+                    </Tag>
+                  )}
                 </span>
               ),
               children: (
@@ -282,6 +290,7 @@ export default function TradingOperating({ onNavigate }) {
                     columns={disputeColumns}
                     dataSource={disputes}
                     pagination={false}
+                    loading={loading}
                   />
                 </div>
               ),
@@ -295,6 +304,7 @@ export default function TradingOperating({ onNavigate }) {
                     columns={contractColumns}
                     dataSource={contracts}
                     pagination={{ pageSize: 5 }}
+                    loading={loading}
                   />
                 </div>
               ),

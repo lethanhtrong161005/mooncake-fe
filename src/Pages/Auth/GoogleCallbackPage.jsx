@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, Result, Button, Spin, Typography, Space, Divider } from 'antd';
+import { Card, Result, Button, Spin, Typography, Divider } from 'antd';
 import {
   LoadingOutlined,
   HomeOutlined,
   SafetyCertificateOutlined,
-  ReloadOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import AppLogo from '../../components/layout/AppLogo';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Paragraph } = Typography;
 
 const STATE_KEY = 'mooncake_google_state';
 const RETURN_PAGE_KEY = 'mooncake_google_return_page';
@@ -53,8 +52,13 @@ export default function GoogleCallbackPage() {
     }
 
     loginWithGoogle(code, state)
-      .then(() => {
-        window.location.replace(`/#${encodeURI(returnPage)}`);
+      .then((response) => {
+        const account = response?.data?.user;
+        const destination = returnPage !== 'trang-chu' ? returnPage :
+          account?.role === 'Admin' ? 'admin/phe-duyet' :
+            account?.role === 'Supplier' && account?.capabilities?.canCreateShop ? 'nha-cung-cap/ho-so' :
+              account?.requestedRole === 'Supplier' ? 'dang-ky-nha-cung-cap' : 'trang-chu';
+        window.location.replace(`/#${encodeURI(destination)}`);
       })
       .catch((requestError) => {
         setError(requestError.message || 'Không thể xác thực tài khoản Google. Vui lòng thử lại.');

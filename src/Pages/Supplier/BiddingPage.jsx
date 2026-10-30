@@ -1,305 +1,116 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Card,
-  Table,
-  Button,
-  Tag,
-  Space,
-  Input,
-  Drawer,
-  Form,
-  InputNumber,
-  message,
-  Typography,
-  Alert,
-  Descriptions,
-  Badge,
-  Row,
-  Col,
+  Alert, Button, Card, Col, Descriptions, Drawer, Form, Input, InputNumber,
+  Modal, Row, Space, Table, Tag, Typography, message,
 } from 'antd';
-import {
-  SolutionOutlined,
-  SendOutlined,
-  EyeOutlined,
-  LockOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
-  CheckCircleOutlined,
-} from '@ant-design/icons';
+import { CloseOutlined, ReloadOutlined, SendOutlined } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import rfqService from '../../services/rfqService';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
+const statusColor = { Open: 'processing', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 
 export default function BiddingPage({ onNavigate }) {
-  const [bidDrawerOpen, setBidDrawerOpen] = useState(false);
+  const [rfqs, setRfqs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRfq, setSelectedRfq] = useState(null);
-  const [bidForm] = Form.useForm();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm();
+  const quoteLines = Form.useWatch('items', form);
 
-  // RFQ Invitations Mock Data
-  const [rfqList, setRfqList] = useState([
-    {
-      key: '1',
-      rfqNo: 'RFQ-2025-08910',
-      title: 'Gói thầu Quà tặng Trung Thu Doanh Nghiệp VVIP (Set Sơn Mài 4 Bánh)',
-      buyerCompany: 'Tập đoàn Vingroup (Khối Nhân sự)',
-      totalQty: 500,
-      targetPrice: '650.000 ₫ / hộp',
-      budgetRange: '300.000.000 ₫ - 350.000.000 ₫',
-      deliveryDateExpected: '2025-08-25',
-      deadline: '2025-08-16 18:00',
-      items: [
-        { itemName: 'Hộp Sơn Mài 4 Bánh Nướng Thập Cẩm & Trà VIP', qty: 300, unit: 'hộp' },
-        { itemName: 'Hộp Sơn Mài 4 Bánh Dẻo Hương Sen Cao Cấp', qty: 200, unit: 'hộp' },
-      ],
-      myBidStatus: 'drafting', // 'none' | 'drafting' | 'submitted' | 'accepted' | 'cancelled'
-    },
-    {
-      key: '2',
-      rfqNo: 'RFQ-2025-08925',
-      title: 'Đơn hàng Bánh Trung Thu Tri Ân Khách Hàng Thân Thiết Masan',
-      buyerCompany: 'Masan Consumer Corporation',
-      totalQty: 1200,
-      targetPrice: '280.000 ₫ / hộp',
-      budgetRange: '320.000.000 ₫ - 350.000.000 ₫',
-      deliveryDateExpected: '2025-08-28',
-      deadline: '2025-08-18 12:00',
-      items: [
-        { itemName: 'Hộp Giấy Mỹ Thuật 4 Bánh Nướng Hạt Sen & Đậu Xanh', qty: 1200, unit: 'hộp' },
-      ],
-      myBidStatus: 'submitted',
-    },
-    {
-      key: '3',
-      rfqNo: 'RFQ-2025-08880',
-      title: 'Gói Bánh Trung Thu Phúc Lộc Thọ Cán Bộ Nhân Viên FPT Software',
-      buyerCompany: 'Công ty Cổ phần Phần Mềm FPT',
-      totalQty: 2500,
-      targetPrice: '200.000 ₫ / hộp',
-      budgetRange: '480.000.000 ₫ - 520.000.000 ₫',
-      deliveryDateExpected: '2025-09-02',
-      deadline: '2025-08-15 17:00',
-      items: [
-        { itemName: 'Bánh Nướng Thập Cẩm 150g (Đóng hộp quà in logo FPT)', qty: 2500, unit: 'hộp' },
-      ],
-      myBidStatus: 'accepted',
-    },
-  ]);
+  const loadRfqs = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRfqs(await rfqService.listSupplierInvitations());
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleOpenBid = (record) => {
-    setSelectedRfq(record);
-    bidForm.resetFields();
-    setBidDrawerOpen(true);
+  useEffect(() => {
+    const timeout = window.setTimeout(loadRfqs, 0);
+    return () => window.clearTimeout(timeout);
+  }, [loadRfqs]);
+
+  const openBid = async (rfq) => {
+    setSubmitting(true);
+    try {
+      const detail = await rfqService.get(rfq.id);
+      setSelectedRfq(detail);
+      form.setFieldsValue({
+        estimatedDeliveryDays: 7,
+        validityDays: 30,
+        notes: '',
+        items: detail.items.map((item) => ({ rfqItemId: item.id, unitPrice: 0, notes: '' })),
+      });
+      setDrawerOpen(true);
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmitBid = (values) => {
-    setRfqList((prev) =>
-      prev.map((rfq) => (rfq.key === selectedRfq.key ? { ...rfq, myBidStatus: 'submitted' } : rfq))
-    );
-    message.success(
-      `Đã nộp thành công Hồ Sơ Chào Giá (Bid) cho phiên ${selectedRfq.rfqNo}! Báo giá đã được niêm phong theo cơ chế Sealed-Bid an toàn.`
-    );
-    setBidDrawerOpen(false);
+  const submitBid = async (values) => {
+    setSubmitting(true);
+    try {
+      await rfqService.submitBid(selectedRfq.id, values);
+      message.success('Đã nộp báo giá niêm phong. Khách hàng đã được thông báo.');
+      setDrawerOpen(false);
+      await loadRfqs();
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const columns = [
-    {
-      title: 'Mã RFQ',
-      dataIndex: 'rfqNo',
-      key: 'rfqNo',
-      width: 150,
-      render: (no) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{no}</span>,
-    },
-    {
-      title: 'Tên Gói Thầu & Doanh Nghiệp Mời',
-      dataIndex: 'title',
-      key: 'title',
-      render: (t, r) => (
-        <div>
-          <div style={{ fontWeight: 600, color: '#1f1f1f' }}>{t}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>Doanh nghiệp: <strong>{r.buyerCompany}</strong></div>
-        </div>
-      ),
-    },
-    {
-      title: 'Tổng Số Lượng',
-      dataIndex: 'totalQty',
-      key: 'totalQty',
-      align: 'center',
-      render: (qty) => <Tag color="purple">{qty.toLocaleString()} hộp</Tag>,
-    },
-    {
-      title: 'Ngân Sách Mục Tiêu',
-      dataIndex: 'budgetRange',
-      key: 'budgetRange',
-      render: (b) => <span style={{ color: '#8c1524', fontWeight: 600 }}>{b}</span>,
-    },
-    {
-      title: 'Hạn Chót Nộp Bid',
-      dataIndex: 'deadline',
-      key: 'deadline',
-      render: (d) => <Tag color="orange" icon={<CalendarOutlined />}>{d}</Tag>,
-    },
-    {
-      title: 'Trạng Thái Báo Giá Của Bạn',
-      dataIndex: 'myBidStatus',
-      key: 'myBidStatus',
-      render: (s) => {
-        if (s === 'submitted') return <Tag color="processing">✓ Đã nộp báo giá</Tag>;
-        if (s === 'accepted') return <Tag color="success">★ Trúng thầu (Awarded)</Tag>;
-        if (s === 'cancelled') return <Tag color="default">Không trúng thầu</Tag>;
-        return <Tag color="warning">Chưa gửi báo giá</Tag>;
+  const decline = (rfq) => {
+    let reason = '';
+    Modal.confirm({
+      title: `Từ chối lời mời ${rfq.rfqNumber}`,
+      content: <TextArea rows={3} onChange={(event) => { reason = event.target.value; }} placeholder="Lý do từ chối (ít nhất 3 ký tự)" />,
+      okText: 'Từ chối lời mời',
+      okButtonProps: { danger: true },
+      cancelText: 'Quay lại',
+      onOk: async () => {
+        if (reason.trim().length < 3) throw new Error('Vui lòng nhập lý do từ chối.');
+        await rfqService.decline(rfq.id, reason.trim());
+        message.success('Đã gửi phản hồi từ chối.');
+        await loadRfqs();
       },
-    },
-    {
-      title: 'Thao Tác',
-      key: 'action',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={record.myBidStatus === 'submitted' ? <EyeOutlined /> : <SendOutlined />}
-          style={{
-            background: record.myBidStatus === 'submitted' ? '#2c3e50' : '#8c1524',
-            borderColor: record.myBidStatus === 'submitted' ? '#2c3e50' : '#8c1524',
-          }}
-          onClick={() => handleOpenBid(record)}
-        >
-          {record.myBidStatus === 'submitted' ? 'Xem Báo Giá' : 'Soạn Báo Giá'}
-        </Button>
-      ),
-    },
+    });
+  };
+
+  const total = useMemo(() => selectedRfq?.items?.reduce((sum, item, index) =>
+    sum + Number(quoteLines?.[index]?.unitPrice || 0) * item.quantity, 0) || 0,
+  [quoteLines, selectedRfq]);
+  const columns = [
+    { title: 'RFQ', dataIndex: 'rfqNumber', render: (value) => <Text strong>{value}</Text> },
+    { title: 'Gói thầu', dataIndex: 'title', render: (value, item) => <Space direction="vertical" size={0}><Text>{value}</Text><Text type="secondary">Giao trước: {item.deliveryDateRequired}</Text></Space> },
+    { title: 'Hạn báo giá', dataIndex: 'bidDeadline', render: (value) => new Date(value).toLocaleString('vi-VN') },
+    { title: 'Trạng thái', dataIndex: 'status', render: (value) => <Tag color={statusColor[value]}>{value}</Tag> },
+    { title: 'Thao tác', render: (_, item) => <Space><Button type="primary" icon={<SendOutlined />} disabled={item.status !== 'Open'} onClick={() => openBid(item)}>Nộp báo giá</Button>{item.status === 'Open' && <Button danger icon={<CloseOutlined />} onClick={() => decline(item)}>Từ chối</Button>}</Space> },
   ];
 
-  return (
-    <ColonyAdminLayout
-      role="Supplier"
-      activeKey="nha-cung-cap/dau-thau"
-      onNavigate={onNavigate}
-      title="Đấu Thầu RFQ, Hộp Thư Lời Mời & Soạn Báo Giá (Bidding)"
-      subtitle="Tham gia các gói thầu bánh trung thu doanh nghiệp lớn, gửi báo giá niêm phong và theo dõi kết quả trúng thầu"
-    >
-      <Alert
-        message="Cơ chế Bảo mật Báo giá Niêm phong (Sealed Bid)"
-        description="Mọi báo giá của xưởng được mã hóa và bảo mật tuyệt đối, các nhà cung cấp khác không thể xem được giá của nhau. Khi Bên Mua accept báo giá, hệ thống sẽ tự động kích hoạt luồng Ký Hợp Đồng Điện Tử và đặt cọc M1."
-        type="info"
-        showIcon
-        icon={<LockOutlined />}
-        style={{ marginBottom: 20 }}
-      />
-
-      <Card bordered={false} style={{ borderRadius: 10 }}>
-        <Table columns={columns} dataSource={rfqList} pagination={{ pageSize: 6 }} />
-      </Card>
-
-      {/* Drawer Soạn Báo Giá Bid */}
-      {selectedRfq && (
-        <Drawer
-          title={
-            <div>
-              <div style={{ fontSize: 13, color: '#888' }}>Mã RFQ: {selectedRfq.rfqNo}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#1f1f1f' }}>
-                Hồ Sơ Chào Giá (Bid) - {selectedRfq.buyerCompany}
-              </div>
-            </div>
-          }
-          width={640}
-          open={bidDrawerOpen}
-          onClose={() => setBidDrawerOpen(false)}
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <Button onClick={() => setBidDrawerOpen(false)}>Đóng</Button>
-              {selectedRfq.myBidStatus !== 'submitted' && (
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  style={{ background: '#8c1524', borderColor: '#8c1524' }}
-                  onClick={() => bidForm.submit()}
-                >
-                  Gửi Báo Giá Niêm Phong
-                </Button>
-              )}
-            </div>
-          }
-        >
-          <Descriptions bordered size="small" column={1} style={{ marginBottom: 20 }}>
-            <Descriptions.Item label="Gói Thầu">{selectedRfq.title}</Descriptions.Item>
-            <Descriptions.Item label="Ngày Cần Giao">{selectedRfq.deliveryDateExpected}</Descriptions.Item>
-            <Descriptions.Item label="Hạn Chót Báo Giá">{selectedRfq.deadline}</Descriptions.Item>
-            <Descriptions.Item label="Danh Mục Hàng Hóa Cần Báo Giá">
-              {selectedRfq.items.map((item, idx) => (
-                <div key={idx} style={{ padding: '4px 0' }}>
-                  • <strong>{item.itemName}</strong> - Số lượng: <strong>{item.qty} {item.unit}</strong>
-                </div>
-              ))}
-            </Descriptions.Item>
-          </Descriptions>
-
-          <Form
-            form={bidForm}
-            layout="vertical"
-            initialValues={{
-              unitPrice: 620000,
-              validityDays: 14,
-              deliveryLeadTimeDays: 7,
-              specialNotes: 'Bao gồm hộp sơn mài cao cấp, miễn phí in logo doanh nghiệp dập nổi và giao hàng tận nơi tại trụ sở Vingroup.',
-            }}
-            onFinish={handleSubmitBid}
-          >
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="unitPrice"
-                  label="Đơn Giá Đề Xuất (VNĐ / Hộp)"
-                  rules={[{ required: true }]}
-                >
-                  <InputNumber
-                    min={50000}
-                    step={10000}
-                    formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={(v) => v.replace(/\$\s?|(,*)/g, '')}
-                    addonAfter="₫"
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="validityDays"
-                  label="Thời Hạn Hiệu Lực Báo Giá"
-                  rules={[{ required: true }]}
-                >
-                  <InputNumber min={7} max={30} addonAfter="ngày" style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="deliveryLeadTimeDays"
-                  label="Thời Gian Sản Xuất & Giao Hàng"
-                  rules={[{ required: true }]}
-                >
-                  <InputNumber min={3} max={30} addonAfter="ngày sau cọc M1" style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <div style={{ background: '#fff9f9', padding: '10px 14px', borderRadius: 8, marginTop: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>Tổng giá trị báo giá dự kiến:</Text>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#8c1524' }}>
-                    {(selectedRfq.totalQty * 620000).toLocaleString('vi-VN')} ₫
-                  </div>
-                </div>
-              </Col>
-            </Row>
-
-            <Form.Item name="specialNotes" label="Cam Kết Về Chất Lượng / Ưu Đãi Đóng Gói Kèm Theo">
-              <TextArea rows={4} placeholder="Cam kết chứng chỉ ATTP, mẫu thử miễn phí, hỗ trợ in ấn logo theo chuẩn nhận diện..." />
-            </Form.Item>
-          </Form>
-        </Drawer>
-      )}
-    </ColonyAdminLayout>
-  );
+  return <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/dau-thau" onNavigate={onNavigate}
+    title="RFQ được mời & báo giá niêm phong" subtitle="Báo giá đầy đủ từng hạng mục; các xưởng khác không thể xem giá của bạn.">
+    <Alert type="info" showIcon style={{ marginBottom: 20 }} message="Quy tắc báo giá" description="Chỉ nộp khi RFQ còn mở và phải báo giá cho toàn bộ hạng mục. Báo giá có thể được cập nhật trước hạn chót theo chính sách RFQ." />
+    <Card extra={<Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button>}><Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 920 }} /></Card>
+    <Drawer title={`Nộp báo giá · ${selectedRfq?.rfqNumber || ''}`} width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)} footer={<Space><Button onClick={() => setDrawerOpen(false)}>Đóng</Button><Button type="primary" loading={submitting} onClick={() => form.submit()}>Gửi báo giá niêm phong</Button></Space>}>
+      {selectedRfq && <><Descriptions bordered size="small" column={1} style={{ marginBottom: 18 }}><Descriptions.Item label="Gói thầu">{selectedRfq.title}</Descriptions.Item><Descriptions.Item label="Hạn nộp">{new Date(selectedRfq.bidDeadline).toLocaleString('vi-VN')}</Descriptions.Item><Descriptions.Item label="Ngày giao">{selectedRfq.deliveryDateRequired}</Descriptions.Item></Descriptions>
+        <Form form={form} layout="vertical" onFinish={submitBid}>
+          <Form.List name="items">{(fields) => <Space direction="vertical" style={{ width: '100%' }}>{fields.map((field, index) => { const item = selectedRfq.items[index]; return <Card key={field.key} size="small" title={`${item.productName} × ${item.quantity} ${item.unit}`}><Form.Item {...field} name={[field.name, 'rfqItemId']} hidden><Input /></Form.Item><Row gutter={12}><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'unitPrice']} label="Đơn giá" rules={[{ required: true, message: 'Nhập đơn giá.' }]}><InputNumber min={0.01} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'notes']} label="Ghi chú dòng hàng"><Input /></Form.Item></Col></Row></Card>; })}</Space>}</Form.List>
+          <Row gutter={12} style={{ marginTop: 16 }}><Col span={12}><Form.Item name="estimatedDeliveryDays" label="Số ngày giao hàng" rules={[{ required: true }]}><InputNumber min={1} max={365} style={{ width: '100%' }} /></Form.Item></Col><Col span={12}><Form.Item name="validityDays" label="Hiệu lực báo giá" rules={[{ required: true }]}><InputNumber min={1} max={365} style={{ width: '100%' }} /></Form.Item></Col></Row>
+          <Form.Item name="notes" label="Cam kết / ưu đãi"><TextArea rows={4} maxLength={4000} showCount /></Form.Item>
+          <Card size="small"><Title level={5}>Tổng báo giá dự kiến: {money(total)}</Title></Card>
+        </Form></>}
+    </Drawer>
+  </ColonyAdminLayout>;
 }
