@@ -32,6 +32,7 @@ export const shopService = {
       ...headers(key), timeout: 90000,
     }));
   },
+  getTemplates: (params, signal) => get(paths.ADMIN_TEMPLATES, params, signal),
 };
 
 export const shopTemplateService = {
@@ -42,3 +43,6 @@ export const shopTemplateService = {
   availability: (id, body, key) => write('patch', paths.TEMPLATE_AVAILABILITY(id), body, key),
   premium: (id, body, key) => write('patch', paths.TEMPLATE_PREMIUM(id), body, key),
 };
+
+export default shopService;
+

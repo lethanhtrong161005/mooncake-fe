@@ -1,35 +1,30 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
-const unwrap = (response) => response?.data ?? response;
+const unwrap = (res) => (res && res.data !== undefined ? (res.data?.data !== undefined ? res.data.data : res.data) : res);
 
 export const adminService = {
-  async getDashboard() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.DASHBOARD_STATS));
+  async getDisputes(params = {}) {
+    const response = await apiClient.get(API_ENDPOINTS.DISPUTES.LIST, { params });
+    return unwrap(response);
   },
-  async listSystemConfig() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.SYSTEM_CONFIG));
+
+  async resolveDispute(disputeId, payload) {
+    const response = await apiClient.post(API_ENDPOINTS.DISPUTES.RESOLVE(disputeId), payload);
+    return unwrap(response);
   },
-  async setSystemConfig(key, valueJson, description = null) {
-    return unwrap(await apiClient.put(API_ENDPOINTS.ADMIN.SYSTEM_CONFIG_ITEM(encodeURIComponent(key)), {
+
+  async getSystemConfigs() {
+    const response = await apiClient.get('/v1/admin/system-config');
+    return unwrap(response);
+  },
+
+  async updateSystemConfig(key, valueJson, description) {
+    const response = await apiClient.put(`/v1/admin/system-config/${encodeURIComponent(key)}`, {
       valueJson,
       description,
-    }));
-  },
-  async listAuditLogs(params = {}) {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.AUDIT_LOGS, { params }));
-  },
-  async listDepositRules() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN.CONTRACT_DEPOSIT_RULES));
-  },
-  async createDepositRule(request) {
-    return unwrap(await apiClient.post(API_ENDPOINTS.ADMIN.CONTRACT_DEPOSIT_RULES, request));
-  },
-  async updateDepositRule(ruleId, request) {
-    return unwrap(await apiClient.put(API_ENDPOINTS.ADMIN.CONTRACT_DEPOSIT_RULE(ruleId), request));
-  },
-  async updateUser(userId, request) {
-    return unwrap(await apiClient.patch(API_ENDPOINTS.ADMIN.USER(userId), request));
+    });
+    return unwrap(response);
   },
 };
 

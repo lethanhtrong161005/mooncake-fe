@@ -1,262 +1,293 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Table,
   Button,
   Tag,
   Space,
-  Modal,
-  Timeline,
-  Descriptions,
-  message,
   Typography,
   Alert,
+  message,
+  Tooltip,
 } from 'antd';
 import {
   CarOutlined,
-  CheckCircleOutlined,
   CameraOutlined,
-  StarOutlined,
+  ClockCircleOutlined,
+  MobileOutlined,
+  FileDoneOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import PoDViewerModal from '../../components/delivery/PoDViewerModal';
+import deliveryService from '../../services/deliveryService';
 
 const { Text } = Typography;
 
+const STATUS_TAG_MAP = {
+  Pending: { text: 'Chờ xếp xe', color: 'default' },
+  Confirmed: { text: 'Đã xác nhận', color: 'blue' },
+  PickedUp: { text: 'Đã bốc lên xe', color: 'geekblue' },
+  InTransit: { text: 'Đang vận chuyển', color: 'gold' },
+  Delivered: { text: 'Đã bàn giao (PoD)', color: 'green' },
+  Failed: { text: 'Giao thất bại', color: 'red' },
+  Returned: { text: 'Đã chuyển hoàn', color: 'volcano' },
+  in_transit: { text: 'Đang vận chuyển', color: 'gold' },
+  delivered: { text: 'Đã bàn giao (PoD)', color: 'green' },
+};
+
 export default function DeliveryPoD({ onNavigate }) {
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
+  const [currentProofs, setCurrentProofs] = useState([]);
   const [podModalOpen, setPodModalOpen] = useState(false);
 
-  // Customer Deliveries Mock Data
-  const [deliveries, setDeliveries] = useState([
-    {
-      key: '1',
-      deliveryCode: 'DEL-2025-01',
-      contractNo: 'HD-2025-08910',
-      supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân',
-      trackingCode: 'TA-TRUCK-889',
-      carrier: 'Đội vận chuyển chuyên dụng xưởng',
-      packagesCount: '500 Hộp Sơn Mài',
-      status: 'in_transit', // 'in_transit' | 'delivered'
-      expectedDate: '2025-08-25',
-      proofPhotos: ['pod_pickup_package.jpg'],
-    },
-    {
-      key: '2',
-      deliveryCode: 'DEL-2025-02',
-      contractNo: 'HD-2025-08500',
-      supplierName: 'Hữu Nghị Luxury Mooncake',
-      trackingCode: 'GHTK-B2B-998811',
-      carrier: 'Giao Hàng Tiết Kiệm B2B',
-      packagesCount: '300 Hộp Dạ Nguyệt',
-      status: 'delivered',
-      expectedDate: '2025-08-10',
-      proofPhotos: ['pod_delivered_signed.jpg', 'pod_packages_dock.jpg'],
-      customerConfirmed: true,
-    },
-  ]);
+  const fetchDeliveries = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await deliveryService.listMine();
+      setDeliveries(Array.isArray(data) ? data : []);
+    } catch {
+      message.error('Không thể tải danh sách chuyến giao hàng.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleOpenPod = (record) => {
+  useEffect(() => {
+    let ignore = false;
+    const run = async () => {
+      try {
+        setLoading(true);
+        const data = await deliveryService.listMine();
+        if (!ignore) {
+          setDeliveries(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (!ignore) {
+          message.error('Không thể tải danh sách chuyến giao hàng.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+    run();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const handleOpenPod = async (record) => {
     setSelectedDelivery(record);
+    try {
+      const proofs = await deliveryService.getProofs(record.id || record.key);
+      setCurrentProofs(Array.isArray(proofs) ? proofs : []);
+    } catch {
+      setCurrentProofs([]);
+    }
     setPodModalOpen(true);
   };
 
-  const handleConfirmReceived = () => {
-    setDeliveries((prev) =>
-      prev.map((d) => (d.key === selectedDelivery.key ? { ...d, status: 'delivered', customerConfirmed: true } : d))
-    );
-    message.success(
-      'Đã xác nhận nhận đủ hàng nguyên vẹn! Hệ thống đã giải phóng đợt thanh toán Escrow tương ứng và kích hoạt luồng đánh giá.'
-    );
-    setPodModalOpen(false);
-    onNavigate?.('thanh-toan-danh-gia');
+  const handleConfirmReceived = async (record) => {
+    try {
+      await deliveryService.updateStatus(record.id || record.key, 'Delivered', 'Khách hàng đối soát và xác nhận đã nhận đủ hàng.');
+      message.success('Đã xác nhận nhận đủ hàng nguyên vẹn! Hệ thống đã kích hoạt giải phóng đợt thanh toán Milestone tương ứng.');
+      fetchDeliveries();
+    } catch {
+      message.error('Không thể cập nhật trạng thái nhận hàng.');
+    }
   };
 
   const columns = [
     {
       title: 'Mã Vận Chuyển',
-      dataIndex: 'deliveryCode',
-      key: 'deliveryCode',
-      render: (c) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{c}</span>,
+      dataIndex: 'deliveryNumber',
+      key: 'deliveryNumber',
+      render: (text, r) => (
+        <div>
+          <span className="font-bold text-amber-700">{text || r.deliveryCode || 'DEL-N/A'}</span>
+          <div className="text-[11px] text-slate-400">
+            {r.deliveryType === 'SelfArranged' ? 'Xưởng tự chở' : 'Đơn vị VC'}
+          </div>
+        </div>
+      ),
     },
     {
-      title: 'Hợp Đồng Tham Chiếu',
-      dataIndex: 'contractNo',
-      key: 'contractNo',
-      render: (c) => <strong>{c}</strong>,
+      title: 'Hợp Đồng / Đơn Hàng',
+      dataIndex: 'contractNumber',
+      key: 'contractNumber',
+      render: (text, r) => (
+        <div>
+          <strong className="text-slate-800">{text || r.contractNo || 'HĐ-B2B'}</strong>
+          <div className="text-xs text-slate-500 truncate max-w-xs">{r.supplierName || 'Nhà cung cấp'}</div>
+        </div>
+      ),
     },
     {
-      title: 'Nhà Cung Cấp Vận Chuyển',
-      dataIndex: 'supplierName',
-      key: 'supplierName',
+      title: 'Điểm Nhận Hàng & Người Nhận',
+      key: 'destination',
+      render: (_, r) => (
+        <div className="text-xs">
+          <div className="font-medium text-slate-800 truncate max-w-xs">{r.toAddress || 'Tại kho khách hàng'}</div>
+          <div className="text-slate-500">
+            👤 {r.recipientName || 'Thủ kho'} ({r.recipientPhone || 'N/A'})
+          </div>
+        </div>
+      ),
     },
     {
-      title: 'Quy Cách Kiện Hàng',
-      dataIndex: 'packagesCount',
-      key: 'packagesCount',
-      render: (p) => <Tag color="purple">{p}</Tag>,
-    },
-    {
-      title: 'Mã Vận Đơn (Tracking)',
+      title: 'Mã Tracking',
       dataIndex: 'trackingCode',
       key: 'trackingCode',
-      render: (t, r) => (
-        <div>
-          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{t}</span>
-          <div style={{ fontSize: 11, color: '#888' }}>{r.carrier}</div>
-        </div>
+      render: (t) => (
+        <Tag color="cyan" className="font-mono">
+          {t || 'Nội bộ xưởng'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Ngày Dự Kiến',
+      dataIndex: 'scheduledDate',
+      key: 'scheduledDate',
+      render: (d, r) => (
+        <span className="text-xs text-slate-600">
+          <ClockCircleOutlined className="mr-1 text-slate-400" />
+          {d || r.expectedDate || 'Đang cập nhật'}
+        </span>
       ),
     },
     {
       title: 'Trạng Thái',
       dataIndex: 'status',
       key: 'status',
-      render: (s) => (s === 'delivered' ? <Tag color="success">✓ Đã giao thành công</Tag> : <Tag color="processing">Đang trên đường giao</Tag>),
+      render: (status) => {
+        const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
+        return (
+          <Tag color={config.color} className="font-semibold text-xs px-2.5 py-0.5">
+            {config.text}
+          </Tag>
+        );
+      },
     },
     {
-      title: 'Hành Động',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            size="small"
-            icon={<CameraOutlined />}
-            style={{ background: '#8c1524', borderColor: '#8c1524' }}
-            onClick={() => handleOpenPod(record)}
-          >
-            Ảnh PoD & Ký Nhận
-          </Button>
-          {record.status === 'delivered' && (
+      title: 'Thao Tác Bằng Chứng',
+      key: 'actions',
+      align: 'right',
+      render: (_, record) => {
+        const isDelivered = record.status === 'Delivered' || record.status === 'delivered';
+        return (
+          <Space size="small">
             <Button
-              type="default"
               size="small"
-              icon={<StarOutlined />}
-              onClick={() => onNavigate?.('thanh-toan-danh-gia')}
+              icon={<CameraOutlined />}
+              onClick={() => handleOpenPod(record)}
+              className="border-amber-300 text-amber-800 hover:bg-amber-50 font-medium"
             >
-              Đánh Giá
+              Xem PoD
             </Button>
-          )}
-        </Space>
-      ),
+
+            {!isDelivered && (
+              <Tooltip title="Mở giao diện Web Mobile-First giả lập tài xế nộp ảnh & ký tên">
+                <Button
+                  size="small"
+                  icon={<MobileOutlined />}
+                  onClick={() => {
+                    window.location.hash = `driver-delivery-view?id=${record.id || record.key}`;
+                  }}
+                  className="text-xs border-slate-300"
+                >
+                  Tài xế PoD
+                </Button>
+              </Tooltip>
+            )}
+
+            {!isDelivered && (record.status === 'InTransit' || record.status === 'in_transit') && (
+              <Button
+                size="small"
+                type="dashed"
+                className="text-emerald-700 border-emerald-400 hover:bg-emerald-50 font-medium text-xs"
+                onClick={() => handleConfirmReceived(record)}
+              >
+                Nhận hàng
+              </Button>
+            )}
+
+            {isDelivered && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<FileDoneOutlined />}
+                className="bg-emerald-600 hover:bg-emerald-500 font-medium text-xs"
+                onClick={() => {
+                  window.location.hash = 'hop-dong-tien-do';
+                  onNavigate?.('hop-dong-tien-do');
+                }}
+              >
+                Nghiệm thu Mốc
+              </Button>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
   return (
-    <div style={{ background: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <CustomerHeader activeKey="giao-hang-pod" onNavigate={onNavigate} />
+    <div className="min-h-screen bg-stone-50">
+      <CustomerHeader onNavigate={onNavigate} />
 
-      <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
-        <div
-          style={{
-            background: '#ffffff',
-            padding: '20px 24px',
-            borderRadius: 10,
-            marginBottom: 20,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1f1f1f' }}>
-            Theo Dõi Giao Nhận & Xác Minh Bằng Chứng PoD (Proof of Delivery)
-          </h1>
-          <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>
-            Kiểm tra trạng thái kiện hàng, đối chiếu hình ảnh thực tế tại điểm giao và bấm xác nhận hoàn thành đợt giao
-          </p>
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <CarOutlined className="text-amber-600" />
+              Theo Dõi Giao Nhận & Xác Minh Bằng Chứng PoD
+            </h1>
+            <Text type="secondary" className="text-sm">
+              Doanh nghiệp đối soát ảnh chụp hiện trường kiện bánh, chữ ký điện tử thủ kho và tọa độ GPS chống gian lận
+            </Text>
+          </div>
+
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={fetchDeliveries}
+            loading={loading}
+            className="border-slate-300 font-medium self-start sm:self-auto"
+          >
+            Làm mới
+          </Button>
         </div>
 
         <Alert
-          message="Bằng chứng giao nhận an toàn (PoD - Proof of Delivery)"
-          description="Ảnh chụp thực tế tại điểm giao hàng kèm chữ ký đại diện doanh nghiệp được mã hóa bảo mật. Quý khách vui lòng kiểm tra kỹ số lượng hộp trước khi xác nhận nghiệm thu."
           type="info"
           showIcon
-          style={{ marginBottom: 20 }}
+          className="bg-amber-50/70 border-amber-200"
+          message={
+            <div className="text-xs text-slate-700">
+              <strong>Bảo đảm quyền lợi pháp lý:</strong> Mỗi đợt giao bánh trung thu đều bắt buộc nhân viên giao vận chụp ảnh kiện hàng nguyên đai niêm phong kèm chữ ký số cảm ứng của người nhận tại kho. Bằng chứng được niêm phong bằng mã băm SHA-256 bất biến trên cơ sở dữ liệu.
+            </div>
+          }
         />
 
-        <Card bordered={false} style={{ borderRadius: 10 }}>
-          <Table columns={columns} dataSource={deliveries} pagination={false} />
+        <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+          <Table
+            columns={columns}
+            dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
+            loading={loading}
+            pagination={{ pageSize: 8 }}
+            scroll={{ x: 900 }}
+          />
         </Card>
 
-        {/* Modal PoD */}
-        {selectedDelivery && (
-          <Modal
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <CameraOutlined style={{ color: '#8c1524' }} />
-                <span>Bằng Chứng Giao Nhận PoD: {selectedDelivery.deliveryCode}</span>
-              </div>
-            }
-            open={podModalOpen}
-            onCancel={() => setPodModalOpen(false)}
-            footer={
-              selectedDelivery.status !== 'delivered' ? (
-                <Space>
-                  <Button onClick={() => setPodModalOpen(false)}>Đóng</Button>
-                  <Button
-                    type="primary"
-                    icon={<CheckCircleOutlined />}
-                    style={{ background: '#2e7d32', borderColor: '#2e7d32' }}
-                    onClick={handleConfirmReceived}
-                  >
-                    Xác Nhận Đã Nhận Đủ Hàng
-                  </Button>
-                </Space>
-              ) : (
-                <Button type="primary" onClick={() => setPodModalOpen(false)}>
-                  Đóng
-                </Button>
-              )
-            }
-            width={650}
-          >
-            <Descriptions bordered size="small" column={2} style={{ margin: '16px 0' }}>
-              <Descriptions.Item label="Đơn Vị Cung Ứng">{selectedDelivery.supplierName}</Descriptions.Item>
-              <Descriptions.Item label="Mã Hợp Đồng">{selectedDelivery.contractNo}</Descriptions.Item>
-              <Descriptions.Item label="Số Lượng Kiện">{selectedDelivery.packagesCount}</Descriptions.Item>
-              <Descriptions.Item label="Mã Tracking">{selectedDelivery.trackingCode}</Descriptions.Item>
-            </Descriptions>
-
-            <div style={{ background: '#fafafa', padding: 16, borderRadius: 8, marginBottom: 16 }}>
-              <Text strong style={{ display: 'block', marginBottom: 10 }}>
-                Ảnh Chụp Bằng Chứng Giao Nhận Tại Kho / Trụ Sở Doanh Nghiệp:
-              </Text>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {selectedDelivery.proofPhotos.map((photo, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: 140,
-                      height: 100,
-                      border: '1px solid #ddd',
-                      borderRadius: 8,
-                      background: '#ffffff',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 11,
-                      color: '#666',
-                      padding: 6,
-                    }}
-                  >
-                    <span style={{ fontSize: 24, marginBottom: 4 }}>📷</span>
-                    <span>{photo}</span>
-                    <span style={{ color: '#2e7d32', fontWeight: 600 }}>✓ GPS Verified</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <Timeline
-              items={[
-                { color: 'green', children: 'Hàng xuất kho xưởng Tràng An (2025-08-24 07:30)' },
-                { color: 'green', children: 'Xe chuyên dụng vận chuyển đến địa chỉ doanh nghiệp (2025-08-25 09:15)' },
-                {
-                  color: selectedDelivery.status === 'delivered' ? 'green' : 'blue',
-                  children: selectedDelivery.status === 'delivered' ? 'Đại diện doanh nghiệp đã ký nhận & đóng dấu' : 'Đang tiến hành bàn giao kiểm đếm tại sảnh',
-                },
-              ]}
-            />
-          </Modal>
-        )}
+        <PoDViewerModal
+          open={podModalOpen}
+          onClose={() => setPodModalOpen(false)}
+          delivery={selectedDelivery}
+          proofs={currentProofs}
+        />
       </main>
     </div>
   );

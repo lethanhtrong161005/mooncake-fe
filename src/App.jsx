@@ -16,6 +16,7 @@ import PackagingAndLogoPrinting from './Pages/Customer/PackagingAndLogoPrinting'
 import BiddingAndQuoteComparison from './Pages/Customer/BiddingAndQuoteComparison';
 import ContractsAndMilestone from './Pages/Customer/ContractsAndMilestone';
 import DeliveryPoD from './Pages/Customer/DeliveryPoD';
+import DriverMobileView from './Pages/Delivery/DriverMobileView';
 import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
 
@@ -40,6 +41,8 @@ import AdminProfile from './Pages/Admin/AdminProfile';
 import LoginPopup from './Pages/LoginPopup';
 import RegisterPopup from './Pages/RegisterPopup';
 import GoogleCallbackPage from './Pages/Auth/GoogleCallbackPage';
+import AiChatWidget from './components/ai/AiChatWidget';
+import PaymentResultView from './components/payment/PaymentResultView';
 
 const StoreSetUp = lazy(() => import('./Pages/Supplier/StoreSetUp'));
 const ShopAppearance = lazy(() => import('./Pages/Supplier/ShopAppearance'));
@@ -130,10 +133,22 @@ export default function App() {
       case 'hop-dong-dien-tu':
         return <ContractsAndMilestone onNavigate={navigateTo} />;
       case 'giao-hang-pod':
+      case 'van-chuyen-pod':
         return <DeliveryPoD onNavigate={navigateTo} />;
+      case 'driver-delivery-view':
+      case 'driver-pod':
+        return (
+          <DriverMobileView
+            onBack={() => navigateTo('giao-hang-pod')}
+            onComplete={() => navigateTo('giao-hang-pod')}
+          />
+        );
       case 'thanh-toan-danh-gia':
       case 'danh-gia-va-phe-duyet-mau-thu':
         return <PaymentAndRate onNavigate={navigateTo} />;
+      case 'thanh-toan/ket-qua':
+      case 'ket-qua-thanh-toan':
+        return <PaymentResultView onNavigate={navigateTo} />;
       case 'ho-so-khach-hang':
         return <CustomerProfile onNavigate={navigateTo} />;
       case 'thong-bao':
@@ -152,6 +167,7 @@ export default function App() {
         return <ProductManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/dau-thau':
         return <BiddingPage onNavigate={navigateTo} />;
+      case 'nha-cung-cap/don-hang':
       case 'nha-cung-cap/quan-ly-don-hang':
         return <OrderManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/quan-ly-hop-dong':
@@ -232,7 +248,9 @@ export default function App() {
         { key: 'so-sanh-bao-gia', label: '6. Yêu cầu báo giá (RFQ)' },
         { key: 'hop-dong-tien-do', label: '7. Hợp đồng & Cọc M1' },
         { key: 'giao-hang-pod', label: '8. Giao nhận PoD' },
+        { key: 'driver-delivery-view', label: '8b. Tài xế Mobile PoD (Web View)' },
         { key: 'thanh-toan-danh-gia', label: '9. Thanh toán & Đánh giá' },
+        { key: 'thanh-toan/ket-qua', label: '9b. Biên lai VNPay (E-Receipt)' },
         { key: 'ho-so-khach-hang', label: '10. Hồ sơ doanh nghiệp' },
       ],
     },
@@ -351,6 +369,9 @@ export default function App() {
             setShowLogin(true);
           }}
         />
+
+        {/* Global AI Chatbot Concierge Widget */}
+        <AiChatWidget onNavigate={navigateTo} />
       </div>
       </AntApp>
     </ConfigProvider>

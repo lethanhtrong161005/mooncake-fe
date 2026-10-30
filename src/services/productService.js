@@ -18,6 +18,7 @@ export const productService = {
   related: (id, signal) => getPublic(API_ENDPOINTS.PRODUCTS.RELATED(id), undefined, signal),
   recommendations: (params, signal) => getPublic(API_ENDPOINTS.PRODUCTS.RECOMMENDATIONS, params, signal),
   categories: (signal) => getPublic(API_ENDPOINTS.PRODUCTS.CATEGORIES, undefined, signal),
+  getCategories: (signal) => getPublic(API_ENDPOINTS.PRODUCTS.CATEGORIES, undefined, signal),
   regions: (signal) => getPublic(API_ENDPOINTS.PRODUCTS.REGIONS, undefined, signal),
   recordView: (id, body) => apiClient.post(API_ENDPOINTS.PRODUCTS.VIEW(id), body).then(unwrap),
 

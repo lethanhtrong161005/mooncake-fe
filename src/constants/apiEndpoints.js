@@ -67,9 +67,11 @@ export const API_ENDPOINTS = {
   RFQ: {
     CREATE: `/${API_VERSION}/rfqs`,
     LIST: `/${API_VERSION}/rfqs/mine`,
+    SUPPLIER_LIST: `/${API_VERSION}/rfqs/supplier`,
     DETAILS: (id) => `/${API_VERSION}/rfqs/${id}`,
     PUBLISH: (id) => `/${API_VERSION}/rfqs/${id}/publish`,
     CANCEL: (id) => `/${API_VERSION}/rfqs/${id}/cancel`,
+    SUGGESTED_SUPPLIERS: (id) => `/${API_VERSION}/rfqs/${id}/suggested-suppliers`,
     INVITATIONS: (id) => `/${API_VERSION}/rfqs/${id}/invitations`,
     DECLINE: (id) => `/${API_VERSION}/rfqs/${id}/decline`,
     BIDS: (id) => `/${API_VERSION}/rfqs/${id}/bids`,
@@ -80,6 +82,7 @@ export const API_ENDPOINTS = {
   // Orders & PoD Logistics
   ORDERS: {
     CREATE: `/${API_VERSION}/orders`,
+    QUOTE_PREVIEW: `/${API_VERSION}/orders/quote-preview`,
     LIST: `/${API_VERSION}/orders`,
     DETAILS: (id) => `/${API_VERSION}/orders/${id}`,
     CANCEL: (id) => `/${API_VERSION}/orders/${id}/cancel`,
@@ -90,6 +93,10 @@ export const API_ENDPOINTS = {
     PROCESSING: (id) => `/${API_VERSION}/orders/${id}/processing`,
     SHIP: (id) => `/${API_VERSION}/orders/${id}/ship`,
     CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
+    CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
+    PACKAGING_REVISIONS: (id) => `/${API_VERSION}/orders/${id}/custom-packaging/revisions`,
+    REVIEW_PACKAGING_REVISION: (id, revisionId) =>
+      `/${API_VERSION}/orders/${id}/custom-packaging/revisions/${revisionId}/review`,
   },
 
   // e-Contract & Escrow Payments
@@ -99,6 +106,31 @@ export const API_ENDPOINTS = {
     SIGN: (id) => `/${API_VERSION}/contracts/${id}/sign`,
     SIGNATURE_OTP: (id) => `/${API_VERSION}/contracts/${id}/signature-otp`,
     SUBMIT_FOR_SIGNATURE: (id) => `/${API_VERSION}/contracts/${id}/submit-for-signature`,
+    MILESTONES: (id) => `/${API_VERSION}/contracts/${id}/milestones`,
+    SUBMIT_PROGRESS: (id, milestoneId) => `/${API_VERSION}/contracts/${id}/milestones/${milestoneId}/submit-progress`,
+    VERIFY_MILESTONE: (id, milestoneId) => `/${API_VERSION}/contracts/${id}/milestones/${milestoneId}/verify`,
+    EXTENSION_REQUEST: (id) => `/${API_VERSION}/contracts/${id}/extension-request`,
+    EXTENSION_RESPOND: (id) => `/${API_VERSION}/contracts/${id}/extension-request/respond`,
+    DISPUTE: (id) => `/${API_VERSION}/contracts/${id}/dispute`,
+    REQUEST_FINAL_ACCEPTANCE: (id) => `/${API_VERSION}/contracts/${id}/request-final-acceptance`,
+    CONFIRM_FINAL_ACCEPTANCE: (id) => `/${API_VERSION}/contracts/${id}/confirm-final-acceptance`,
+  },
+  ADMIN_CONTRACTS: {
+    RESOLVE_DISPUTE: (id) => `/${API_VERSION}/admin/contracts/${id}/resolve-dispute`,
+  },
+
+  // Logistics & Proof of Delivery (PoD)
+  DELIVERIES: {
+    LIST: `/${API_VERSION}/deliveries`,
+    DETAILS: (id) => `/${API_VERSION}/deliveries/${id}`,
+    CREATE: `/${API_VERSION}/deliveries`,
+    STATUS: (id) => `/${API_VERSION}/deliveries/${id}/status`,
+    CARRIER_INFO: (id) => `/${API_VERSION}/deliveries/${id}/carrier-info`,
+    BY_CONTRACT: (contractId) => `/${API_VERSION}/deliveries/contract/${contractId}`,
+    BY_ORDER: (orderId) => `/${API_VERSION}/deliveries/order/${orderId}`,
+    PROOFS: (deliveryId) => `/${API_VERSION}/deliveries/${deliveryId}/proofs`,
+    PROOF_DETAILS: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}`,
+    VERIFY_PROOF: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}/verify`,
   },
 
   PAYMENTS: {
@@ -106,6 +138,13 @@ export const API_ENDPOINTS = {
     LIST: `/${API_VERSION}/payments/mine`,
     CONFIRM: (id) => `/${API_VERSION}/payments/${id}/confirm`,
     REFUND: (id) => `/${API_VERSION}/payments/${id}/refund`,
+    VNPAY_CREATE_URL: `/${API_VERSION}/payments/vnpay/create-url`,
+    ORDER_VNPAY_URL: `/${API_VERSION}/payments/orders/vnpay-url`,
+    CONTRACT_VNPAY_URL: `/${API_VERSION}/payments/contracts/vnpay-url`,
+    BANK_TRANSFER: `/${API_VERSION}/payments/bank-transfer`,
+    VNPAY_RETURN: `/${API_VERSION}/payments/vnpay/return-callback`,
+    UPLOAD_EVIDENCE: (id) => `/${API_VERSION}/payments/${id}/evidence`,
+    ESCROW_SUMMARY: `/${API_VERSION}/payments/escrow/summary`,
   },
 
   // Suppliers & Workshops
@@ -148,6 +187,55 @@ export const API_ENDPOINTS = {
     CONTRACT_DEPOSIT_RULES: `/${API_VERSION}/admin/contract-deposit-rules`,
     CONTRACT_DEPOSIT_RULE: (ruleId) => `/${API_VERSION}/admin/contract-deposit-rules/${ruleId}`,
     USER: (userId) => `/${API_VERSION}/admin/users/${userId}`,
+  },
+
+  // Module 8: Reviews & Reputation Management
+  REVIEWS: {
+    TRANSACTION: `/${API_VERSION}/reviews/transaction`,
+    ELIGIBLE_ORDERS: `/${API_VERSION}/reviews/transaction/eligible-orders`,
+    TRANSACTION_REPLY: (reviewId) => `/${API_VERSION}/reviews/transaction/${reviewId}/reply`,
+    SHOP_REVIEWS: (slug) => `/${API_VERSION}/reviews/shops/${encodeURIComponent(slug)}`,
+    SUPPLIER_REPUTATION: (supplierId) => `/${API_VERSION}/reviews/suppliers/${supplierId}/reputation`,
+    ADMIN_ADJUST_REPUTATION: (supplierId) => `/${API_VERSION}/reviews/admin/suppliers/${supplierId}/reputation/adjustment`,
+    ADMIN_MODERATE: (reviewId) => `/${API_VERSION}/reviews/admin/${reviewId}/moderate`,
+    PRODUCT_REVIEWS: (productId) => `/${API_VERSION}/products/${productId}/reviews`,
+    PRODUCT_ELIGIBLE_ITEMS: (productId) => `/${API_VERSION}/products/${productId}/eligible-order-items`,
+    PRODUCT_REVIEW_LIKE: (reviewId) => `/${API_VERSION}/products/reviews/${reviewId}/like`,
+    PRODUCT_REVIEW_REPLY: (reviewId) => `/${API_VERSION}/products/reviews/${reviewId}/reply`,
+  },
+
+  // Module 9: AI Chatbot & Sales Analytics
+  AI: {
+    CHAT_SESSIONS: `/${API_VERSION}/ai/chat/sessions`,
+    CHAT_MESSAGES: `/${API_VERSION}/ai/chat/messages`,
+    CHAT_HISTORY: (sessionToken) => `/${API_VERSION}/ai/chat/sessions/${encodeURIComponent(sessionToken)}/history`,
+    CHAT_END: (sessionToken) => `/${API_VERSION}/ai/chat/sessions/${encodeURIComponent(sessionToken)}`,
+    ANALYTICS_GENERATE: `/${API_VERSION}/ai/analytics/generate`,
+    ANALYTICS_REPORTS: `/${API_VERSION}/ai/analytics/reports`,
+    ANALYTICS_REPORT_DETAIL: (id) => `/${API_VERSION}/ai/analytics/reports/${id}`,
+    ANALYTICS_DASHBOARD_SUMMARY: `/${API_VERSION}/ai/analytics/dashboard-summary`,
+  },
+
+  // Module 11: Real-time Notifications, Admin Operations & Reports
+  NOTIFICATIONS: {
+    LIST: `/${API_VERSION}/notifications`,
+    UNREAD_COUNT: `/${API_VERSION}/notifications/unread-count`,
+    MARK_READ: (id) => `/${API_VERSION}/notifications/${id}/read`,
+    MARK_ALL_READ: `/${API_VERSION}/notifications/read-all`,
+    PREFERENCES: `/${API_VERSION}/notifications/preferences`,
+    HUB_URL: `/${API_VERSION}/hubs/notifications`,
+  },
+  DISPUTES: {
+    LIST: `/${API_VERSION}/admin/disputes`,
+    RESOLVE: (id) => `/${API_VERSION}/admin/disputes/${id}/resolve`,
+    CONTRACT_RESOLVE: (contractId) => `/${API_VERSION}/admin/contracts/${contractId}/resolve-dispute`,
+  },
+  REPORTS: {
+    DASHBOARD_METRICS: `/${API_VERSION}/reports/dashboard-metrics`,
+    CONVERSION_FUNNEL: `/${API_VERSION}/reports/conversion-funnel`,
+    TOP_SUPPLIERS: `/${API_VERSION}/reports/top-suppliers`,
+    EXPORT: `/${API_VERSION}/reports/export`,
+    AI_SUMMARY: `/${API_VERSION}/reports/ai-summary`,
   },
 };
 

@@ -38,10 +38,24 @@ function Reviews({ slug }) {
     <Select aria-label="Lọc đánh giá" allowClear placeholder="Tất cả số sao"
       style={{ width: 150, marginBottom: 16 }} value={rating} onChange={setRating} options={[5, 4, 3, 2, 1].map((value) => ({ value, label: `${value} sao` }))} />
     <CursorList key={rating || 'all'} load={load} render={(rows) => rows.length ? <Space orientation="vertical" style={{ width: '100%' }}>
-      {rows.map((review) => <Card key={review.id} size="small"><Space orientation="vertical">
-        {review.overallRating && <Rate disabled value={review.overallRating} />}
+      {rows.map((review) => <Card key={review.id} size="small"><Space orientation="vertical" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {review.overallRating && <Rate disabled value={review.overallRating} />}
+          <Typography.Text type="secondary">{new Date(review.createdAtUtc || review.createdAt).toLocaleDateString('vi-VN')}</Typography.Text>
+        </div>
+        {review.qualityRating && (
+          <div style={{ fontSize: 11, color: '#666', display: 'flex', gap: 12 }}>
+            <span>Chất lượng: {review.qualityRating}★</span>
+            <span>Đúng hạn: {review.deliveryRating}★</span>
+            <span>Dịch vụ: {review.serviceRating}★</span>
+          </div>
+        )}
         <Typography.Text>{review.comment || 'Khách hàng không để lại nhận xét.'}</Typography.Text>
-        <Typography.Text type="secondary">{new Date(review.createdAtUtc).toLocaleDateString('vi-VN')}</Typography.Text>
+        {review.supplierReply && (
+          <div style={{ background: '#fffbe6', padding: '6px 10px', borderRadius: 6, borderLeft: '3px solid #faad14', fontSize: 12 }}>
+            <strong>Phản hồi từ gian hàng:</strong> {review.supplierReply}
+          </div>
+        )}
       </Space></Card>)}</Space> : <Empty description="Chưa có đánh giá phù hợp" />} />
   </Card>;
 }

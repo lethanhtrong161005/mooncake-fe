@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import {
   Card,
   Tabs,
@@ -15,61 +15,43 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
-const ShopManagementPanel = lazy(() => import('./ShopManagement').then((module) => ({ default: module.ShopManagementPanel })));
+import apiClient from '../../services/apiClient';
 
+const ShopManagementPanel = lazy(() => import('./ShopManagement').then((module) => ({ default: module.ShopManagementPanel })));
 
 export default function ControllerPage({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('users');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Users Mock Data
-  const [users, setUsers] = useState([
-    {
-      key: '1',
-      id: 'USR-001',
-      fullName: 'Trần Minh Quân',
-      email: 'quan.tm@moonmarket.vn',
-      phone: '0901234567',
-      role: 'Admin',
-      isActive: true,
-      createdAt: '2025-01-15',
-    },
-    {
-      key: '2',
-      id: 'USR-002',
-      fullName: 'Nguyễn Bích Ngọc',
-      email: 'ngoc.nb@vingroup.net',
-      phone: '0912988776',
-      role: 'Customer',
-      isActive: true,
-      createdAt: '2025-06-20',
-    },
-    {
-      key: '3',
-      id: 'USR-003',
-      fullName: 'Trần Đức Thắng',
-      email: 'thang.td@tranganbakery.vn',
-      phone: '0934112233',
-      role: 'Supplier',
-      isActive: true,
-      createdAt: '2025-07-02',
-    },
-    {
-      key: '4',
-      id: 'USR-004',
-      fullName: 'Hoàng Anh Dũng',
-      email: 'dung.ha@spamdomain.com',
-      phone: '0988776655',
-      role: 'Customer',
-      isActive: false,
-      createdAt: '2025-08-01',
-    },
-  ]);
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        const res = await apiClient.get('/v1/admin/users');
+        const list = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        setUsers(list.map((u, idx) => ({ ...u, key: u.id || `${idx}` })));
+      } catch (err) {
+        console.warn('Failed to load users:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUsers();
+  }, []);
 
-  const toggleUserStatus = (record) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.key === record.key ? { ...u, isActive: !u.isActive } : u))
-    );
-    message.info(`Đã ${record.isActive ? 'khóa' : 'mở khóa'} tài khoản của ${record.fullName}.`);
+  const toggleUserStatus = async (record) => {
+    try {
+      if (record.id) {
+        await apiClient.put(`/v1/admin/users/${record.id}/status`, { isActive: !record.isActive });
+      }
+      setUsers((prev) =>
+        prev.map((u) => (u.key === record.key ? { ...u, isActive: !u.isActive } : u))
+      );
+      message.info(`Đã ${record.isActive ? 'khóa' : 'mở khóa'} tài khoản của ${record.fullName}.`);
+    } catch {
+      message.error('Không thể cập nhật trạng thái người dùng.');
+    }
   };
 
   const userColumns = [
@@ -149,7 +131,7 @@ export default function ControllerPage({ onNavigate }) {
                       allowClear
                     />
                   </div>
-                  <Table columns={userColumns} dataSource={users} pagination={false} />
+                  <Table columns={userColumns} dataSource={users} pagination={false} loading={loading} />
                 </div>
               ),
             },

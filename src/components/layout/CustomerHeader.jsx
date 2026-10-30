@@ -1,4 +1,5 @@
 import VerificationBell from '../supplier-verification/VerificationBell';
+import NotificationBell from '../notification/NotificationBell';
 import { useState } from 'react';
 import {
   Menu,
@@ -230,6 +231,7 @@ export default function CustomerHeader({
           />}
 
           {/* Notifications */}
+          <NotificationBell onNavigate={onNavigate} />
           <VerificationBell onNavigate={onNavigate} />
 
           {!compact && <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />}

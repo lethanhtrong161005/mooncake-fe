@@ -1,4 +1,5 @@
 import VerificationBell from '../supplier-verification/VerificationBell';
+import NotificationBell from '../notification/NotificationBell';
 import { VERIFICATION_LABELS } from '../../constants/supplierVerification';
 import { useState } from 'react';
 import {
@@ -318,6 +319,7 @@ export default function ColonyAdminLayout({
             />}
 
             {/* Notifications */}
+            <NotificationBell onNavigate={onNavigate} />
             <VerificationBell onNavigate={onNavigate} />
 
             <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />
