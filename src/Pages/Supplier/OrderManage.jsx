@@ -107,9 +107,18 @@ export default function OrderManage({ onNavigate }) {
       title: 'Đơn hàng',
       dataIndex: 'orderNumber',
       key: 'orderNumber',
+      width: 210,
       render: (value, order) => <Space direction="vertical" size={0}>
-        <Text strong>{value}</Text>
-        <Text type="secondary">{new Date(order.createdAtUtc).toLocaleString('vi-VN')}</Text>
+        <Text strong style={{ color: '#8c1524', fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>{value}</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>{new Date(order.createdAtUtc || order.createdAt).toLocaleString('vi-VN')}</Text>
+      </Space>,
+    },
+    {
+      title: 'Doanh nghiệp / Khách hàng',
+      key: 'customer',
+      render: (_, order) => <Space direction="vertical" size={0}>
+        <Text strong>{order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}</Text>
+        {order.recipientPhone && <Text type="secondary" style={{ fontSize: 12 }}>{order.recipientPhone}</Text>}
       </Space>,
     },
     {

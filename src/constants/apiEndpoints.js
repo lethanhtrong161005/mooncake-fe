@@ -94,9 +94,17 @@ export const API_ENDPOINTS = {
     SHIP: (id) => `/${API_VERSION}/orders/${id}/ship`,
     CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
     CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
+    CUSTOM_PACKAGING_UPLOAD_LOGO: `/${API_VERSION}/custom-packaging/upload-logo`,
     PACKAGING_REVISIONS: (id) => `/${API_VERSION}/orders/${id}/custom-packaging/revisions`,
     REVIEW_PACKAGING_REVISION: (id, revisionId) =>
       `/${API_VERSION}/orders/${id}/custom-packaging/revisions/${revisionId}/review`,
+  },
+
+  // Packaging Templates
+  PACKAGING_TEMPLATES: {
+    BY_SHOP: (shopId) => `/${API_VERSION}/shops/${shopId}/packaging-templates`,
+    MINE: `/${API_VERSION}/suppliers/me/packaging-templates`,
+    DETAIL: (id) => `/${API_VERSION}/suppliers/me/packaging-templates/${id}`,
   },
 
   // e-Contract & Escrow Payments

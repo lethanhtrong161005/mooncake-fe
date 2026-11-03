@@ -17,10 +17,12 @@ export const ROUTES = {
   NOTIFICATIONS: 'thong-bao',
 
   // Supplier Routes
+  SUPPLIER_DASHBOARD: 'nha-cung-cap/dashboard',
   SUPPLIER_STORE_SETUP: 'nha-cung-cap/thiet-lap-gian-hang',
   SUPPLIER_PRODUCTS: 'nha-cung-cap/quan-ly-san-pham',
   SUPPLIER_BIDDING: 'nha-cung-cap/dau-thau',
   SUPPLIER_ORDERS: 'nha-cung-cap/don-hang',
+  SUPPLIER_ORDER_MANAGE: 'nha-cung-cap/quan-ly-don-hang',
   SUPPLIER_CONTRACTS: 'nha-cung-cap/hop-dong',
   SUPPLIER_DELIVERY: 'nha-cung-cap/giao-hang',
   SUPPLIER_PROFILE: 'nha-cung-cap/ho-so',

@@ -1,31 +1,32 @@
 import {
   ArrowRightOutlined,
-  CarOutlined,
   CheckCircleFilled,
-  FileDoneOutlined,
   PhoneOutlined,
-  QuestionCircleOutlined,
   SafetyCertificateOutlined,
   ShopOutlined,
   ShoppingOutlined,
   StarFilled,
   ThunderboltOutlined
 } from '@ant-design/icons';
-import { Button, Space, Tag } from 'antd';
+import { Button, Tag } from 'antd';
 import { useEffect, useState } from 'react';
 import CustomerFooter from '../components/layout/CustomerFooter';
 import CustomerHeader from '../components/layout/CustomerHeader';
 import AnnouncementPill from '../components/lucian/AnnouncementPill';
 import B2BPriceCalculator from '../components/lucian/B2BPriceCalculator';
 import FaqAccordion from '../components/lucian/FaqAccordion';
-import RecentOrderToast from '../components/lucian/RecentOrderToast';
 import TearOffCoupon from '../components/lucian/TearOffCoupon';
 import TrustSecurityBadges from '../components/lucian/TrustSecurityBadges';
 import productService from '../services/productService';
+import { formatCurrency } from '../utils/formatters';
+
+
 
 export default function HomePage({ onNavigate }) {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,6 +34,15 @@ export default function HomePage({ onNavigate }) {
       .then((items) => setCategories(Array.isArray(items) ? items : []))
       .catch(() => setCategories([]))
       .finally(() => setCategoriesLoading(false));
+
+    productService.search({ page: 1, pageSize: 4, sort: 'newest' }, controller.signal)
+      .then((response) => {
+        const items = response?.items || [];
+        setFeaturedProducts(items.length > 0 ? items : DEFAULT_FEATURED_PRODUCTS);
+      })
+      .catch(() => setFeaturedProducts(DEFAULT_FEATURED_PRODUCTS))
+      .finally(() => setProductsLoading(false));
+
     return () => controller.abort();
   }, []);
 
@@ -118,217 +128,105 @@ export default function HomePage({ onNavigate }) {
       <main className="w-full bg-surface flex-1">
         <div className="flex flex-col w-full">
 
-          {/* 2. HERO SECTION WITH LUCIAN #252 ANNOUNCEMENT PILL & CALL TO ACTION */}
-          <section className="relative w-full overflow-hidden py-12 sm:py-16 px-4 sm:px-6">
+          {/* 2. HERO SECTION WITH ANNOUNCEMENT PILL & CALL TO ACTION */}
+          <section className="relative w-full overflow-hidden py-16 sm:py-24 px-4 sm:px-6">
             <div className="absolute inset-0 z-0">
               <img
                 src="/hero_mooncake_bg.jpg"
                 alt="Bánh Trung Thu Doanh Nghiệp"
                 className="w-full h-full object-cover object-center transform scale-100 animate-float-slow"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/65 via-stone-950/45 to-stone-950/75" />
+              <div className="absolute inset-0 bg-gradient-to-b from-stone-950/75 via-stone-950/60 to-stone-950/85" />
             </div>
 
             <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center text-center">
-              {/* Lucian Element #252: Shining Expandable Announcement Pill */}
+              {/* Expandable Announcement Pill */}
               <AnnouncementPill onNavigate={onNavigate} />
 
-              <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white max-w-3xl leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-                Nền Tảng Cung Ứng Bánh Trung Thu Doanh Nghiệp
+              <h1 className="font-['Playfair_Display',serif] text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-4xl leading-[1.18] drop-shadow-md">
+                Quà Tặng Trung Thu Doanh Nghiệp
               </h1>
 
-              <p className="mt-3 text-xs sm:text-sm md:text-base text-stone-100 max-w-2xl leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
-                Kết nối trực tiếp 50+ xưởng bánh &amp; thương hiệu uy tín — Chiết khấu tới 35% — Hợp đồng ký số e-Contract &amp; 100% xuất hóa đơn VAT minh bạch.
+              <p className="mt-3 text-sm sm:text-base text-stone-200 max-w-xl leading-relaxed font-normal">
+                50+ xưởng uy tín • Chiết khấu tới 35% • In logo theo yêu cầu • 100% xuất VAT
               </p>
 
-              {/* 3 Trust Badges with Ant Design Icons */}
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs text-white">
-                <Tag
-                  color="#d48806"
+              {/* Action Buttons */}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full sm:w-auto">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ShoppingOutlined />}
+                  onClick={() => onNavigate?.('tim-kiem')}
                   style={{
-                    borderRadius: 20,
+                    background: '#8c1524',
+                    borderColor: '#8c1524',
                     fontWeight: 700,
-                    fontSize: 12,
-                    padding: '3px 12px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
+                    borderRadius: 10,
+                    height: 48,
+                    padding: '0 28px',
+                    fontSize: 15,
+                    boxShadow: '0 8px 24px rgba(140, 21, 36, 0.45)',
                   }}
                 >
-                  <SafetyCertificateOutlined />
-                  <span>50+ Xưởng Đã Duyệt</span>
-                </Tag>
-                <Tag
-                  color="#237804"
+                  Khám phá sản phẩm
+                </Button>
+                <Button
+                  size="large"
+                  icon={<ThunderboltOutlined />}
+                  onClick={() => onNavigate?.('so-sanh-bao-gia')}
                   style={{
-                    borderRadius: 20,
+                    background: '#d48806',
+                    borderColor: '#d48806',
+                    color: '#ffffff',
                     fontWeight: 700,
-                    fontSize: 12,
-                    padding: '3px 12px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
+                    borderRadius: 10,
+                    height: 48,
+                    padding: '0 28px',
+                    fontSize: 15,
+                    boxShadow: '0 8px 24px rgba(212, 136, 6, 0.35)',
                   }}
                 >
-                  <FileDoneOutlined />
-                  <span>100% Xuất VAT &amp; Hợp Đồng</span>
-                </Tag>
-                <Tag
-                  color="#8c1524"
-                  style={{
-                    borderRadius: 20,
-                    fontWeight: 700,
-                    fontSize: 12,
-                    padding: '3px 12px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <CarOutlined />
-                  <span>Giao Xe Lạnh PoD Toàn Quốc</span>
-                </Tag>
+                  Yêu cầu báo giá
+                </Button>
               </div>
 
-              {/* 2 Sleek Action Cards using Ant Design Buttons */}
-              <div className="mt-6 sm:mt-7 w-full grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 text-left max-w-3xl">
-                <div
-                  onClick={() => onNavigate?.('tim-kiem')}
-                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-primary/40 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-800 flex items-center justify-center shrink-0 group-hover:bg-[#8c1524] group-hover:text-white transition-all duration-300 group-hover:scale-105 shadow-xs text-[20px]">
-                      <ShoppingOutlined />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600" />
-                          </span>
-                          Sẵn Kho 24h
-                        </span>
-                        <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 20 hộp</span>
-                      </div>
-                      <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-[#8c1524] transition-colors truncate">
-                        Bánh Sẵn Kho Giao Hỏa Tốc
-                      </h3>
-                      <p className="text-[11px] text-stone-600 truncate">
-                        Chiết khấu bậc thang tới 35% • Xuất VAT tức thì
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="primary"
-                    icon={<ArrowRightOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigate?.('tim-kiem');
-                    }}
-                    style={{
-                      background: '#8c1524',
-                      borderColor: '#8c1524',
-                      fontWeight: 700,
-                      borderRadius: 8,
-                    }}
-                  >
-                    Mua Ngay
-                  </Button>
+              {/* Enterprise Credibility Bar */}
+              <div className="mt-10 pt-6 border-t border-white/15 w-full max-w-4xl grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-white font-bold text-xl sm:text-2xl font-['Playfair_Display',serif]">50+</div>
+                  <div className="text-stone-300 text-xs font-medium">Xưởng tuyển chọn</div>
                 </div>
-
-                <div
-                  onClick={() => onNavigate?.('so-sanh-bao-gia')}
-                  className="group bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl p-4 shadow-lg hover:shadow-2xl border border-white/80 hover:border-amber-400/50 flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 group-hover:bg-[#d48806] group-hover:text-white transition-all duration-300 group-hover:scale-105 shadow-xs text-[20px]">
-                      <ThunderboltOutlined />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-900">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600" />
-                          </span>
-                          Báo giá xưởng
-                        </span>
-                        <span className="text-[11px] text-stone-500 font-medium hidden xs:inline">• Đơn từ 50 hộp</span>
-                      </div>
-                      <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition-colors truncate">
-                        Yêu Cầu Báo Giá Xưởng
-                      </h3>
-                      <p className="text-[11px] text-stone-600 truncate">
-                        Khắc logo doanh nghiệp • Nhận 3–5 bản chào giá
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    type="primary"
-                    icon={<ThunderboltOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigate?.('so-sanh-bao-gia');
-                    }}
-                    style={{
-                      background: '#d48806',
-                      borderColor: '#d48806',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      borderRadius: 8,
-                    }}
-                  >
-                    Tạo RFQ
-                  </Button>
+                <div>
+                  <div className="text-amber-300 font-bold text-xl sm:text-2xl font-['Playfair_Display',serif]">Tới 35%</div>
+                  <div className="text-stone-300 text-xs font-medium">Chiết khấu B2B</div>
+                </div>
+                <div>
+                  <div className="text-white font-bold text-xl sm:text-2xl font-['Playfair_Display',serif]">100%</div>
+                  <div className="text-stone-300 text-xs font-medium">Hóa đơn VAT</div>
+                </div>
+                <div>
+                  <div className="text-emerald-400 font-bold text-xl sm:text-2xl font-['Playfair_Display',serif]">SafeTrade</div>
+                  <div className="text-stone-300 text-xs font-medium">Ký quỹ an toàn</div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* 3. LOGO MARQUEE */}
-          <div className="w-full bg-[#f8ece4] border-y border-[#ebdcd5] py-3 overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-3">
-              <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
-                <StarFilled style={{ color: '#d48806' }} />
-                <span>500+ Doanh nghiệp đã tin chọn:</span>
-              </div>
-              <div className="overflow-hidden relative w-full [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-                <div className="animate-marquee flex items-center gap-8 text-xs font-semibold text-stone-600 uppercase tracking-wider select-none py-0.5">
-                  {[
-                    'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
-                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina',
-                    'Vietcombank', 'FPT Corporation', 'Vingroup Retail', 'Techcombank', 'Viettel Telecom',
-                    'Vinamilk', 'Masan Consumer', 'MB Bank', 'Shopee Việt Nam', 'Samsung Vina',
-                  ].map((brand, idx) => (
-                    <span key={idx} className="flex items-center gap-2 hover:text-[#8c1524] transition-colors cursor-default whitespace-nowrap">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#d48806]" />
-                      <span>{brand}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. PRODUCT CATEGORIES GRID (MERGED FROM DEV) */}
+          {/* 4. PRODUCT CATEGORIES GRID */}
           <section className="w-full py-12 px-gutter bg-white border-b border-stone-200/60">
             <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Danh Mục Quà Tặng 2025</span>
-                  </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Phân Loại Dòng Bánh</h2>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900">
+                  Dòng Bánh &amp; Hộp Quà
+                </h2>
                 <Button
                   type="link"
                   icon={<ArrowRightOutlined />}
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Khám phá toàn bộ danh mục
+                  Xem tất cả
                 </Button>
               </div>
 
@@ -340,28 +238,20 @@ export default function HomePage({ onNavigate }) {
                   <div
                     key={cat.id}
                     onClick={() => onNavigate?.('tim-kiem')}
-                    className="group bg-surface-container-low rounded-2xl overflow-hidden border border-stone-200 hover:border-primary/40 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col"
+                    className="group bg-surface-container-low rounded-2xl overflow-hidden border border-stone-200/80 hover:border-[#8c1524]/40 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
                       <img
                         src={cat.iconUrl || '/categories/banh-nuong.jpg'}
-                        alt={cat.title}
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                        alt={cat.title || cat.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
-                    <div className="p-4 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h3 className="text-base font-bold text-stone-900 group-hover:text-[#8c1524] transition-colors">
+                    <div className="p-4 flex items-center justify-between">
+                      <h3 className="text-base font-bold text-stone-900 group-hover:text-[#8c1524] transition-colors truncate">
                         {cat.name}
-                        </h3>
-                        <p className="text-xs text-stone-600 mt-1 line-clamp-2">
-                          {cat.description || 'Khám phá các sản phẩm phù hợp cho doanh nghiệp.'}
-                        </p>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#8c1524]">
-                        <span>Xem chi tiết</span>
-                        <ArrowRightOutlined className="group-hover:translate-x-1 transition-transform" />
-                      </div>
+                      </h3>
+                      <ArrowRightOutlined className="text-xs text-[#8c1524] group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
                     </div>
                   </div>
                 ))}
@@ -372,20 +262,13 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 5. LUCIAN B2B PRICE CALCULATOR (#278) & TEAR-OFF COUPON (#298) */}
-          <section className="w-full bg-gradient-to-b from-surface-container-low to-surface py-12 sm:py-16 px-gutter border-b border-stone-200/50">
+          {/* 5. LUCIAN B2B PRICE CALCULATOR & TEAR-OFF COUPON */}
+          <section className="w-full bg-gradient-to-b from-surface-container-low to-surface py-12 sm:py-14 px-gutter border-b border-stone-200/50">
             <div className="max-w-7xl mx-auto">
-              <div className="text-center max-w-2xl mx-auto mb-10">
-                <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', marginBottom: 8 }}>
-                  <ThunderboltOutlined style={{ marginRight: 4 }} />
-                  CÔNG CỤ BÁO GIÁ TỨC THÌ
-                </Tag>
-                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                  Dự Toán Ngân Sách &amp; Nhận Ưu Đãi Doanh Nghiệp
+              <div className="text-center max-w-xl mx-auto mb-8">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900">
+                  Dự Toán Ngân Sách &amp; Chiết Khấu
                 </h2>
-                <p className="text-sm text-stone-600 mt-2">
-                  Kéo thanh trượt để tính toán chiết khấu tự động theo số lượng hộp và nhận mã ưu đãi mùa vụ độc quyền.
-                </p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -396,23 +279,23 @@ export default function HomePage({ onNavigate }) {
                 <div className="lg:col-span-5 flex flex-col gap-5 items-center">
                   <TearOffCoupon />
 
-                  <div className="w-full max-w-[440px] bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-[#8c1524] tracking-wider">
+                  <div className="w-full max-w-[440px] bg-white rounded-2xl p-5 border border-stone-200/80 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#8c1524]">
                       <SafetyCertificateOutlined style={{ fontSize: 16 }} />
-                      <span>Đặc Quyền Khách Hàng Doanh Nghiệp</span>
+                      <span>Đặc quyền khách hàng doanh nghiệp</span>
                     </div>
-                    <ul className="text-xs text-stone-600 space-y-2">
-                      <li className="flex items-start gap-2">
-                        <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>01 Hộp mẫu thử tận nơi:</strong> Trải nghiệm thực tế vị bánh &amp; bao bì trước khi chốt hợp đồng.</span>
+                    <ul className="text-xs text-stone-700 space-y-2">
+                      <li className="flex items-center gap-2">
+                        <CheckCircleFilled style={{ color: '#52c41a' }} />
+                        <span>01 Hộp mẫu thử tận nơi miễn phí</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>Bảo chứng SafeTrade:</strong> Tiền được giữ an toàn, chỉ giải ngân khi ký nghiệm thu PoD.</span>
+                      <li className="flex items-center gap-2">
+                        <CheckCircleFilled style={{ color: '#52c41a' }} />
+                        <span>Ký quỹ SafeTrade — nghiệm thu mới giải ngân</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircleFilled style={{ color: '#52c41a', marginTop: 2 }} />
-                        <span><strong>Đội xe lạnh chuyên dụng:</strong> Đảm bảo 100% hộp bánh nguyên vẹn, không móp méo chảy dầu.</span>
+                      <li className="flex items-center gap-2">
+                        <CheckCircleFilled style={{ color: '#52c41a' }} />
+                        <span>Giao xe lạnh chuyên dụng toàn quốc</span>
                       </li>
                     </ul>
                   </div>
@@ -422,289 +305,123 @@ export default function HomePage({ onNavigate }) {
           </section>
 
           {/* 6. FEATURED PRODUCTS COLLECTION */}
-          <section className="w-full bg-surface py-space-xl px-gutter">
+          <section className="w-full bg-surface py-12 sm:py-14 px-gutter border-b border-stone-200/60">
             <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-space-lg">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Sản phẩm nổi bật vụ mùa 2025</span>
-                  </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bộ Sưu Tập Bánh Trung Thu Tiêu Biểu</h2>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900">
+                  Hộp Quà Tiêu Biểu
+                </h2>
                 <Button
                   type="link"
                   icon={<ArrowRightOutlined />}
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Xem tất cả 120+ mẫu hộp 2025
+                  Xem tất cả (120+)
                 </Button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-                {/* PRODUCT 1 */}
-                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
-                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0gce54U1n3kxiDSj_WZFJlCiiqIoXmsqFi5RYcNbE-HyrDYGdatgnVooMWFft7pgTd6ywe3cnZFmwRXVj6-HW98F0Fwk3gNfTVBSw7rBLbrF33ZhdDpVwyiRH56g4-dfFbFya0reGpmL-Hg-p2xW4ghvbZt-9XsLApvBWLRHyojKhGRFcCW7kp_sDFULOOcoXGqIknBa3fyYIkUUZ5QoR6YDPYuQqPll4ZIqIrynw9uXYHAPGqKJt"
-                      alt="Hộp Nguyệt Viên Tri Kỷ"
-                    />
-                    <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-semibold text-[#8c1524] flex items-center gap-1 shadow-sm">
-                      <CheckCircleFilled /> NCC Xác Minh
-                    </span>
-                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Giao trong 48h
-                    </span>
+                {productsLoading && [1, 2, 3, 4].map((item) => (
+                  <div
+                    key={item}
+                    className="bg-surface-container-lowest rounded-2xl shadow-xs overflow-hidden p-space-md animate-pulse border border-stone-200/70"
+                  >
+                    <div className="w-full aspect-square bg-stone-200 rounded-xl mb-4" />
+                    <div className="h-4 bg-stone-200 rounded w-1/2 mb-2" />
+                    <div className="h-6 bg-stone-200 rounded w-3/4 mb-4" />
+                    <div className="h-9 bg-stone-200 rounded-lg w-full mt-4" />
                   </div>
-                  <div className="p-space-md flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
-                        <span className="truncate font-medium">Kinh Đô</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold"><StarFilled /> 4.9 (1.2k)</span>
-                      </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-[#8c1524] transition-colors">
-                        Hộp Thượng Hạng “Nguyệt Viên Tri Kỷ”
-                      </h3>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh x 180g • Thập cẩm sò điệp, sen dừa</p>
-                      <div className="mt-space-sm flex flex-wrap gap-1">
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 30 hộp</span>
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Hỗ trợ in logo</span>
-                      </div>
+                ))}
+
+                {!productsLoading && featuredProducts.map((product) => (
+                  <div
+                    key={product.productId}
+                    className="bg-surface-container-lowest rounded-2xl shadow-xs overflow-hidden flex flex-col justify-between group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-stone-200/80 hover:border-[#8c1524]/40 cursor-pointer"
+                    onClick={() => onNavigate?.(`san-pham/${product.productId}`)}
+                  >
+                    <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
+                      <img
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                        src={product.primaryImageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0gce54U1n3kxiDSj_WZFJlCiiqIoXmsqFi5RYcNbE-HyrDYGdatgnVooMWFft7pgTd6ywe3cnZFmwRXVj6-HW98F0Fwk3gNfTVBSw7rBLbrF33ZhdDpVwyiRH56g4-dfFbFya0reGpmL-Hg-p2xW4ghvbZt-9XsLApvBWLRHyojKhGRFcCW7kp_sDFULOOcoXGqIknBa3fyYIkUUZ5QoR6YDPYuQqPll4ZIqIrynw9uXYHAPGqKJt'}
+                        alt={product.name}
+                      />
+                      {product.shop?.isVerified !== false && (
+                        <span className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-md text-[11px] font-semibold text-[#8c1524] flex items-center gap-1 shadow-xs">
+                          <CheckCircleFilled /> NCC Xác Minh
+                        </span>
+                      )}
+                      <span className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        {product.deliveryTag || (product.effectiveStatus === 'Active' ? 'Còn hàng' : 'Giao 48h')}
+                      </span>
                     </div>
-                    <div className="mt-space-md pt-space-xs">
-                      <div className="flex items-baseline justify-between mb-space-sm">
-                        <div>
-                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (đã giảm 12%):</span>
-                          <span className="font-headline-sm text-headline-sm font-bold text-[#8c1524]">480.000 ₫</span>
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between text-xs text-on-surface-variant mb-1">
+                          <span className="truncate font-medium">{product.shop?.name || 'Xưởng Tiêu Biểu'}</span>
+                          <span className="flex items-center gap-0.5 text-amber-600 font-semibold">
+                            <StarFilled /> {product.averageRating ? Number(product.averageRating).toFixed(1) : '4.9'}
+                          </span>
                         </div>
-                        <Tag color="red">-12%</Tag>
+                        <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[44px] group-hover:text-[#8c1524] transition-colors text-sm sm:text-base">
+                          {product.name}
+                        </h3>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-surface-container text-on-surface">
+                            Tối thiểu: {product.minOrderQty || 20} {product.unit || 'hộp'}
+                          </span>
+                          {product.supportsCustomPackaging && (
+                            <span className="text-[11px] px-2 py-0.5 rounded bg-surface-container text-on-surface">
+                              In logo
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <Space size={8} style={{ width: '100%' }}>
-                        <Button
-                          block
-                          onClick={() => onNavigate?.('san-pham')}
-                          style={{ borderRadius: 8, fontWeight: 600 }}
-                        >
-                          Mẫu thử
-                        </Button>
+                      <div className="mt-3 pt-2">
+                        <div className="flex items-baseline justify-between mb-2">
+                          <span className="font-bold text-[#8c1524] text-base">
+                            {formatCurrency(product.minPrice || product.basePrice || 480000)}
+                          </span>
+                          {product.discountBadge ? (
+                            <Tag color={product.discountBadge === 'VIP' ? 'gold' : 'red'}>{product.discountBadge}</Tag>
+                          ) : (
+                            <Tag color="red">-10%</Tag>
+                          )}
+                        </div>
                         <Button
                           type="primary"
                           block
-                          onClick={() => onNavigate?.('tim-kiem')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate?.(`san-pham/${product.productId}`);
+                          }}
                           style={{ background: '#8c1524', borderColor: '#8c1524', borderRadius: 8, fontWeight: 700 }}
                         >
                           Đặt ngay
                         </Button>
-                      </Space>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PRODUCT 2 */}
-                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
-                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQMG1AQ2M24puU7Wk-qFSPiPY5ooN2Vb1C-bf4rPc15CeqNt3b2CutQ0_J8tcAIyIjgguRLdgomEbGT7FWt_c6rsBDZsd4VMHA6_R31OVY3bcB2Yyh4NXr4fFrt1Yy38xhNpyqGWpywfcMC0_YsZu2Ph5y0ASpB1YxK4_Mez7znUkz_xaEJAIG-EeOdZn6pKU2ilOsgbPZ7QnMUu7J5UHMQi_5e8ByNty_3-SxqavFi2-TZSOB3Aog"
-                      alt="Hộp Sơn Mài Hoàng Kim Vọng Nguyệt"
-                    />
-                    <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-semibold text-[#8c1524] flex items-center gap-1 shadow-sm">
-                      <CheckCircleFilled /> NCC Xác Minh
-                    </span>
-                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      Sản xuất: 5 ngày
-                    </span>
-                  </div>
-                  <div className="p-space-md flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
-                        <span className="truncate font-medium">Madame Hương</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold"><StarFilled /> 5.0 (860)</span>
-                      </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-[#8c1524] transition-colors">
-                        Hộp Sơn Mài “Hoàng Kim Vọng Nguyệt”
-                      </h3>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">6 bánh Lava trứng chảy + Hũ trà sen Tây Hồ</p>
-                      <div className="mt-space-sm flex flex-wrap gap-1">
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 20 hộp</span>
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Hộp gỗ sơn mài</span>
                       </div>
                     </div>
-                    <div className="mt-space-md pt-space-xs">
-                      <div className="flex items-baseline justify-between mb-space-sm">
-                        <div>
-                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (bậc B2B):</span>
-                          <span className="font-headline-sm text-headline-sm font-bold text-[#8c1524]">850.000 ₫</span>
-                        </div>
-                        <Tag color="gold">VIP</Tag>
-                      </div>
-                      <Space size={8} style={{ width: '100%' }}>
-                        <Button
-                          block
-                          onClick={() => onNavigate?.('san-pham')}
-                          style={{ borderRadius: 8, fontWeight: 600 }}
-                        >
-                          Mẫu thử
-                        </Button>
-                        <Button
-                          type="primary"
-                          block
-                          onClick={() => onNavigate?.('so-sanh-bao-gia')}
-                          style={{ background: '#d48806', borderColor: '#d48806', borderRadius: 8, fontWeight: 700 }}
-                        >
-                          Gửi RFQ
-                        </Button>
-                      </Space>
-                    </div>
                   </div>
-                </div>
-
-                {/* PRODUCT 3 */}
-                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
-                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSUU9euk8QszNuwm4Nu_KHGlyRVO6UZa1xAl1qcfUXYkLsaNkL_fo9Y0eBt_pwk-0eq4n7nXJd22bVLwySIH28YqkxQLX1sH74WnTPo1OmweLxstBD8bq7nZpvvI6hI1yfphoRnfldacMi4cEWs-EbM0ix2RwtoGX0Ip90H7Xk7euQe5hhZqxAlK5KNUXqbAtTq5HnS100yvTqcSeSIXTgqcollqTsTw7gCUY5IETDzQU9UuMPqq2H"
-                      alt="Bánh Dưỡng Sinh Thanh Nguyệt Yến"
-                    />
-                    <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-semibold text-[#8c1524] flex items-center gap-1 shadow-sm">
-                      <CheckCircleFilled /> NCC Xác Minh
-                    </span>
-                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Giao trong 24h
-                    </span>
-                  </div>
-                  <div className="p-space-md flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
-                        <span className="truncate font-medium">Nghệ Nhân Hữu Nghị</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold"><StarFilled /> 4.8 (950)</span>
-                      </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-[#8c1524] transition-colors">
-                        Bánh Dưỡng Sinh “Thanh Nguyệt Yến”
-                      </h3>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh yến sào hạt sen • Ít ngọt ăn kiêng</p>
-                      <div className="mt-space-sm flex flex-wrap gap-1">
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 50 hộp</span>
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Healthy ít đường</span>
-                      </div>
-                    </div>
-                    <div className="mt-space-md pt-space-xs">
-                      <div className="flex items-baseline justify-between mb-space-sm">
-                        <div>
-                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (đã giảm 10%):</span>
-                          <span className="font-headline-sm text-headline-sm font-bold text-[#8c1524]">390.000 ₫</span>
-                        </div>
-                        <Tag color="green">-10%</Tag>
-                      </div>
-                      <Space size={8} style={{ width: '100%' }}>
-                        <Button
-                          block
-                          onClick={() => onNavigate?.('san-pham')}
-                          style={{ borderRadius: 8, fontWeight: 600 }}
-                        >
-                          Mẫu thử
-                        </Button>
-                        <Button
-                          type="primary"
-                          block
-                          onClick={() => onNavigate?.('tim-kiem')}
-                          style={{ background: '#8c1524', borderColor: '#8c1524', borderRadius: 8, fontWeight: 700 }}
-                        >
-                          Đặt ngay
-                        </Button>
-                      </Space>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PRODUCT 4 */}
-                <div className="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 border border-stone-200/70 hover:border-[#ffba00]/40">
-                  <div className="relative w-full aspect-square bg-surface-container overflow-hidden">
-                    <img
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ease-out"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOL-Cav9v6rbL1i553OXUyPC1E2zvaok6KNoZjacOPOUdvERGXoE-Wh7kXxHfJEW2bvbWVefYDVCEQ5DAOc4m9LJlOWah_9tg75rJy6I6bysyxwwsNXa6GbzQb4lcysJAIM8wkk7aei8UgYBX40_YCYa1UmqA4X_uylmQwjBQiMcpuN4txuO9dekT-HywkN-YeCgIvkq1Aq-D2vCp8-cG5ZdaSAOc_PGVCOWZqT5EDsT5PZthuvrb3"
-                      alt="Set Quà Đoàn Viên Phú Quý"
-                    />
-                    <span className="absolute top-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded text-[11px] font-semibold text-[#8c1524] flex items-center gap-1 shadow-sm">
-                      <CheckCircleFilled /> NCC Xác Minh
-                    </span>
-                    <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-md text-white px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      Sản xuất: 3 ngày
-                    </span>
-                  </div>
-                  <div className="p-space-md flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant mb-1">
-                        <span className="truncate font-medium">Thu Hương Bakery</span>
-                        <span className="flex items-center gap-0.5 text-amber-600 font-semibold"><StarFilled /> 4.9 (620)</span>
-                      </div>
-                      <h3 className="font-title-md text-title-md font-bold text-on-surface line-clamp-2 min-h-[48px] group-hover:text-[#8c1524] transition-colors">
-                        Set Quà “Đoàn Viên Phú Quý”
-                      </h3>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">4 bánh thượng hạng + 1 Chai vang cao cấp</p>
-                      <div className="mt-space-sm flex flex-wrap gap-1">
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Tối thiểu: 25 hộp</span>
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface">Kèm túi &amp; thiệp</span>
-                      </div>
-                    </div>
-                    <div className="mt-space-md pt-space-xs">
-                      <div className="flex items-baseline justify-between mb-space-sm">
-                        <div>
-                          <span className="text-body-sm font-body-sm text-on-surface-variant block">Từ (bậc 100 hộp):</span>
-                          <span className="font-headline-sm text-headline-sm font-bold text-[#8c1524]">720.000 ₫</span>
-                        </div>
-                        <Tag color="red">-15%</Tag>
-                      </div>
-                      <Space size={8} style={{ width: '100%' }}>
-                        <Button
-                          block
-                          onClick={() => onNavigate?.('san-pham')}
-                          style={{ borderRadius: 8, fontWeight: 600 }}
-                        >
-                          Mẫu thử
-                        </Button>
-                        <Button
-                          type="primary"
-                          block
-                          onClick={() => onNavigate?.('so-sanh-bao-gia')}
-                          style={{ background: '#d48806', borderColor: '#d48806', borderRadius: 8, fontWeight: 700 }}
-                        >
-                          Gửi RFQ
-                        </Button>
-                      </Space>
-                    </div>
-                  </div>
-                </div>
-
+                ))}
               </div>
             </div>
           </section>
 
-          {/* 7. FEATURED SUPPLIERS SHOWCASE (MERGED FROM DEV) */}
-          <section className="w-full py-12 px-gutter bg-surface-container-low border-b border-stone-200/60">
+          {/* 7. FEATURED SUPPLIERS SHOWCASE */}
+          <section className="w-full py-12 sm:py-14 px-gutter bg-surface-container-low border-b border-stone-200/60">
             <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Mạng Lưới Sản Xuất B2B</span>
-                  </div>
-                  <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Đối Tác Xưởng Bánh Tiêu Biểu</h2>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900">
+                  Xưởng Bánh Tiêu Biểu
+                </h2>
                 <Button
                   type="link"
                   icon={<ArrowRightOutlined />}
                   onClick={() => onNavigate?.('tim-kiem')}
                   style={{ color: '#8c1524', fontWeight: 700 }}
                 >
-                  Xem tất cả 50+ xưởng đối tác
+                  Xem tất cả (50+)
                 </Button>
               </div>
 
@@ -712,7 +429,7 @@ export default function HomePage({ onNavigate }) {
                 {featuredSuppliers.map((sup) => (
                   <div
                     key={sup.id}
-                    className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                    className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col"
                   >
                     <div className="relative aspect-[16/9] overflow-hidden bg-stone-100">
                       <img
@@ -720,17 +437,17 @@ export default function HomePage({ onNavigate }) {
                         alt={sup.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                      <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-md">
                         {sup.badge}
                       </span>
                     </div>
 
-                    <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="p-4 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between">
                           <h3 className="text-base font-bold text-stone-900">{sup.name}</h3>
                           <span className="text-xs text-amber-600 font-bold flex items-center gap-0.5">
-                            <StarFilled /> {sup.rating} ({sup.reviewsCount})
+                            <StarFilled /> {sup.rating}
                           </span>
                         </div>
 
@@ -740,20 +457,16 @@ export default function HomePage({ onNavigate }) {
                           <span className="text-emerald-700 font-semibold">{sup.capacity}</span>
                         </div>
 
-                        <p className="text-xs text-stone-600 line-clamp-3 leading-relaxed">
-                          {sup.desc}
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1">
                           {sup.tags.map((tag, idx) => (
-                            <span key={idx} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-stone-100 text-stone-600">
+                            <span key={idx} className="text-[10px] font-medium px-2 py-0.5 rounded bg-stone-100 text-stone-600">
                               #{tag}
                             </span>
                           ))}
                         </div>
                       </div>
 
-                      <div className="mt-5 pt-3 border-t border-stone-100 grid grid-cols-2 gap-2">
+                      <div className="mt-4 pt-3 border-t border-stone-100 grid grid-cols-2 gap-2">
                         <Button
                           onClick={() => onNavigate?.('tim-kiem')}
                           style={{ borderRadius: 8, fontWeight: 600, fontSize: 12 }}
@@ -775,36 +488,27 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 8. LUCIAN TRUST & SECURITY BADGES (#243) */}
-          <section className="w-full bg-[#fbf5f2] py-12 sm:py-16 px-gutter border-b border-stone-200/60">
+          {/* 8. TRUST & SECURITY BADGES */}
+          <section className="w-full bg-[#fbf5f2] py-12 sm:py-14 px-gutter border-b border-stone-200/60">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-4">
-                  <Tag color="#237804" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px' }}>
-                    <SafetyCertificateOutlined style={{ marginRight: 4 }} />
-                    AN TOÀN &amp; PHÁP LÝ TUYỆT ĐỐI
-                  </Tag>
-
-                  <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                    Chuẩn Mực Vận Hành B2B Chuyên Nghiệp Hàng Đầu
+                  <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900 leading-tight">
+                    Chuẩn Mực Vận Hành B2B
                   </h2>
 
-                  <p className="text-sm text-stone-600 leading-relaxed">
-                    Khác biệt với việc mua lẻ trôi nổi trên thị trường, Nguyệt Phố bảo vệ quyền lợi doanh nghiệp bằng hợp đồng ký số pháp lý, hóa đơn VAT điện tử, kiểm soát xe lạnh và bảo chứng dòng tiền SafeTrade.
-                  </p>
-
-                  <div className="pt-2 space-y-2.5">
-                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                  <div className="pt-1 space-y-2.5">
+                    <div className="flex items-center gap-2.5 text-xs sm:text-sm text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Kiểm định xưởng nghiêm ngặt:</strong> 100% cơ sở sản xuất có giấy chứng nhận ISO / HACCP.</span>
+                      <span>100% xưởng đạt chứng nhận an toàn ISO / HACCP</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                    <div className="flex items-center gap-2.5 text-xs sm:text-sm text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Không rủi ro thanh toán:</strong> Tiền được bảo chứng ký quỹ, giải ngân khi quý công ty nghiệm thu xong.</span>
+                      <span>Ký quỹ SafeTrade — nghiệm thu PoD mới thanh toán</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-stone-700">
+                    <div className="flex items-center gap-2.5 text-xs sm:text-sm text-stone-700">
                       <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
-                      <span><strong>Cam kết thời gian:</strong> Đền bù thiệt hại và đổi 100% sản phẩm nếu chậm trễ tiến độ trao tặng.</span>
+                      <span>Đổi mới 100% &amp; bồi hoàn nếu trễ tiến độ giao nhận</span>
                     </div>
                   </div>
                 </div>
@@ -819,19 +523,15 @@ export default function HomePage({ onNavigate }) {
           {/* 9. VENDOR BANNER */}
           <section className="w-full bg-surface py-space-lg px-gutter">
             <div className="max-w-7xl mx-auto">
-              <div className="relative overflow-hidden bg-gradient-to-r from-[#7a0010] via-[#8f0e19] to-[#7a0010] text-on-primary rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-white/10">
+              <div className="relative overflow-hidden bg-gradient-to-r from-[#7a0010] via-[#8f0e19] to-[#7a0010] text-on-primary rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg border border-white/10">
                 <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#ffba00]/15 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="relative z-10 max-w-2xl space-y-2 text-center md:text-left">
-                  <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', border: 'none' }}>
-                    <ShopOutlined style={{ marginRight: 4 }} />
-                    DÀNH CHO NHÀ SẢN XUẤT &amp; NGHỆ NHÂN
-                  </Tag>
-                  <h3 className="font-headline-md text-headline-md font-bold text-white leading-tight">
-                    Bạn là xưởng sản xuất hoặc thương hiệu bánh Trung Thu uy tín?
+                <div className="relative z-10 max-w-xl space-y-1 text-center md:text-left">
+                  <h3 className="font-['Playfair_Display',serif] text-xl sm:text-2xl font-bold text-white leading-tight">
+                    Hợp Tác Phân Phối Bánh Trung Thu B2B
                   </h3>
-                  <p className="font-body-md text-body-md text-rose-100/90 leading-relaxed">
-                    Gia nhập mạng lưới B2B Nguyệt Phố, tiếp cận hàng nghìn khách hàng doanh nghiệp trong mùa vụ 2025. Hỗ trợ hợp đồng e-Contract, ký quỹ và vận hành trọn gói.
+                  <p className="text-sm text-rose-100/90">
+                    Tiếp cận hàng nghìn khách hàng doanh nghiệp trong mùa vụ 2025 cùng Nguyệt Phố.
                   </p>
                 </div>
                 <div className="relative z-10 shrink-0 w-full md:w-auto">
@@ -840,13 +540,13 @@ export default function HomePage({ onNavigate }) {
                     icon={<ShopOutlined />}
                     onClick={() => onNavigate?.('dang-ky-nha-cung-cap')}
                     style={{
-                      borderRadius: 12,
+                      borderRadius: 10,
                       fontWeight: 700,
                       color: '#8c1524',
                       background: '#ffffff',
                       borderColor: '#ffffff',
-                      height: 48,
-                      padding: '0 24px',
+                      height: 44,
+                      padding: '0 20px',
                     }}
                   >
                     Đăng ký mở gian hàng
@@ -856,48 +556,35 @@ export default function HomePage({ onNavigate }) {
             </div>
           </section>
 
-          {/* 10. LUCIAN FAQ ACCORDION (#044) */}
-          <section className="w-full bg-surface-container-low py-12 sm:py-16 px-gutter border-t border-stone-200/50">
+          {/* 10. FAQ ACCORDION */}
+          <section className="w-full bg-surface-container-low py-12 sm:py-14 px-gutter border-t border-stone-200/50">
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-10">
-                <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', marginBottom: 8 }}>
-                  <QuestionCircleOutlined style={{ marginRight: 4 }} />
-                  GIẢI QUYẾT MỌI THẮC MẮC ĐẶT HÀNG
-                </Tag>
-                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-900 leading-tight">
-                  Câu Hỏi Thường Gặp Của Doanh Nghiệp
+              <div className="text-center mb-8">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold text-stone-900 leading-tight">
+                  Câu Hỏi Thường Gặp
                 </h2>
-                <p className="text-sm text-stone-600 mt-2 max-w-xl mx-auto">
-                  Tất cả thông tin minh bạch về xuất hóa đơn VAT, nhận hộp mẫu thử, ký quỹ an toàn và cam kết giao vận PoD xe lạnh.
-                </p>
               </div>
 
-              {/* Lucian Element #044: FAQ Accordion */}
               <FaqAccordion onNavigate={onNavigate} />
             </div>
           </section>
 
           {/* 11. CLOSING CTA SECTION */}
-          <section className="w-full bg-gradient-to-b from-stone-100 to-surface py-12 sm:py-16 px-gutter border-t border-stone-200/60">
-            <div className="max-w-5xl mx-auto text-center bg-gradient-to-br from-[#7a0010] via-[#541829] to-[#3c1723] text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden border border-amber-500/30">
+          <section className="w-full bg-gradient-to-b from-stone-100 to-surface py-12 sm:py-14 px-gutter border-t border-stone-200/60">
+            <div className="max-w-5xl mx-auto text-center bg-gradient-to-br from-[#7a0010] via-[#541829] to-[#3c1723] text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden border border-amber-500/30">
               <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-                <Tag color="#d48806" style={{ fontWeight: 700, borderRadius: 20, padding: '3px 12px', border: 'none' }}>
-                  <SafetyCertificateOutlined style={{ marginRight: 4 }} />
-                  GIẢI PHÁP QUÀ TẶNG DOANH NGHIỆP 2025
-                </Tag>
-
-                <h2 className="font-['Playfair_Display','Be_Vietnam_Pro',serif] text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-                  Sẵn Sàng Chuẩn Bị Quà Tặng Trung Thu Cho Doanh Nghiệp?
+              <div className="relative z-10 max-w-2xl mx-auto space-y-3">
+                <h2 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                  Sẵn Sàng Chuẩn Bị Quà Tặng Doanh Nghiệp?
                 </h2>
 
-                <p className="text-sm sm:text-base text-stone-200 leading-relaxed">
-                  Nhận trọn bộ catalog 120+ mẫu hộp cao cấp, bảng báo giá chiết khấu xưởng tới 35% và đăng ký nhận 01 hộp mẫu thử miễn phí tận nơi.
+                <p className="text-sm text-stone-200 leading-relaxed">
+                  Nhận catalog 2025, báo giá chiết khấu xưởng tới 35% và hộp mẫu thử miễn phí tận nơi.
                 </p>
 
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button
                     size="large"
                     icon={<ThunderboltOutlined />}
@@ -908,7 +595,7 @@ export default function HomePage({ onNavigate }) {
                       color: '#ffffff',
                       borderRadius: 10,
                       fontWeight: 700,
-                      height: 48,
+                      height: 46,
                       padding: '0 24px',
                     }}
                   >
@@ -923,7 +610,7 @@ export default function HomePage({ onNavigate }) {
                     style={{
                       borderRadius: 10,
                       fontWeight: 700,
-                      height: 48,
+                      height: 46,
                       padding: '0 24px',
                       borderColor: 'rgba(255,255,255,0.4)',
                       color: '#ffffff',
@@ -933,12 +620,12 @@ export default function HomePage({ onNavigate }) {
                   </Button>
                 </div>
 
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-stone-300">
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-4 text-xs text-stone-300">
                   <span className="flex items-center gap-1.5">
                     <PhoneOutlined style={{ color: '#d48806' }} />
-                    Hotline B2B: <strong className="text-white font-bold">1800 6886</strong> (Miễn phí)
+                    Hotline: <strong className="text-white font-bold">1800 6886</strong>
                   </span>
-                  <span className="hidden sm:inline">•</span>
+                  <span>•</span>
                   <span className="flex items-center gap-1.5">
                     <CheckCircleFilled style={{ color: '#52c41a' }} />
                     Ký quỹ SafeTrade 100% An Toàn
@@ -951,10 +638,7 @@ export default function HomePage({ onNavigate }) {
         </div>
       </main>
 
-      {/* 12. LUCIAN RECENT ORDER TOAST (#253) */}
-      <RecentOrderToast />
-
-      {/* 13. Customer Footer */}
+      {/* Customer Footer */}
       <CustomerFooter onNavigate={onNavigate} />
     </div>
   );

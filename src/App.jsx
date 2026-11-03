@@ -22,6 +22,7 @@ import CustomerProfile from './Pages/Customer/CustomerProfile';
 
 // Supplier Pages
 import { currentRoute, routeUrl } from './utils/shopRoutes';
+import SupplierDashboard from './Pages/Supplier/SupplierDashboard';
 import ProductManage from './Pages/Supplier/ProductManage';
 import BiddingPage from './Pages/Supplier/BiddingPage';
 import OrderManage from './Pages/Supplier/OrderManage';
@@ -111,6 +112,9 @@ export default function App() {
 
   const renderPage = () => {
     if (currentPage.startsWith('shop/')) return <PublicShopPage key={currentPage} slug={currentPage.slice(5)} onNavigate={navigateTo} />;
+    if (currentPage.startsWith('dat-hang-thiet-ke') || currentPage.startsWith('dat-hang-doanh-nghiep')) {
+      return <OrderAndDesgin key={currentPage} onNavigate={navigateTo} />;
+    }
     switch (currentPage) {
       // Role 1: Customer (Khách hàng doanh nghiệp B2B)
       case 'trang-chu':
@@ -155,6 +159,8 @@ export default function App() {
         return <Notification onNavigate={navigateTo} />;
 
       // Role 2: Supplier (Nhà cung cấp / Xưởng bánh B2B)
+      case 'nha-cung-cap/dashboard':
+        return <SupplierDashboard onNavigate={navigateTo} />;
       case 'dang-ky-nha-cung-cap':
       case 'nha-cung-cap/xac-minh':
         return hasSupplierWorkspace(user) ? <SuppilerProfile onNavigate={navigateTo} /> :
@@ -222,12 +228,13 @@ export default function App() {
       return <Result status="403" title="Trang đăng ký nhà cung cấp dành cho tài khoản khách hàng" />;
     }
     if (supplier) {
+      const isSupplierDashboard = currentPage === 'nha-cung-cap/dashboard' && ['Supplier', 'Admin'].includes(user?.role);
       const onboarding = currentPage === 'nha-cung-cap/ho-so' || currentPage === 'nha-cung-cap/xac-minh';
       const eligible = user?.capabilities?.canReadSupplierVerification;
       const fulfillment = user?.capabilities?.canFulfillExistingOrders &&
-        ['nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang'].includes(currentPage);
+        ['nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang'].includes(currentPage);
       const canStartOnboarding = onboarding && user?.role === 'Customer';
-      if ((!eligible && !canStartOnboarding) || (!onboarding && !user?.capabilities?.canCreateShop && !fulfillment)) {
+      if (!isSupplierDashboard && ((!eligible && !canStartOnboarding) || (!onboarding && !user?.capabilities?.canCreateShop && !fulfillment))) {
         return <Result status="403" title="Hoàn tất xác minh doanh nghiệp để sử dụng chức năng này"
           extra={eligible && <Button type="primary" onClick={() => navigateTo('nha-cung-cap/ho-so')}>Xem hồ sơ xác minh</Button>} />;
       }
@@ -262,6 +269,7 @@ export default function App() {
       type: 'group',
       label: '🏭 NHÀ CUNG CẤP / XƯỞNG BÁNH (COLONY)',
       children: [
+        { key: 'nha-cung-cap/dashboard', label: '0. Dashboard Tổng quan' },
         { key: 'nha-cung-cap/thiet-lap-gian-hang', label: '1. Thiết lập gian hàng' },
         { key: 'nha-cung-cap/quan-ly-san-pham', label: '2. Sản phẩm & Biến thể' },
         { key: 'nha-cung-cap/dau-thau', label: '3. Đấu thầu RFQ & Báo giá' },
