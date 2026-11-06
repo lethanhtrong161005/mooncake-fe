@@ -10,8 +10,14 @@ export const rfqService = {
   async listMine() {
     return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.LIST));
   },
+  async listMinePaged(params = {}, signal) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.LIST, { params, signal }));
+  },
   async listSupplierInvitations() {
     return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.SUPPLIER_LIST));
+  },
+  async listSupplierInvitationsPaged(params = {}, signal) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.SUPPLIER_LIST, { params, signal }));
   },
   async get(rfqId) {
     return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.DETAILS(rfqId)));

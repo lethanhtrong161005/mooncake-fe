@@ -1,0 +1,67 @@
+[
+  {
+    "scenario": "E1",
+    "title": "Happy Path Standard Bulk Order",
+    "status": "PASSED",
+    "orderId": "3e21d2ae-b736-4c89-b8f5-9bd17529d5b4",
+    "orderNumber": "MC-20261105041149-6F1D300E3C"
+  },
+  {
+    "scenario": "E2",
+    "title": "Stock Concurrency Race Guard",
+    "status": "PASSED",
+    "details": {
+      "race1": 201,
+      "race2": 409
+    }
+  },
+  {
+    "scenario": "E3",
+    "title": "Customer Mutual Cancellation & Stock Release",
+    "status": "PASSED",
+    "orderId": "a6e571db-1cce-4bd8-9428-06d6fd2ef2f7"
+  },
+  {
+    "scenario": "E4",
+    "title": "Supplier Rejection within 12h SLA",
+    "status": "PASSED",
+    "orderId": "fc6d834d-664f-4732-a23f-4e3355122d0a"
+  },
+  {
+    "scenario": "E5",
+    "title": "Propose Alternate Delivery Date & Approval",
+    "status": "PASSED",
+    "orderId": "0515a0ae-a386-4dfa-a65c-c6a930de88ef"
+  },
+  {
+    "scenario": "E6",
+    "title": "Custom Packaging Mockup & Change Request",
+    "status": "PASSED",
+    "orderId": "3d3c21cd-15e8-4a52-b662-d3a65bb0e325"
+  },
+  {
+    "scenario": "E7",
+    "title": "Delivery Dispute & Admin Resolution",
+    "status": "PASSED",
+    "disputeId": "43fcd5b8-772e-49d7-89a2-9a6bb59d8b66"
+  },
+  {
+    "scenario": "E8",
+    "title": "Late VNPay IPN Auto-Refund Case",
+    "status": "PASSED"
+  },
+  {
+    "scenario": "E9",
+    "title": "Multi-part VNPay Payments with 100M VND Cap",
+    "status": "PASSED",
+    "orderId": "164312a3-28a8-48e8-9e22-89a95ebb63a0",
+    "partsCount": 2,
+    "vnpUrlAvailable": true
+  },
+  {
+    "scenario": "E10",
+    "title": "Supplier Simulated Payout Request & Admin Approval",
+    "status": "PASSED",
+    "payoutId": "f727a50f-e405-4c32-b7c8-5e3fef936d3d"
+  }
+]

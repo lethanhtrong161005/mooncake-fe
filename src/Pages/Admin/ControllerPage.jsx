@@ -16,38 +16,37 @@ import {
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import apiClient from '../../services/apiClient';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
+import useIsMobile from '../../hooks/useIsMobile';
+
+const fetchUsersPage = async (params, signal) => {
+  const response = await apiClient.get('/v1/users', {
+    params: { ...params, role: params.status, status: undefined }, signal,
+  });
+  return response?.data ?? response;
+};
+const fetchAuditPage = async (params, signal) => {
+  const response = await apiClient.get('/v1/admin/audit-logs', { params, signal });
+  return response?.data ?? response;
+};
 
 const ShopManagementPanel = lazy(() => import('./ShopManagement').then((module) => ({ default: module.ShopManagementPanel })));
 
 export default function ControllerPage({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('users');
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setLoading(true);
-        const res = await apiClient.get('/v1/admin/users');
-        const list = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        setUsers(list.map((u, idx) => ({ ...u, key: u.id || `${idx}` })));
-      } catch (err) {
-        console.warn('Failed to load users:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadUsers();
-  }, []);
+  const userPage = usePagedList(fetchUsersPage);
+  const mobile = useIsMobile();
+  const auditPage = usePagedList(fetchAuditPage, { syncUrl: false });
+  const users = userPage.items;
+  const loading = userPage.loading;
 
   const toggleUserStatus = async (record) => {
     try {
       if (record.id) {
-        await apiClient.put(`/v1/admin/users/${record.id}/status`, { isActive: !record.isActive });
+        await apiClient.patch(`/v1/admin/users/${record.id}`, { isActive: !record.isActive });
       }
-      setUsers((prev) =>
-        prev.map((u) => (u.key === record.key ? { ...u, isActive: !u.isActive } : u))
-      );
+      userPage.refresh();
       message.info(`Đã ${record.isActive ? 'khóa' : 'mở khóa'} tài khoản của ${record.fullName}.`);
     } catch {
       message.error('Không thể cập nhật trạng thái người dùng.');
@@ -123,15 +122,39 @@ export default function ControllerPage({ onNavigate }) {
               label: '👥 Quản Lý Người Dùng (Users)',
               children: (
                 <div>
-                  <div style={{ marginBottom: 16 }}>
-                    <Input
-                      placeholder="Tìm kiếm theo Tên, Email hoặc Số điện thoại..."
-                      prefix={<SearchOutlined style={{ color: '#aaa' }} />}
-                      style={{ width: 320 }}
-                      allowClear
-                    />
-                  </div>
-                  <Table columns={userColumns} dataSource={users} pagination={false} loading={loading} />
+                  <FilterBar search={userPage.search} onSearchChange={userPage.setSearch}
+                    status={userPage.query.status} onStatusChange={userPage.setStatus}
+                    onReset={userPage.reset} placeholder="Tìm tên, email hoặc số điện thoại"
+                    filterLabel="Vai trò" statusOptions={['Customer', 'Supplier', 'Admin']
+                      .map((value) => ({ value, label: value }))} />
+                  <Table columns={userColumns} dataSource={users} rowKey="id" loading={loading}
+                    scroll={{ x: 900 }}
+                    pagination={{ current: userPage.query.page, pageSize: userPage.query.pageSize,
+                      total: userPage.totalCount, onChange: userPage.setPage,
+                      simple: mobile, showSizeChanger: !mobile, pageSizeOptions: [10, 20, 50, 100] }} />
+                </div>
+              ),
+            },
+            {
+              key: 'audit',
+              label: 'Nhật ký quản trị',
+              children: (
+                <div>
+                  <Input.Search value={auditPage.search} onChange={(event) => auditPage.setSearch(event.target.value)}
+                    placeholder="Tìm hành động hoặc đối tượng" allowClear className="mb-3 w-full sm:max-w-xs" />
+                  <Table rowKey="id" loading={auditPage.loading} dataSource={auditPage.items}
+                    scroll={{ x: 900 }}
+                    columns={[
+                      { title: 'Thời gian', dataIndex: 'createdAtUtc', key: 'createdAtUtc',
+                        render: (value) => value ? new Date(value).toLocaleString('vi-VN') : '—' },
+                      { title: 'Hành động', dataIndex: 'action', key: 'action' },
+                      { title: 'Đối tượng', dataIndex: 'entityName', key: 'entityName' },
+                      { title: 'Mã đối tượng', dataIndex: 'entityId', key: 'entityId' },
+                      { title: 'Người thực hiện', dataIndex: 'actorUserId', key: 'actorUserId' },
+                    ]}
+                    pagination={{ current: auditPage.query.page, pageSize: auditPage.query.pageSize,
+                      total: auditPage.totalCount, onChange: auditPage.setPage,
+                      simple: mobile, showSizeChanger: !mobile, pageSizeOptions: [10, 20, 50, 100] }} />
                 </div>
               ),
             },

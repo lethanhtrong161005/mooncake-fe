@@ -1,0 +1,81 @@
+{
+  "vnpUrlRes": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "VNPay order payment URL generated successfully.",
+      "data": {
+        "paymentId": "d31b54b0-9d6f-435a-89b5-76ab2041a9bd",
+        "paymentNumber": "PAY-20261104-866D4E5B1",
+        "amount": 3000000,
+        "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=300000000&vnp_Command=pay&vnp_CreateDate=20261104145326&vnp_CurrCode=VND&vnp_IpAddr=%3A%3A1&vnp_Locale=vn&vnp_OrderInfo=Order+payment+PAY-20261104-866D4E5B1&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A5173%2F%23%2Fthanh-toan%2Fket-qua&vnp_TmnCode=BFYI47AF&vnp_TxnRef=PAY-20261104-866D4E5B1&vnp_Version=2.1.0&vnp_SecureHash=db592454eb03ac9352e352601d74da01ac136ff894dd234ec527d3601a8dd6bb58d21c5164924d6cb194ce92d88d5aa762c9d9cf7cd53baa900a3c71f3f56de1"
+      },
+      "path": "/api/v1/payments/orders/vnpay-url",
+      "traceId": "57efe1e8b8b74d8f811f66c9b598eba0",
+      "time": "2026-11-04T14:53:26.6539299Z"
+    }
+  },
+  "beforeIpnAfterReturnUrlOnly": {
+    "paymentStatus": "Pending",
+    "orderStatus": "Confirmed"
+  },
+  "ipnRes": {
+    "status": 200,
+    "body": {
+      "rspCode": "00",
+      "message": "Confirm Success"
+    }
+  },
+  "afterIpn": {
+    "paymentStatus": "Completed",
+    "orderStatus": "Confirmed"
+  },
+  "singleDeliveryGuard": {
+    "status": 409,
+    "body": {
+      "errorCode": "SINGLE_DELIVERY_LIMIT",
+      "status": 409,
+      "message": "Direct bulk orders support only a single active shipment in v1.",
+      "path": "/api/v1/deliveries",
+      "traceId": "a808f1fd6e764f798211f398f0dbaa5c",
+      "time": "2026-11-04T14:53:34.6326193Z"
+    }
+  },
+  "podWithoutSignatureAccepted": {
+    "status": 201,
+    "body": {
+      "status": 201,
+      "message": "Proof of delivery submitted successfully.",
+      "data": {
+        "id": "bbaddc72-8b4d-43d0-871e-57dd86089866",
+        "deliveryId": "09ce6b61-7445-455d-ae02-5abf76255411",
+        "proofType": "Delivery",
+        "photoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=600&q=80",
+        "signatureUrl": null,
+        "takenBy": "Delivery Driver",
+        "takenAt": "2026-11-04T14:53:34.8841296Z",
+        "locationLat": null,
+        "locationLng": null,
+        "notes": "P0 PoD photo uploaded without forced customer signature",
+        "tamperProofHash": "7cbc2393e0a73ef0a3593634569b05e87350f1c45f3766ee5a11fd6b222c9f94",
+        "isVerified": true,
+        "createdAt": "2026-11-04T14:53:34.8842115Z"
+      },
+      "path": "/api/v1/deliveries/09ce6b61-7445-455d-ae02-5abf76255411/proofs",
+      "traceId": "060afc61e1f442de8220c0d06c95e2d9",
+      "time": "2026-11-04T14:53:35.0087802Z"
+    }
+  },
+  "deliveryStatusAfterPodBeforeCustomerConfirm": "InTransit",
+  "packagingOrderBlockedFromProcessing": {
+    "status": 409,
+    "body": {
+      "errorCode": "PACKAGING_APPROVAL_REQUIRED",
+      "status": 409,
+      "message": "Custom packaging design must be approved before production can start.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5/processing",
+      "traceId": "4cfaeac997b7482c839f781bef6611ae",
+      "time": "2026-11-04T14:53:36.0921704Z"
+    }
+  }
+}

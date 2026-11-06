@@ -24,6 +24,8 @@ import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import deliveryService from '../../services/deliveryService';
 import contractService from '../../services/contractService';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
 
 const { Text } = Typography;
 
@@ -40,9 +42,10 @@ const STATUS_TAG_MAP = {
 };
 
 export default function DeliverManage({ onNavigate }) {
-  const [deliveries, setDeliveries] = useState([]);
+  const deliveryPage = usePagedList(deliveryService.listMinePaged);
+  const deliveries = deliveryPage.items;
   const [contracts, setContracts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const loading = deliveryPage.loading;
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [podModalOpen, setPodModalOpen] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
@@ -50,40 +53,25 @@ export default function DeliverManage({ onNavigate }) {
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-      const [delivData, contractData] = await Promise.all([
-        deliveryService.listMine(),
-        contractService.listMine().catch(() => []),
-      ]);
-      setDeliveries(Array.isArray(delivData) ? delivData : []);
+      deliveryPage.refresh();
+      const contractData = await contractService.listMine().catch(() => []);
       setContracts(Array.isArray(contractData) ? contractData : []);
     } catch {
       message.error('Không thể tải dữ liệu giao vận.');
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [deliveryPage.refresh]);
 
   useEffect(() => {
     let ignore = false;
     const run = async () => {
       try {
-        setLoading(true);
-        const [delivData, contractData] = await Promise.all([
-          deliveryService.listMine(),
-          contractService.listMine().catch(() => []),
-        ]);
+        const contractData = await contractService.listMine().catch(() => []);
         if (!ignore) {
-          setDeliveries(Array.isArray(delivData) ? delivData : []);
           setContracts(Array.isArray(contractData) ? contractData : []);
         }
       } catch {
         if (!ignore) {
           message.error('Không thể tải dữ liệu giao vận.');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
         }
       }
     };
@@ -299,11 +287,18 @@ export default function DeliverManage({ onNavigate }) {
         />
 
         <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+          <FilterBar search={deliveryPage.search} onSearchChange={deliveryPage.setSearch}
+            status={deliveryPage.query.status} onStatusChange={deliveryPage.setStatus}
+            onReset={deliveryPage.reset} placeholder="Tìm mã giao hàng"
+            statusOptions={Object.keys(STATUS_TAG_MAP).filter((value) => value[0] === value[0].toUpperCase())
+              .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))} />
           <Table
             columns={columns}
             dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
             loading={loading}
-            pagination={{ pageSize: 8 }}
+            pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
+              total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
+              pageSizeOptions: [10, 20, 50, 100] }}
             scroll={{ x: 1000 }}
           />
         </Card>

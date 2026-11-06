@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
     TEMPLATE_PREMIUM: (id) => `/${API_VERSION}/admin/shop-templates/${id}/premium`,
     TEMPLATE_MEDIA: `/${API_VERSION}/admin/shop-templates/media`,
   },
+
   // Authentication & Users
   AUTH: {
     LOGIN: `/${API_VERSION}/auth/login`,
@@ -79,24 +80,61 @@ export const API_ENDPOINTS = {
     ACCEPT_BID: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/accept`,
   },
 
-  // Orders & PoD Logistics
+  // Enterprise Direct Bulk Orders & PoD Logistics
   ORDERS: {
     CREATE: `/${API_VERSION}/orders`,
     QUOTE_PREVIEW: `/${API_VERSION}/orders/quote-preview`,
+    PREVIEW: `/${API_VERSION}/orders/preview`,
+    SHOP_POLICY: (shopId) => `/${API_VERSION}/orders/shops/${shopId}/policy`,
     LIST: `/${API_VERSION}/orders`,
     DETAILS: (id) => `/${API_VERSION}/orders/${id}`,
     CANCEL: (id) => `/${API_VERSION}/orders/${id}/cancel`,
     CUSTOMER_LIST: `/${API_VERSION}/orders/mine`,
+    CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
+    SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
+    SUPPLIER_DASHBOARD_SUMMARY: `/${API_VERSION}/orders/supplier/dashboard-summary`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
+    PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
+    RESPOND_DELIVERY_PROPOSAL: (id) => `/${API_VERSION}/orders/${id}/delivery-proposal/respond`,
+    CANCELLATION_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/cancellation-requests`,
+    RESPOND_CANCELLATION_REQUEST: (id, requestId) =>
+      `/${API_VERSION}/orders/${id}/cancellation-requests/${requestId}/respond`,
     PROCESSING: (id) => `/${API_VERSION}/orders/${id}/processing`,
     SHIP: (id) => `/${API_VERSION}/orders/${id}/ship`,
+    PART_VNPAY_URL: (id, partId) => `/${API_VERSION}/orders/${id}/payment-parts/${partId}/vnpay-url`,
+    PAYMENT_SUMMARY: (id) => `/${API_VERSION}/orders/${id}/payment-summary`,
+    FINANCIAL_SUMMARY: (id) => `/${API_VERSION}/orders/${id}/financial-summary`,
+    FINANCIAL_LEDGER: (id) => `/${API_VERSION}/orders/${id}/financial-ledger`,
     CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
+    CONFIRM_DELIVERY_RECEIPT: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm-receipt`,
+    DELIVERY_DISPUTE: (id) => `/${API_VERSION}/orders/${id}/delivery/dispute`,
+    REFUND_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/refund-requests`,
+    PAYOUT_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/payout-requests`,
     CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
+    CUSTOM_PACKAGING_UPLOAD_LOGO: `/${API_VERSION}/custom-packaging/upload-logo`,
     PACKAGING_REVISIONS: (id) => `/${API_VERSION}/orders/${id}/custom-packaging/revisions`,
     REVIEW_PACKAGING_REVISION: (id, revisionId) =>
       `/${API_VERSION}/orders/${id}/custom-packaging/revisions/${revisionId}/review`,
+  },
+
+  ADMIN_ORDERS: {
+    OPERATIONS: `/${API_VERSION}/admin/orders/operations`,
+    SUMMARY: `/${API_VERSION}/admin/orders/operations/summary`,
+    REFUND_CASES: `/${API_VERSION}/admin/orders/operations/refund-cases`,
+    PAYOUT_REQUESTS: `/${API_VERSION}/admin/orders/operations/payout-requests`,
+    DELIVERY_DISPUTES: `/${API_VERSION}/admin/orders/operations/delivery-disputes`,
+    PROCESS_REFUND_CASE: (refundCaseId) => `/${API_VERSION}/admin/orders/refund-cases/${refundCaseId}/process`,
+    PROCESS_PAYOUT_REQUEST: (payoutRequestId) => `/${API_VERSION}/admin/orders/payout-requests/${payoutRequestId}/process`,
+    RESOLVE_DELIVERY_DISPUTE: (disputeId) => `/${API_VERSION}/admin/orders/delivery-disputes/${disputeId}/resolve`,
+  },
+
+  // Packaging Templates
+  PACKAGING_TEMPLATES: {
+    BY_SHOP: (shopId) => `/${API_VERSION}/shops/${shopId}/packaging-templates`,
+    MINE: `/${API_VERSION}/suppliers/me/packaging-templates`,
+    DETAIL: (id) => `/${API_VERSION}/suppliers/me/packaging-templates/${id}`,
   },
 
   // e-Contract & Escrow Payments
@@ -154,6 +192,9 @@ export const API_ENDPOINTS = {
     APPLY: `/${API_VERSION}/suppliers/me/apply`,
     START_ONBOARDING: `/${API_VERSION}/suppliers/me/onboarding`,
     MY_PROFILE: `/${API_VERSION}/suppliers/me`,
+    ORDER_POLICY: `/${API_VERSION}/suppliers/me/order-policy`,
+    PAYOUT_ACCOUNT: `/${API_VERSION}/suppliers/me/payout-account`,
+    FINANCIAL_OVERVIEW: `/${API_VERSION}/suppliers/me/financial-overview`,
     DOCUMENTS: `/${API_VERSION}/suppliers/me/documents`,
     DOCUMENT: (id) => `/${API_VERSION}/suppliers/me/documents/${id}`,
     DOCUMENT_CONTENT: (id) => `/${API_VERSION}/suppliers/documents/${id}/content`,
@@ -161,9 +202,9 @@ export const API_ENDPOINTS = {
     VERIFICATION: (id) => `/${API_VERSION}/suppliers/${id}/verification`,
     HISTORY: (id) => `/${API_VERSION}/suppliers/${id}/history`,
     MY_HISTORY: `/${API_VERSION}/suppliers/me/history`,
-    SUBMISSION: (profileId, submissionId) => profileId ?
-      `/${API_VERSION}/suppliers/${profileId}/submissions/${submissionId}` :
-      `/${API_VERSION}/suppliers/me/submissions/${submissionId}`,
+    SUBMISSION: (profileId, submissionId) => (profileId
+      ? `/${API_VERSION}/suppliers/${profileId}/submissions/${submissionId}`
+      : `/${API_VERSION}/suppliers/me/submissions/${submissionId}`),
     REVOKE: (id) => `/${API_VERSION}/suppliers/${id}/revoke`,
     PENDING: `/${API_VERSION}/suppliers/pending`,
     REVIEW: (profileId) => `/${API_VERSION}/suppliers/${profileId}/review`,
@@ -172,11 +213,6 @@ export const API_ENDPOINTS = {
   },
 
   // Admin Portal & Oversight
-  NOTIFICATIONS: {
-    LIST: `/${API_VERSION}/notifications`,
-    READ: (id) => `/${API_VERSION}/notifications/${id}/read`,
-    READ_ALL: `/${API_VERSION}/notifications/read-all`,
-  },
   ADMIN: {
     DASHBOARD_STATS: `/${API_VERSION}/admin/dashboard`,
     SYSTEM_CONFIG: `/${API_VERSION}/admin/system-config`,
@@ -220,7 +256,9 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: {
     LIST: `/${API_VERSION}/notifications`,
     UNREAD_COUNT: `/${API_VERSION}/notifications/unread-count`,
+    READ: (id) => `/${API_VERSION}/notifications/${id}/read`,
     MARK_READ: (id) => `/${API_VERSION}/notifications/${id}/read`,
+    READ_ALL: `/${API_VERSION}/notifications/read-all`,
     MARK_ALL_READ: `/${API_VERSION}/notifications/read-all`,
     PREFERENCES: `/${API_VERSION}/notifications/preferences`,
     HUB_URL: `/${API_VERSION}/hubs/notifications`,

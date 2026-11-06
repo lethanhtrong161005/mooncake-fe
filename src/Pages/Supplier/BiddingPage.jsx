@@ -6,6 +6,8 @@ import {
 import { CloseOutlined, ReloadOutlined, SendOutlined } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import rfqService from '../../services/rfqService';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
@@ -14,29 +16,17 @@ const errorMessage = (error) => error?.response?.data?.message || error?.message
 const statusColor = { Open: 'processing', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 
 export default function BiddingPage({ onNavigate }) {
-  const [rfqs, setRfqs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const rfqPage = usePagedList(rfqService.listSupplierInvitationsPaged);
+  const rfqs = rfqPage.items;
+  const loading = rfqPage.loading;
   const [selectedRfq, setSelectedRfq] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
   const quoteLines = Form.useWatch('items', form);
 
-  const loadRfqs = useCallback(async () => {
-    setLoading(true);
-    try {
-      setRfqs(await rfqService.listSupplierInvitations());
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(loadRfqs, 0);
-    return () => window.clearTimeout(timeout);
-  }, [loadRfqs]);
+  const loadRfqs = rfqPage.refresh;
+  useEffect(() => { if (rfqPage.error) message.error(errorMessage(rfqPage.error)); }, [rfqPage.error]);
 
   const openBid = async (rfq) => {
     setSubmitting(true);
@@ -102,7 +92,16 @@ export default function BiddingPage({ onNavigate }) {
   return <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/dau-thau" onNavigate={onNavigate}
     title="RFQ được mời & báo giá niêm phong" subtitle="Báo giá đầy đủ từng hạng mục; các xưởng khác không thể xem giá của bạn.">
     <Alert type="info" showIcon style={{ marginBottom: 20 }} message="Quy tắc báo giá" description="Chỉ nộp khi RFQ còn mở và phải báo giá cho toàn bộ hạng mục. Báo giá có thể được cập nhật trước hạn chót theo chính sách RFQ." />
-    <Card extra={<Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button>}><Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 920 }} /></Card>
+    <Card extra={<Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button>}>
+      <FilterBar search={rfqPage.search} onSearchChange={rfqPage.setSearch}
+        status={rfqPage.query.status} onStatusChange={rfqPage.setStatus} onReset={rfqPage.reset}
+        placeholder="Tìm mã RFQ hoặc tiêu đề"
+        statusOptions={Object.keys(statusColor).map((value) => ({ value, label: value }))} />
+      <Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 920 }}
+        pagination={{ current: rfqPage.query.page, pageSize: rfqPage.query.pageSize,
+          total: rfqPage.totalCount, onChange: rfqPage.setPage,
+          showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} />
+    </Card>
     <Drawer title={`Nộp báo giá · ${selectedRfq?.rfqNumber || ''}`} width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)} footer={<Space><Button onClick={() => setDrawerOpen(false)}>Đóng</Button><Button type="primary" loading={submitting} onClick={() => form.submit()}>Gửi báo giá niêm phong</Button></Space>}>
       {selectedRfq && <><Descriptions bordered size="small" column={1} style={{ marginBottom: 18 }}><Descriptions.Item label="Gói thầu">{selectedRfq.title}</Descriptions.Item><Descriptions.Item label="Hạn nộp">{new Date(selectedRfq.bidDeadline).toLocaleString('vi-VN')}</Descriptions.Item><Descriptions.Item label="Ngày giao">{selectedRfq.deliveryDateRequired}</Descriptions.Item></Descriptions>
         <Form form={form} layout="vertical" onFinish={submitBid}>

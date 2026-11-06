@@ -1,0 +1,52 @@
+[
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/deliveries",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/deliveries",
+    "query": {
+      "page": "2",
+      "pageSize": "10"
+    }
+  }
+]

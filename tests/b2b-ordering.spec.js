@@ -137,16 +137,19 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
       const path = url.pathname.replace(/^.*\/api\/v1/, '');
       if (path === '/auth/me') return route.fulfill({ json: { status: 200, data: { id: '33333333-3333-4333-8333-333333333333', role: 'Customer' } } });
       if (path === '/notifications') return route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0, totalCount: 0 } } });
-      if (path === '/orders/mine') return route.fulfill({ json: { status: 200, data: [orderFixture] } });
+      if (path === '/orders/mine/paged') return route.fulfill({ json: { status: 200,
+        data: { items: [orderFixture], page: 1, pageSize: 10, totalCount: 1 } } });
       return route.continue();
     });
 
     await page.goto('/#dat-hang-thiet-ke');
-    await expect(page.locator('h2')).toContainText('Đặt hàng doanh nghiệp');
-    await expect(page.locator('.ant-result-title')).toContainText('Chưa có sản phẩm để đặt');
+    await expect(page.getByRole('heading', { name: /Đặt Hàng Doanh Nghiệp/ })).toBeVisible();
+    await expect(page.getByText('Chưa Có Sản Phẩm Trong Đơn Nháp')).toBeVisible();
 
-    // Switch to order tracking tab
-    await page.getByRole('tab', { name: 'Đơn của tôi' }).click();
+    await page.getByRole('button', { name: 'Tài khoản' }).click();
+    await page.getByRole('menuitem', { name: 'Đơn hàng của tôi' }).click();
+    await expect(page).toHaveURL(/#don-hang-cua-toi$/);
+    await expect(page.getByRole('heading', { name: 'Đơn hàng của tôi' })).toBeVisible();
     await expect(page.locator('text=MC-20261029-TEST01')).toBeVisible();
     await expect(page.locator('text=11.700.000 ₫')).toBeVisible();
   });
@@ -184,11 +187,12 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
       if (path === `/orders/${orderFixture.id}/custom-packaging` && request.method() === 'POST') {
         return route.fulfill({ status: 201, json: { status: 201, data: packagingFixture } });
       }
-      if (path === '/orders/mine') return route.fulfill({ json: { status: 200, data: [orderFixture] } });
+      if (path === '/orders/mine/paged') return route.fulfill({ json: { status: 200,
+        data: { items: [orderFixture], page: 1, pageSize: 10, totalCount: 1 } } });
       return route.continue();
     });
 
-    await page.goto('/#dat-hang-thiet-ke');
+    await page.goto(`/#dat-hang-thiet-ke?productId=${productFixture.id}`);
     await expect(page.locator('text=Bánh Trung Thu Hoàng Kim')).toBeVisible();
     await expect(page.locator('text=Chiết khấu doanh nghiệp 10%')).toBeVisible();
     await expect(page.locator('text=11.700.000 ₫')).toBeVisible();
@@ -205,6 +209,8 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
 
     await page.getByRole('button', { name: /Gửi đơn đặt hàng/i }).click();
     await expect(page.locator('.ant-message-success')).toContainText('MC-20261029-TEST01');
+    await expect(page).toHaveURL(/#don-hang-cua-toi$/);
+    await expect(page.getByText('#MC-20261029-TEST01', { exact: true })).toBeVisible();
     expect(orderCreated).toBeTruthy();
   });
 
@@ -232,7 +238,8 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
         });
       }
       if (path === '/notifications') return route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0, totalCount: 0 } } });
-      if (path === '/orders/supplier') return route.fulfill({ json: { status: 200, data: [orderFixture] } });
+      if (path === '/orders/supplier/paged') return route.fulfill({ json: { status: 200,
+        data: { items: [orderFixture], page: 1, pageSize: 10, totalCount: 1 } } });
       if (path === `/orders/${orderFixture.id}/confirm` && request.method() === 'POST') {
         orderConfirmed = true;
         return route.fulfill({ status: 200, json: { status: 200, data: { ...orderFixture, status: 'Confirmed' } } });

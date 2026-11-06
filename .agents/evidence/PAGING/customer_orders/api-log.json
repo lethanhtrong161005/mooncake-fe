@@ -1,0 +1,148 @@
+[
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "2",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "25",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "20",
+      "status": "Pending"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "MC-PAGING-0250"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "MC-PAGING-0250"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "no-matching-record-999"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/mine/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  }
+]

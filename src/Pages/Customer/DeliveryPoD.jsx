@@ -21,6 +21,8 @@ import {
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import deliveryService from '../../services/deliveryService';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
 
 const { Text } = Typography;
 
@@ -37,48 +39,15 @@ const STATUS_TAG_MAP = {
 };
 
 export default function DeliveryPoD({ onNavigate }) {
-  const [deliveries, setDeliveries] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const deliveryPage = usePagedList(deliveryService.listMinePaged);
+  const deliveries = deliveryPage.items;
+  const loading = deliveryPage.loading;
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [currentProofs, setCurrentProofs] = useState([]);
   const [podModalOpen, setPodModalOpen] = useState(false);
 
-  const fetchDeliveries = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await deliveryService.listMine();
-      setDeliveries(Array.isArray(data) ? data : []);
-    } catch {
-      message.error('Không thể tải danh sách chuyến giao hàng.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let ignore = false;
-    const run = async () => {
-      try {
-        setLoading(true);
-        const data = await deliveryService.listMine();
-        if (!ignore) {
-          setDeliveries(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        if (!ignore) {
-          message.error('Không thể tải danh sách chuyến giao hàng.');
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-    run();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const fetchDeliveries = deliveryPage.refresh;
+  useEffect(() => { if (deliveryPage.error) message.error(deliveryPage.error.message); }, [deliveryPage.error]);
 
   const handleOpenPod = async (record) => {
     setSelectedDelivery(record);
@@ -273,11 +242,18 @@ export default function DeliveryPoD({ onNavigate }) {
         />
 
         <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+          <FilterBar search={deliveryPage.search} onSearchChange={deliveryPage.setSearch}
+            status={deliveryPage.query.status} onStatusChange={deliveryPage.setStatus}
+            onReset={deliveryPage.reset} placeholder="Tìm mã giao hàng"
+            statusOptions={Object.keys(STATUS_TAG_MAP).filter((value) => value[0] === value[0].toUpperCase())
+              .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))} />
           <Table
             columns={columns}
             dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
             loading={loading}
-            pagination={{ pageSize: 8 }}
+            pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
+              total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
+              pageSizeOptions: [10, 20, 50, 100] }}
             scroll={{ x: 900 }}
           />
         </Card>

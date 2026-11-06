@@ -1,0 +1,100 @@
+{
+  "requestSentByFE": {
+    "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+    "items": [
+      {
+        "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+        "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+        "quantity": 5
+      }
+    ],
+    "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+    "recipientName": "TEST Nguyen Van Alpha",
+    "recipientPhone": "0988000101",
+    "deliveryDateExpected": "2026-11-18",
+    "notes": "TEST-P0 VIP packaging delivery note",
+    "customPackaging": {
+      "companyName": "TEST Alpha Enterprise Co., Ltd.",
+      "companyLogoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80",
+      "packagingType": "Hộp Sơn Mài Thượng Hạng",
+      "colorScheme": "{\"primary\":\"#8c1524\",\"secondary\":\"#d48806\"}",
+      "specialMessage": null,
+      "notes": "Gold foil embossed center logo"
+    }
+  },
+  "responseFromBE": {
+    "status": 201,
+    "body": {
+      "status": 201,
+      "message": "Order placed successfully.",
+      "data": {
+        "id": "f994e9a6-628b-4074-987f-8a416e86e7f5",
+        "orderNumber": "MC-20261104145311-F5069101D1",
+        "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+        "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+        "status": "Pending",
+        "subtotal": 2500000,
+        "discountAmount": 0,
+        "taxAmount": 0,
+        "shippingFee": 0,
+        "packagingFee": 0,
+        "totalAmount": 2500000,
+        "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+        "recipientName": "TEST Nguyen Van Alpha",
+        "recipientPhone": "0988000101",
+        "deliveryDateExpected": "2026-11-18",
+        "notes": "TEST-P0 VIP packaging delivery note",
+        "createdAtUtc": "2026-11-04T14:53:11.3997424Z",
+        "items": [
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "4-Piece Abalone Mixed Nuts Box",
+            "sku": "TEST-SA-P1-V1",
+            "quantity": 5,
+            "unitPrice": 500000,
+            "discountAmount": 0,
+            "subtotal": 2500000
+          }
+        ],
+        "customPackaging": {
+          "id": "fc00d27e-63ec-4cde-8a3d-c927fbb2930f",
+          "companyName": "TEST Alpha Enterprise Co., Ltd.",
+          "companyLogoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80",
+          "boxDesignUrl": null,
+          "packagingType": "Hộp Sơn Mài Thượng Hạng",
+          "status": "Pending",
+          "revisionsCount": 0
+        }
+      },
+      "path": "/api/v1/orders",
+      "traceId": "2896e97fb0304d2b8ce0ba72e0a51d53",
+      "time": "2026-11-04T14:53:11.9641582Z"
+    }
+  },
+  "persistedCustomPackagingBrief": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "Custom packaging details retrieved successfully.",
+      "data": {
+        "id": "fc00d27e-63ec-4cde-8a3d-c927fbb2930f",
+        "orderId": "f994e9a6-628b-4074-987f-8a416e86e7f5",
+        "companyName": "TEST Alpha Enterprise Co., Ltd.",
+        "companyLogoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80",
+        "boxDesignUrl": null,
+        "packagingType": "Hộp Sơn Mài Thượng Hạng",
+        "colorScheme": "{\"primary\": \"#8c1524\", \"secondary\": \"#d48806\"}",
+        "specialMessage": null,
+        "notes": "Gold foil embossed center logo",
+        "status": "Pending",
+        "createdAtUtc": "2026-11-04T14:53:11.399742Z",
+        "revisions": []
+      },
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5/custom-packaging",
+      "traceId": "324026c29c04439790de5c7fa8f581d1",
+      "time": "2026-11-04T14:53:13.7102513Z"
+    }
+  }
+}

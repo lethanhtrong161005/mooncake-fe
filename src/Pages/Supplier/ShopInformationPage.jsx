@@ -3,6 +3,7 @@ import { Alert, App, Button, Card, Form, Input, Select, Skeleton, Space, Tag, Ty
 import { ReloadOutlined, ShopOutlined } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import ShopMediaUpload from '../../components/shop/ShopMediaUpload';
+import PackagingTemplateManager from '../../components/shop/PackagingTemplateManager';
 import { useShopResource, useShopMutation, useDirtyExit } from '../../hooks/useShopResource';
 import { shopService } from '../../services/shopService';
 import { SHOP_STATUS, shopError } from '../../constants/shop';
@@ -94,12 +95,14 @@ export default function ShopInformationPage({ onNavigate }) {
         <Tag color={shop.status === 'Active' ? 'success' : shop.status === 'Suspended' ? 'error' : 'default'}>{SHOP_STATUS[shop.status]}</Tag>
         <Button onClick={() => navigate('nha-cung-cap/giao-dien-gian-hang')}>Tùy chỉnh giao diện</Button>
         {shop.status === 'Active' && <Button onClick={() => navigate(`shop/${shop.slug}`)}>Xem trang công khai</Button>}
+        <Button type="primary" style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }} onClick={() => navigate('nha-cung-cap/dashboard')}>Dashboard & Đơn hàng mới</Button>
         <Button disabled={dirty || shop.status === 'Suspended'} loading={mutation.busy} onClick={visibility}>{shop.status === 'Active' ? 'Tạm ẩn' : 'Hiển thị gian hàng'}</Button>
       </Space></Card> : <Alert type="info" showIcon title="Bạn đã được duyệt Supplier. Tạo gian hàng để bắt đầu giới thiệu sản phẩm." />}
       {shop?.status === 'Suspended' && <Alert type="error" showIcon title="Gian hàng bị đình chỉ" description={shop.suspensionReason} />}
       {mutation.error && <Alert type="error" title={shopError(mutation.error)} />}
       <InformationForm key={`${user.id}:${shop?.shopId || 'new'}:${shop?.version || 0}`} shop={shop} catalog={resource.data.catalog}
         onSaved={resource.reload} onDirtyChange={setDirty} />
+      {shop && <PackagingTemplateManager shopId={shop?.shopId || shop?.id} />}
     </Space>}
   </ColonyAdminLayout>;
 }

@@ -4,6 +4,15 @@ import { API_ENDPOINTS } from '../constants/apiEndpoints';
 const unwrap = (response) => response?.data ?? response;
 
 export const customPackagingService = {
+  async uploadLogo(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post(API_ENDPOINTS.ORDERS.CUSTOM_PACKAGING_UPLOAD_LOGO, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+    return unwrap(res)?.data ?? unwrap(res);
+  },
   async create(orderId, request) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.CUSTOM_PACKAGING(orderId), request));
   },
