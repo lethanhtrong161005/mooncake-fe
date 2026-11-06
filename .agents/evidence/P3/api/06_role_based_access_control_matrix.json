@@ -1,0 +1,57 @@
+[
+  {
+    "action": "Unauthenticated GET /api/v1/orders/mine",
+    "expectedStatuses": [
+      401
+    ],
+    "actualStatus": 401,
+    "passed": true,
+    "responseSummary": "OK"
+  },
+  {
+    "action": "Customer calls Supplier endpoint /api/v1/orders/supplier",
+    "expectedStatuses": [
+      403
+    ],
+    "actualStatus": 403,
+    "passed": true,
+    "responseSummary": "OK"
+  },
+  {
+    "action": "Cross-tenant Supplier B attempts GET /api/v1/orders/{orderId} of Shop A",
+    "expectedStatuses": [
+      404
+    ],
+    "actualStatus": 404,
+    "passed": true,
+    "responseSummary": "Order was not found."
+  },
+  {
+    "action": "Customer attempts POST /api/v1/orders/{orderId}/confirm (Supplier only)",
+    "expectedStatuses": [
+      403,
+      404
+    ],
+    "actualStatus": 403,
+    "passed": true,
+    "responseSummary": "OK"
+  },
+  {
+    "action": "Supplier attempts POST /api/v1/admin/orders/refund-cases/{id}/process (Admin only)",
+    "expectedStatuses": [
+      403
+    ],
+    "actualStatus": 403,
+    "passed": true,
+    "responseSummary": "OK"
+  },
+  {
+    "action": "Admin accesses /api/v1/admin/orders/operations (Admin only)",
+    "expectedStatuses": [
+      200
+    ],
+    "actualStatus": 200,
+    "passed": true,
+    "responseSummary": "Administrator bulk order operations retrieved successfully."
+  }
+]

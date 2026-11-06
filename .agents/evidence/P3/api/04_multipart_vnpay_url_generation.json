@@ -1,0 +1,95 @@
+{
+  "orderId": "b08b96a7-87b0-44e4-90f6-50a58fd67cb4",
+  "paymentSummary": {
+    "orderId": "b08b96a7-87b0-44e4-90f6-50a58fd67cb4",
+    "totalOrderAmount": 59375000,
+    "totalScheduledAmount": 59375000,
+    "totalPaidAmount": 0,
+    "totalRefundedAmount": 0,
+    "remainingAmount": 59375000,
+    "canStartProduction": false,
+    "canMarkShipped": false,
+    "vnPayMaxAmountPerPart": 100000000,
+    "obligations": [
+      {
+        "id": "a9f0353e-5d51-4f6b-85d8-bcebe94945d5",
+        "sequenceNo": 1,
+        "obligationType": "Deposit",
+        "title": "Order deposit (30%)",
+        "totalAmount": 17812500,
+        "paidAmount": 0,
+        "remainingAmount": 17812500,
+        "status": "Pending",
+        "isRequiredBeforeProduction": true,
+        "isRequiredBeforeShipping": true,
+        "dueAtUtc": "2026-11-06T02:43:06.114202Z",
+        "paidAtUtc": null,
+        "parts": [
+          {
+            "id": "95bddc01-90d6-4cfc-b449-4b5599d68434",
+            "obligationId": "a9f0353e-5d51-4f6b-85d8-bcebe94945d5",
+            "partIndex": 1,
+            "totalParts": 1,
+            "amount": 17812500,
+            "status": "Pending",
+            "paidAtUtc": null,
+            "activePaymentNumber": null,
+            "transactionId": null
+          }
+        ]
+      },
+      {
+        "id": "981bec1a-506d-46c9-b182-f2863b79bfac",
+        "sequenceNo": 2,
+        "obligationType": "RemainingBalance",
+        "title": "Remaining balance before shipping",
+        "totalAmount": 41562500,
+        "paidAmount": 0,
+        "remainingAmount": 41562500,
+        "status": "Pending",
+        "isRequiredBeforeProduction": false,
+        "isRequiredBeforeShipping": true,
+        "dueAtUtc": null,
+        "paidAtUtc": null,
+        "parts": [
+          {
+            "id": "7777d98a-568e-4282-9ff9-cd9d4561b4d2",
+            "obligationId": "981bec1a-506d-46c9-b182-f2863b79bfac",
+            "partIndex": 1,
+            "totalParts": 1,
+            "amount": 41562500,
+            "status": "Pending",
+            "paidAtUtc": null,
+            "activePaymentNumber": null,
+            "transactionId": null
+          }
+        ]
+      }
+    ],
+    "transactions": []
+  },
+  "firstPartRequested": {
+    "id": "95bddc01-90d6-4cfc-b449-4b5599d68434",
+    "obligationId": "a9f0353e-5d51-4f6b-85d8-bcebe94945d5",
+    "partIndex": 1,
+    "totalParts": 1,
+    "amount": 17812500,
+    "status": "Pending",
+    "paidAtUtc": null,
+    "activePaymentNumber": null,
+    "transactionId": null
+  },
+  "vnpayUrlResult": {
+    "status": 200,
+    "message": "VNPay payment URL generated for order payment part.",
+    "data": {
+      "paymentId": "82f8a09a-9cce-438c-9079-683af0e58fad",
+      "paymentNumber": "PAY-20261105-AC135B5A4",
+      "amount": 17812500,
+      "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1781250000&vnp_Command=pay&vnp_CreateDate=20261105024308&vnp_CurrCode=VND&vnp_IpAddr=%3A%3A1&vnp_Locale=vn&vnp_OrderInfo=Order+payment+PAY-20261105-AC135B5A4&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A5173%2F%23%2Fthanh-toan%2Fket-qua&vnp_TmnCode=BFYI47AF&vnp_TxnRef=PAY-20261105-AC135B5A4&vnp_Version=2.1.0&vnp_SecureHash=5f56afa64e8937b1ace6d4b3bf844611bb5fd3b00e3c7ee99d9a80009e8c4ba3479342ba48137d7b609c0d389be2e3c3af7bb02d0a8506fc312a9e7c6d5e1e37"
+    },
+    "path": "/api/v1/orders/b08b96a7-87b0-44e4-90f6-50a58fd67cb4/payment-parts/95bddc01-90d6-4cfc-b449-4b5599d68434/vnpay-url",
+    "traceId": "8a4fd499fbf74e70be18f5f1bffe2b95",
+    "time": "2026-11-05T02:43:08.6213322Z"
+  }
+}

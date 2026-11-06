@@ -50,11 +50,6 @@ export default function CustomerHeader({
       label: 'Sản phẩm',
     },
     {
-      key: 'dat-hang-thiet-ke',
-      icon: <ShoppingOutlined />,
-      label: 'Đặt hàng & In logo',
-    },
-    {
       key: 'so-sanh-bao-gia',
       icon: <SolutionOutlined />,
       label: 'Yêu cầu Báo giá',
@@ -86,42 +81,48 @@ export default function CustomerHeader({
 
 
   const userMenuItems = [
+    ...(['Supplier', 'Admin'].includes(user?.role) ? [{
+      key: 'workspace',
+      icon: <HomeOutlined />,
+      label: user?.role === 'Admin' ? 'Về trang quản trị' : 'Về kênh nhà cung cấp',
+      onClick: () => onNavigate?.(user?.role === 'Admin' ? 'admin/dashboard' : 'nha-cung-cap/dashboard'),
+    }] : []),
+    ...(user?.role === 'Customer' ? [{
+      key: 'my-orders',
+      icon: <ShoppingOutlined />,
+      label: 'Đơn hàng của tôi',
+      onClick: () => onNavigate?.('don-hang-cua-toi'),
+    }] : []),
     ...(user?.role === 'Customer' && !user?.capabilities?.canReadSupplierVerification ? [{
       key: 'supplier-onboarding',
       icon: <ShopOutlined />,
       label: 'Đăng ký mở gian hàng',
       onClick: () => onNavigate?.('dang-ky-nha-cung-cap'),
     }] : []),
-    ...(user?.role === 'Admin' ? [{
-      key: 'admin-verification',
-      icon: <ShopOutlined />,
-      label: 'Duyệt nhà cung cấp',
-      onClick: () => onNavigate?.('admin/phe-duyet'),
-    }] : []),
-    ...(user?.capabilities?.canReadSupplierVerification ? [{
+    ...(user?.role === 'Customer' && user?.capabilities?.canReadSupplierVerification ? [{
       key: 'supplier-verification',
       icon: <ShopOutlined />,
       label: 'Hồ sơ xác minh nhà cung cấp',
-      onClick: () => onNavigate?.(user?.role === 'Supplier' ? 'nha-cung-cap/ho-so' : 'dang-ky-nha-cung-cap'),
+      onClick: () => onNavigate?.('dang-ky-nha-cung-cap'),
     }] : []),
-    {
+    ...(user?.role === 'Customer' ? [{
       key: 'profile',
       icon: <UserOutlined />,
       label: 'Hồ sơ Doanh nghiệp',
       onClick: () => onNavigate?.('ho-so-khach-hang'),
-    },
-    {
+    }] : []),
+    ...(user?.role === 'Customer' ? [{
       key: 'rfq',
       icon: <SolutionOutlined />,
       label: 'Quản lý RFQ của tôi',
       onClick: () => onNavigate?.('so-sanh-bao-gia'),
-    },
-    {
+    }] : []),
+    ...(user?.role === 'Customer' ? [{
       key: 'contracts',
       icon: <FileTextOutlined />,
       label: 'Hợp đồng & Đặt cọc M1',
       onClick: () => onNavigate?.('hop-dong-tien-do'),
-    },
+    }] : []),
     {
       type: 'divider',
     },

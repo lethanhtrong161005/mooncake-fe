@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert, App, Avatar, Badge, Button, Card, Col, Descriptions,
   Empty, Form, Image, Input, InputNumber, Modal, Row, Select,
@@ -13,6 +13,7 @@ import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import customPackagingService from '../../services/customPackagingService';
 import orderService from '../../services/orderService';
 import { useAuth } from '../../hooks/useAuth';
+import usePagedList from '../../hooks/usePagedList';
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -41,9 +42,13 @@ const statusLabel = {
 export default function SupplierDashboard({ onNavigate }) {
   const { user } = useAuth();
   const { message, modal } = App.useApp();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('All');
+  const orderPage = usePagedList(orderService.listSupplierOrdersPaged);
+  const orders = orderPage.items;
+  const loading = orderPage.loading;
+  const statusFilter = orderPage.query.status || 'All';
+  const setStatusFilter = (value) => orderPage.setStatus(value === 'All' ? '' : value);
+  const [metrics, setMetrics] = useState({ totalOrders: 0, pendingOrders: 0,
+    processingOrders: 0, packagingOrders: 0, totalRevenue: 0 });
 
   // Modal Packaging State
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -54,46 +59,18 @@ export default function SupplierDashboard({ onNavigate }) {
 
   // Load orders from API
   const loadOrders = useCallback(async () => {
-    setLoading(true);
+    orderPage.refresh();
     try {
-      const data = await orderService.listSupplierOrders();
-      setOrders(Array.isArray(data) ? data : []);
+      setMetrics(await orderService.getSupplierDashboardSummary());
     } catch (error) {
       console.warn('Load supplier orders error:', error);
       message.error(errorMessage(error));
-    } finally {
-      setLoading(false);
     }
-  }, [message]);
+  }, [message, orderPage.refresh]);
 
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
-
-  // Derived metrics
-  const metrics = useMemo(() => {
-    const totalOrders = orders.length;
-    const pendingOrders = orders.filter((o) => o.status === 'Pending').length;
-    const processingOrders = orders.filter((o) => o.status === 'Confirmed' || o.status === 'Processing').length;
-    const packagingOrders = orders.filter((o) => !!o.customPackaging).length;
-    const totalRevenue = orders
-      .filter((o) => o.status !== 'Cancelled')
-      .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
-
-    return {
-      totalOrders,
-      pendingOrders,
-      processingOrders,
-      packagingOrders,
-      totalRevenue,
-    };
-  }, [orders]);
-
-  // Filtered orders list
-  const filteredOrders = useMemo(() => {
-    if (statusFilter === 'All') return orders;
-    return orders.filter((order) => order.status === statusFilter);
-  }, [orders, statusFilter]);
 
   // Actions
   const handleConfirmOrder = async (order) => {
@@ -509,8 +486,10 @@ export default function SupplierDashboard({ onNavigate }) {
           rowKey="id"
           loading={loading}
           columns={columns}
-          dataSource={filteredOrders}
-          pagination={{ pageSize: 8, showSizeChanger: false }}
+          dataSource={orders}
+          pagination={{ current: orderPage.query.page, pageSize: orderPage.query.pageSize,
+            total: orderPage.totalCount, onChange: orderPage.setPage, showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100] }}
           locale={{ emptyText: <Empty description="Chưa có đơn hàng nào trong danh mục này." /> }}
           scroll={{ x: 1000 }}
         />

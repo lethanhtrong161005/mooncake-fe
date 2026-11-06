@@ -188,8 +188,8 @@ export default function ColonyAdminLayout({
     {
       key: 'home',
       icon: <HomeOutlined />,
-      label: 'Về Cổng Khách hàng (B2B)',
-      onClick: () => onNavigate?.('trang-chu'),
+      label: 'Trang tổng quan',
+      onClick: () => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard'),
     },
     {
       type: 'divider',
@@ -307,7 +307,7 @@ export default function ColonyAdminLayout({
             />
             {!compact && <Breadcrumb
               items={[
-                { title: <HomeOutlined onClick={() => onNavigate?.('trang-chu')} style={{ cursor: 'pointer' }} /> },
+                { title: <HomeOutlined onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')} style={{ cursor: 'pointer' }} /> },
                 { title: isAdmin ? 'Ban Quản Trị HQ' : 'Kênh Nhà Cung Cấp' },
                 { title: title || 'Tổng quan' },
               ]}

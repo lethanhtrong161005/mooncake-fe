@@ -8,6 +8,7 @@ export const ROUTES = {
   SEARCH: 'tim-kiem',
   PRODUCT_DETAILS: 'san-pham',
   ORDER_DESIGN: 'dat-hang-thiet-ke',
+  MY_ORDERS: 'don-hang-cua-toi',
   PACKAGING_LOGO: 'in-an-bao-bi',
   RFQ_BIDDING: 'so-sanh-bao-gia',
   CONTRACTS: 'hop-dong-tien-do',

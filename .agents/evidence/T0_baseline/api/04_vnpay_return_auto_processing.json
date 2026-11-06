@@ -1,0 +1,93 @@
+{
+  "note": "Only GET /payments/vnpay/return-callback was called (no IPN). Payment became Completed and Order jumped to Processing.",
+  "vnpUrlRes": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "VNPay order payment URL generated successfully.",
+      "data": {
+        "paymentId": "b4a805bc-ce84-4107-87dd-cc10b1b3b69d",
+        "paymentNumber": "PAY-20261104-B4F327D69",
+        "amount": 2500000,
+        "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=250000000&vnp_Command=pay&vnp_CreateDate=20261104140540&vnp_CurrCode=VND&vnp_IpAddr=%3A%3A1&vnp_Locale=vn&vnp_OrderInfo=Contract+deposit+PAY-20261104-B4F327D69&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A5173%2F%23%2Fthanh-toan%2Fket-qua&vnp_TmnCode=BFYI47AF&vnp_TxnRef=PAY-20261104-B4F327D69&vnp_Version=2.1.0&vnp_SecureHash=c075c12570817a64faba41fc27ac5f8386f74c0752a22268d9faeb9d97ed1b46f84d94b311516e4aa3adb72e09aed13c350573b863ccbcfb2f1ce470801a4e17"
+      },
+      "path": "/api/v1/payments/orders/vnpay-url",
+      "traceId": "3bb5fb85e69742e09cd843775b180e60",
+      "time": "2026-11-04T14:05:40.8090335Z"
+    }
+  },
+  "returnCallbackRes": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "VNPay return callback verified successfully.",
+      "data": {
+        "paymentNumber": "PAY-20261104-B4F327D69",
+        "orderId": "36568522-fbc1-4465-9de7-e08d9e0b54f7",
+        "contractId": null,
+        "milestoneId": null,
+        "amount": 2500000,
+        "isSuccess": true,
+        "responseCode": "00",
+        "bankCode": "NCB",
+        "transactionNo": "14999901",
+        "paidAt": "2026-11-04T14:05:40.914902Z"
+      },
+      "path": "/api/v1/payments/vnpay/return-callback",
+      "traceId": "ab90f37eeac249e88e747a4f3af1709e",
+      "time": "2026-11-04T14:05:41.1970646Z"
+    }
+  },
+  "orderStatusAfterReturnUrlOnly": "Processing",
+  "orderAfterReturn": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "Order retrieved successfully.",
+      "data": {
+        "id": "36568522-fbc1-4465-9de7-e08d9e0b54f7",
+        "orderNumber": "MC-20261104140520-C14B8CBDA4",
+        "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+        "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+        "status": "Processing",
+        "subtotal": 2500000,
+        "discountAmount": 0,
+        "taxAmount": 0,
+        "shippingFee": 0,
+        "packagingFee": 0,
+        "totalAmount": 2500000,
+        "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+        "recipientName": "TEST Nguyen Van Alpha",
+        "recipientPhone": "0988000101",
+        "deliveryDateExpected": "2026-11-18",
+        "notes": "[Thông Tin Thiết Kế Bao Bì & In Logo]:\n- Đơn vị: TEST Alpha Enterprise Co., Ltd.\n- Mẫu hộp: Hộp Sơn Mài Thượng Hạng\n- Logo: https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80\n- Màu nhận diện: #8c1524 (chính) / #d48806 (phụ)\n- Thông điệp nắp hộp: (Không)\n- Yêu cầu gia công: (Không)",
+        "createdAtUtc": "2026-11-04T14:05:20.154989Z",
+        "items": [
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "4-Piece Abalone Mixed Nuts Box",
+            "sku": "TEST-SA-P1-V1",
+            "quantity": 5,
+            "unitPrice": 500000,
+            "discountAmount": 0,
+            "subtotal": 2500000
+          }
+        ],
+        "customPackaging": {
+          "id": "b6a6c721-4018-4454-96ed-dad128a7a7f1",
+          "companyName": "TEST Alpha Enterprise Co., Ltd.",
+          "companyLogoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80",
+          "boxDesignUrl": null,
+          "packagingType": "Hộp Sơn Mài Thượng Hạng",
+          "status": "Pending",
+          "revisionsCount": 0
+        }
+      },
+      "path": "/api/v1/orders/36568522-fbc1-4465-9de7-e08d9e0b54f7",
+      "traceId": "276d62a51836458ea0f828bd77aa86c4",
+      "time": "2026-11-04T14:05:41.3932085Z"
+    }
+  }
+}

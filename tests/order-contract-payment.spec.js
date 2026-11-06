@@ -65,15 +65,12 @@ test.describe('Module 10: Order & Contract Payment (Feature #25)', () => {
       });
     });
 
-    await page.goto('/#dat-hang-thiet-ke');
-    await expect(page.locator('h2')).toContainText('Đặt hàng doanh nghiệp');
-
-    // Switch to "Đơn của tôi" tab
-    await page.getByRole('tab', { name: 'Đơn của tôi' }).click();
+    await page.goto('/#don-hang-cua-toi');
+    await expect(page.getByRole('heading', { name: 'Đơn hàng của tôi' })).toBeVisible();
 
     // Verify order is listed with "Thanh toán ngay" button
     await expect(page.getByText('ORD-20261029-VIP01')).toBeVisible();
-    const payBtn = page.getByRole('button', { name: /Thanh toán ngay/i }).first();
+    const payBtn = page.getByRole('button', { name: /Thanh toán ký quỹ ngay/i }).first();
     await expect(payBtn).toBeVisible();
     await payBtn.click();
 

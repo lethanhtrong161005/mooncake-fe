@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { App as AntApp, Button, ConfigProvider, FloatButton, Dropdown, Result, Spin } from 'antd';
 import { useAuth } from './hooks/useAuth';
 import { hasSupplierWorkspace } from './utils/supplierAccess';
+import { roleHomeRoute } from './utils/roleNavigation';
 import SupplierRegistration from './Pages/Customer/SupplierRegistration';
 import { CompassOutlined } from '@ant-design/icons';
 import antdTheme from './theme/antdTheme';
@@ -12,6 +13,7 @@ import SearchPage from './Pages/SearchPage';
 import Notification from './Pages/Notification';
 import ProductInformation from './Pages/Products/ProductInformation';
 import OrderAndDesgin from './Pages/Customer/OrderAndDesgin';
+import MyOrders from './Pages/Customer/MyOrders';
 import PackagingAndLogoPrinting from './Pages/Customer/PackagingAndLogoPrinting';
 import BiddingAndQuoteComparison from './Pages/Customer/BiddingAndQuoteComparison';
 import ContractsAndMilestone from './Pages/Customer/ContractsAndMilestone';
@@ -21,7 +23,7 @@ import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
 
 // Supplier Pages
-import { currentRoute, routeUrl } from './utils/shopRoutes';
+import { currentHashQuery, currentRoute, routeUrl } from './utils/shopRoutes';
 import SupplierDashboard from './Pages/Supplier/SupplierDashboard';
 import ProductManage from './Pages/Supplier/ProductManage';
 import BiddingPage from './Pages/Supplier/BiddingPage';
@@ -54,6 +56,7 @@ const ShopTemplates = lazy(() => import('./Pages/Admin/ShopTemplates'));
 export default function App() {
   const { user, isLoggedIn, isRestoring } = useAuth();
   const [currentPage, setCurrentPage] = useState(currentRoute);
+  const [hashQuery, setHashQuery] = useState(currentHashQuery);
 
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
@@ -81,7 +84,7 @@ export default function App() {
     }
 
     const proceed = () => {
-      setCurrentPage(target);
+      setCurrentPage(target); setHashQuery('');
       window.history.pushState(null, '', routeUrl(target));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -91,8 +94,8 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const target = currentRoute();
-      if (target === currentPage) return;
-      const proceed = () => { setCurrentPage(target); window.history.replaceState(null, '', routeUrl(target)); };
+      if (target === currentPage && currentHashQuery() === hashQuery) return;
+      const proceed = () => { const q = currentHashQuery(); setCurrentPage(target); setHashQuery(q); window.history.replaceState(null, '', `${routeUrl(target)}${q}`); };
       if (window.dispatchEvent(new CustomEvent('app:before-navigate', { cancelable: true, detail: { proceed } }))) proceed();
       else window.history.replaceState(null, '', routeUrl(currentPage));
     };
@@ -102,7 +105,7 @@ export default function App() {
       window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('popstate', handleHashChange);
     };
-  }, [currentPage]);
+    }, [currentPage, hashQuery]);
 
   useEffect(() => {
     const handleExpiredSession = () => setShowLogin(true);
@@ -110,10 +113,18 @@ export default function App() {
     return () => window.removeEventListener('auth:unauthorized', handleExpiredSession);
   }, []);
 
+  useEffect(() => {
+    const destination = roleHomeRoute(user);
+    if (isRestoring || !isLoggedIn || currentPage !== 'trang-chu' || destination === 'trang-chu') return undefined;
+    window.history.replaceState(null, '', routeUrl(destination));
+    const timer = window.setTimeout(() => setCurrentPage(destination), 0);
+    return () => window.clearTimeout(timer);
+  }, [currentPage, isLoggedIn, isRestoring, user]);
+
   const renderPage = () => {
     if (currentPage.startsWith('shop/')) return <PublicShopPage key={currentPage} slug={currentPage.slice(5)} onNavigate={navigateTo} />;
     if (currentPage.startsWith('dat-hang-thiet-ke') || currentPage.startsWith('dat-hang-doanh-nghiep')) {
-      return <OrderAndDesgin key={currentPage} onNavigate={navigateTo} />;
+      return <OrderAndDesgin key={`${currentPage}${hashQuery}`} onNavigate={navigateTo} />;
     }
     switch (currentPage) {
       // Role 1: Customer (Khách hàng doanh nghiệp B2B)
@@ -127,6 +138,8 @@ export default function App() {
       case 'dat-hang-thiet-ke':
       case 'dat-hang-doanh-nghiep':
         return <OrderAndDesgin onNavigate={navigateTo} />;
+      case 'don-hang-cua-toi':
+        return <MyOrders onNavigate={navigateTo} />;
       case 'in-an-bao-bi':
       case 'yeu-cau-bao-gia':
         return <PackagingAndLogoPrinting onNavigate={navigateTo} />;
@@ -216,13 +229,19 @@ export default function App() {
 
   // Quick Navigator Menu Items for testing & preview
   const renderAuthorizedPage = () => {
+    if (currentPage === 'trang-chu' && isLoggedIn &&
+        (isRestoring || roleHomeRoute(user) !== 'trang-chu')) {
+      return <Spin fullscreen description="Đang mở không gian làm việc…" />;
+    }
     const admin = currentPage.startsWith('admin/');
     const supplier = currentPage.startsWith('nha-cung-cap/');
     const registration = currentPage === 'dang-ky-nha-cung-cap';
-    if (!admin && !supplier && !registration && currentPage !== 'thong-bao') return renderPage();
+    const myOrders = currentPage === 'don-hang-cua-toi';
+    if (!admin && !supplier && !registration && !myOrders && currentPage !== 'thong-bao') return renderPage();
     if (isRestoring) return <Spin fullscreen description="Đang kiểm tra phiên đăng nhập…" />;
     if (!isLoggedIn) return <Result status="403" title="Vui lòng đăng nhập để tiếp tục"
       extra={<Button type="primary" onClick={() => setShowLogin(true)}>Đăng nhập</Button>} />;
+    if (myOrders && user?.role !== 'Customer') return <Result status="403" title="Trang đơn hàng dành cho tài khoản khách hàng" />;
     if (admin && user?.role !== 'Admin') return <Result status="403" title="Trang này dành cho quản trị viên" />;
     if (registration && !['Customer', 'Supplier'].includes(user?.role)) {
       return <Result status="403" title="Trang đăng ký nhà cung cấp dành cho tài khoản khách hàng" />;
@@ -250,7 +269,7 @@ export default function App() {
         { key: 'trang-chu', label: '1. Trang chủ' },
         { key: 'tim-kiem', label: '2. Khám phá sản phẩm B2B' },
         { key: 'san-pham', label: '3. Chi tiết sản phẩm & Biến thể' },
-        { key: 'dat-hang-thiet-ke', label: '4. Đặt hàng & In logo' },
+        { key: 'dat-hang-thiet-ke', label: '4. Đặt hàng doanh nghiệp' },
         { key: 'in-an-bao-bi', label: '5. Tùy biến bao bì' },
         { key: 'so-sanh-bao-gia', label: '6. Yêu cầu báo giá (RFQ)' },
         { key: 'hop-dong-tien-do', label: '7. Hợp đồng & Cọc M1' },

@@ -1,0 +1,90 @@
+{
+  "actor": "sup.b@test.mooncake.local (owns Shop B ONLY)",
+  "targetShopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+  "getOrderDetailBySupB": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "Order retrieved successfully.",
+      "data": {
+        "id": "278e23a6-1fde-4163-addb-0493713ce876",
+        "orderNumber": "MC-20261104140522-7F2EFE3565",
+        "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+        "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+        "status": "Pending",
+        "subtotal": 5000000,
+        "discountAmount": 0,
+        "taxAmount": 0,
+        "shippingFee": 0,
+        "packagingFee": 0,
+        "totalAmount": 5000000,
+        "deliveryAddress": "101 Le Loi, District 1, Ho Chi Minh City",
+        "recipientName": "TEST Nguyen Van Alpha",
+        "recipientPhone": "0988000101",
+        "deliveryDateExpected": "2026-11-18",
+        "notes": "TEST-T0 order 2 on Shop A to test cross-tenant action",
+        "createdAtUtc": "2026-11-04T14:05:22.50927Z",
+        "items": [
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "4-Piece Abalone Mixed Nuts Box",
+            "sku": "TEST-SA-P1-V1",
+            "quantity": 10,
+            "unitPrice": 500000,
+            "discountAmount": 0,
+            "subtotal": 5000000
+          }
+        ],
+        "customPackaging": null
+      },
+      "path": "/api/v1/orders/278e23a6-1fde-4163-addb-0493713ce876",
+      "traceId": "94909f22625d4e519c6ebf92adec7bd2",
+      "time": "2026-11-04T14:05:29.7951823Z"
+    }
+  },
+  "rejectShopAOrderBySupB": {
+    "status": 200,
+    "body": {
+      "status": 200,
+      "message": "Order rejected successfully.",
+      "data": {
+        "id": "278e23a6-1fde-4163-addb-0493713ce876",
+        "orderNumber": "MC-20261104140522-7F2EFE3565",
+        "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+        "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+        "status": "Cancelled",
+        "subtotal": 5000000,
+        "discountAmount": 0,
+        "taxAmount": 0,
+        "shippingFee": 0,
+        "packagingFee": 0,
+        "totalAmount": 5000000,
+        "deliveryAddress": "101 Le Loi, District 1, Ho Chi Minh City",
+        "recipientName": "TEST Nguyen Van Alpha",
+        "recipientPhone": "0988000101",
+        "deliveryDateExpected": "2026-11-18",
+        "notes": "TEST-T0 order 2 on Shop A to test cross-tenant action",
+        "createdAtUtc": "2026-11-04T14:05:22.50927Z",
+        "items": [
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "4-Piece Abalone Mixed Nuts Box",
+            "sku": "TEST-SA-P1-V1",
+            "quantity": 10,
+            "unitPrice": 500000,
+            "discountAmount": 0,
+            "subtotal": 5000000
+          }
+        ],
+        "customPackaging": null
+      },
+      "path": "/api/v1/orders/278e23a6-1fde-4163-addb-0493713ce876/reject",
+      "traceId": "bffa472f310041b2a771f5b5f880a271",
+      "time": "2026-11-04T14:05:31.2374589Z"
+    }
+  }
+}

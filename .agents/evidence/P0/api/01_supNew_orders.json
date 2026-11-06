@@ -1,0 +1,13 @@
+{
+  "actor": "sup.new@test.mooncake.local (0 shops, 0 orders)",
+  "status": 200,
+  "orderCount": 0,
+  "response": {
+    "status": 200,
+    "message": "Supplier orders retrieved successfully.",
+    "data": [],
+    "path": "/api/v1/orders/supplier",
+    "traceId": "09b0768a9c26411c9c74ffd734567254",
+    "time": "2026-11-04T14:53:13.84369Z"
+  }
+}

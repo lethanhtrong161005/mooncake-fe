@@ -38,42 +38,13 @@ export default function HomePage({ onNavigate }) {
     productService.search({ page: 1, pageSize: 4, sort: 'newest' }, controller.signal)
       .then((response) => {
         const items = response?.items || [];
-        setFeaturedProducts(items.length > 0 ? items : DEFAULT_FEATURED_PRODUCTS);
+        setFeaturedProducts(items);
       })
-      .catch(() => setFeaturedProducts(DEFAULT_FEATURED_PRODUCTS))
+      .catch(() => setFeaturedProducts([]))
       .finally(() => setProductsLoading(false));
 
     return () => controller.abort();
   }, []);
-
-  /* Categories are managed in the catalog database and loaded through the public API. */
-  /* The legacy inline category array below is intentionally removed from rendering. */
-  const legacyCategories = [
-    {
-      key: 'nuong',
-      image: '/categories/banh-nuong.jpg',
-      title: 'Bánh Nướng Truyền Thống',
-      desc: 'Thập cẩm gà quay, vi cá, jambon hảo hạng',
-    },
-    {
-      key: 'deo',
-      image: '/categories/banh-deo.jpg',
-      title: 'Bánh Dẻo Truyền Thống',
-      desc: 'Hạt sen hoa bưởi, đậu xanh cốm non',
-    },
-    {
-      key: 'hop-vip',
-      image: '/categories/hop-son-mai.jpg',
-      title: 'Hộp Quà Sơn Mài Cao Cấp',
-      desc: 'Sơn mài khóa đồng, khắc logo theo yêu cầu',
-    },
-    {
-      key: 'healthy',
-      image: '/categories/banh-dinh-duong.jpg',
-      title: 'Bánh Dinh Dưỡng Ít Ngọt',
-      desc: 'Đường ăn kiêng tự nhiên, hạt dinh dưỡng',
-    },
-  ];
 
   const featuredSuppliers = [
     {

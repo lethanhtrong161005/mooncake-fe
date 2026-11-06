@@ -1,0 +1,155 @@
+{
+  "actor": "sup.new@test.mooncake.local (0 shops, 0 orders)",
+  "status": 200,
+  "leakedOrderCount": 4,
+  "leakedOrdersSample": [
+    {
+      "id": "278e23a6-1fde-4163-addb-0493713ce876",
+      "orderNumber": "MC-20261104140522-7F2EFE3565",
+      "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+      "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+      "status": "Pending",
+      "subtotal": 5000000,
+      "discountAmount": 0,
+      "taxAmount": 0,
+      "shippingFee": 0,
+      "packagingFee": 0,
+      "totalAmount": 5000000,
+      "deliveryAddress": "101 Le Loi, District 1, Ho Chi Minh City",
+      "recipientName": "TEST Nguyen Van Alpha",
+      "recipientPhone": "0988000101",
+      "deliveryDateExpected": "2026-11-18",
+      "notes": "TEST-T0 order 2 on Shop A to test cross-tenant action",
+      "createdAtUtc": "2026-11-04T14:05:22.50927Z",
+      "items": [
+        {
+          "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+          "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+          "productName": "TEST-Imperial Golden Mooncake Gift Box",
+          "variantName": "4-Piece Abalone Mixed Nuts Box",
+          "sku": "TEST-SA-P1-V1",
+          "quantity": 10,
+          "unitPrice": 500000,
+          "discountAmount": 0,
+          "subtotal": 5000000
+        }
+      ],
+      "customPackaging": null
+    },
+    {
+      "id": "36568522-fbc1-4465-9de7-e08d9e0b54f7",
+      "orderNumber": "MC-20261104140520-C14B8CBDA4",
+      "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+      "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+      "status": "Pending",
+      "subtotal": 2500000,
+      "discountAmount": 0,
+      "taxAmount": 0,
+      "shippingFee": 0,
+      "packagingFee": 0,
+      "totalAmount": 2500000,
+      "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+      "recipientName": "TEST Nguyen Van Alpha",
+      "recipientPhone": "0988000101",
+      "deliveryDateExpected": "2026-11-18",
+      "notes": "[Thông Tin Thiết Kế Bao Bì & In Logo]:\n- Đơn vị: TEST Alpha Enterprise Co., Ltd.\n- Mẫu hộp: Hộp Sơn Mài Thượng Hạng\n- Logo: https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80\n- Màu nhận diện: #8c1524 (chính) / #d48806 (phụ)\n- Thông điệp nắp hộp: (Không)\n- Yêu cầu gia công: (Không)",
+      "createdAtUtc": "2026-11-04T14:05:20.154989Z",
+      "items": [
+        {
+          "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+          "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+          "productName": "TEST-Imperial Golden Mooncake Gift Box",
+          "variantName": "4-Piece Abalone Mixed Nuts Box",
+          "sku": "TEST-SA-P1-V1",
+          "quantity": 5,
+          "unitPrice": 500000,
+          "discountAmount": 0,
+          "subtotal": 2500000
+        }
+      ],
+      "customPackaging": {
+        "id": "b6a6c721-4018-4454-96ed-dad128a7a7f1",
+        "companyName": "TEST Alpha Enterprise Co., Ltd.",
+        "companyLogoUrl": "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&w=400&q=80",
+        "boxDesignUrl": null,
+        "packagingType": "Hộp Sơn Mài Thượng Hạng",
+        "status": "Pending",
+        "revisionsCount": 0
+      }
+    },
+    {
+      "id": "47112169-fa7a-44f2-a6e2-f54ec6678eb5",
+      "orderNumber": "MC-20261104140322-E1D9194EB1",
+      "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+      "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+      "status": "Cancelled",
+      "subtotal": 5000000,
+      "discountAmount": 0,
+      "taxAmount": 0,
+      "shippingFee": 0,
+      "packagingFee": 0,
+      "totalAmount": 5000000,
+      "deliveryAddress": "101 Le Loi, District 1, Ho Chi Minh City",
+      "recipientName": "TEST Nguyen Van Alpha",
+      "recipientPhone": "0988000101",
+      "deliveryDateExpected": "2026-11-18",
+      "notes": "TEST-T0 order 2 on Shop A to test cross-tenant action",
+      "createdAtUtc": "2026-11-04T14:03:22.197379Z",
+      "items": [
+        {
+          "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+          "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+          "productName": "TEST-Imperial Golden Mooncake Gift Box",
+          "variantName": "4-Piece Abalone Mixed Nuts Box",
+          "sku": "TEST-SA-P1-V1",
+          "quantity": 10,
+          "unitPrice": 500000,
+          "discountAmount": 0,
+          "subtotal": 5000000
+        }
+      ],
+      "customPackaging": null
+    },
+    {
+      "id": "78afeac1-89e1-4999-aa2e-9c9365806c8c",
+      "orderNumber": "MC-20261102112435-9311BA9E80",
+      "customerId": "635069c8-2ad7-4c2e-b845-b1ff3688b43e",
+      "shopId": "ff3df787-d87b-4b7f-83ce-ac642f5d367c",
+      "status": "Delivered",
+      "subtotal": 9000000,
+      "discountAmount": 0,
+      "taxAmount": 0,
+      "shippingFee": 0,
+      "packagingFee": 0,
+      "totalAmount": 9000000,
+      "deliveryAddress": "Tòa nhà Landmark 81, 720A Điện Biên Phủ, Phường 22, Quận Bình Thạnh, TP. Hồ Chí Minh",
+      "recipientName": "Nguyễn Văn Doanh Nghiệp (CEO)",
+      "recipientPhone": "0987654321",
+      "deliveryDateExpected": "2026-11-20",
+      "notes": "Ghi chú giao nhận: Giao giờ hành chính, bốc xếp cẩn thận vào văn phòng tầng 25\n\n[Thông Tin Thiết Kế Bao Bì & In Logo]:\n- Đơn vị: Tập đoàn Công nghệ Bách Khoa Việt Nam\n- Mẫu hộp: Hộp Sơn Mài Thượng Hạng\n- Logo: https://res.cloudinary.com/t8rh8x0i/image/upload/v1793618672/mooncake/images/public/b3843c85f31c474293c1d6460a3aefd5.png\n- Màu nhận diện: #8c1524 (chính) / #d48806 (phụ)\n- Thông điệp nắp hộp: (Không)\n- Yêu cầu gia công: Nắp hộp ép kim vàng 24K logo, lót vải lụa hoàng gia, kèm thiệp thư pháp viết tay",
+      "createdAtUtc": "2026-11-02T11:24:35.689102Z",
+      "items": [
+        {
+          "productId": "0242075c-33ce-44f2-8b27-784f82c9d5f6",
+          "variantId": "b0c2a556-be07-4738-930e-7c154126e067",
+          "productName": "Bánh Dẻo Khoai Môn Sữa Dừa Non Bến Tre",
+          "variantName": "Bánh Dẻo Khoai Môn Sữa Dừa (150g)",
+          "sku": "BD-KM-SD-150",
+          "quantity": 100,
+          "unitPrice": 90000,
+          "discountAmount": 0,
+          "subtotal": 9000000
+        }
+      ],
+      "customPackaging": {
+        "id": "6203bd91-e078-4e67-a34b-1cb9d12c751e",
+        "companyName": "Tập đoàn Công nghệ Bách Khoa Việt Nam",
+        "companyLogoUrl": "https://res.cloudinary.com/t8rh8x0i/image/upload/v1793618672/mooncake/images/public/b3843c85f31c474293c1d6460a3aefd5.png",
+        "boxDesignUrl": null,
+        "packagingType": "Hộp Sơn Mài Thượng Hạng",
+        "status": "Pending",
+        "revisionsCount": 0
+      }
+    }
+  ]
+}

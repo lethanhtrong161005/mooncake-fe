@@ -1,0 +1,33 @@
+{
+  "requestSentByFE": {
+    "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+    "items": [
+      {
+        "productId": "a38818a7-8860-4954-a918-df91046fe89d",
+        "variantId": "83d930bb-df50-4f65-ab57-00904ec7cf81",
+        "quantity": 10
+      }
+    ],
+    "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+    "recipientName": "TEST Nguyen Van Alpha",
+    "recipientPhone": "0988000101",
+    "deliveryDateExpected": "2026-11-18",
+    "notes": "Ghi chú giao nhận: TEST-T0 standard order without custom packaging\n\n[Thông Tin Thiết Kế Bao Bì & In Logo]:\n- Đơn vị: Doanh Nghiệp Đặt Hàng\n- Mẫu hộp: TEST Royal Lacquer Gift Box\n- Logo: (Chưa có link)\n- Màu nhận diện: #8c1524 (chính) / #d48806 (phụ)\n- Thông điệp nắp hộp: (Không)\n- Yêu cầu gia công: (Không)",
+    "customPackaging": {
+      "companyName": "Doanh Nghiệp Đặt Hàng",
+      "companyLogoUrl": "",
+      "packagingType": "TEST Royal Lacquer Gift Box",
+      "colorScheme": "{\"primary\":\"#8c1524\",\"secondary\":\"#d48806\"}",
+      "specialMessage": null,
+      "notes": null
+    }
+  },
+  "responseFromBE": {
+    "errorCode": "SUPPLIER_INVALID_REQUEST",
+    "status": 400,
+    "message": "The supplier verification request could not be completed.",
+    "path": "/api/v1/orders",
+    "traceId": "0HNPQFIH0B29O:00000006",
+    "time": "2026-11-04T14:05:15.0023127Z"
+  }
+}

@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import AppLogo from '../../components/layout/AppLogo';
+import { postLoginRoute } from '../../utils/roleNavigation';
 
 const { Title, Paragraph } = Typography;
 
@@ -54,10 +55,7 @@ export default function GoogleCallbackPage() {
     loginWithGoogle(code, state)
       .then((response) => {
         const account = response?.data?.user;
-        const destination = returnPage !== 'trang-chu' ? returnPage :
-          account?.role === 'Admin' ? 'admin/phe-duyet' :
-            account?.role === 'Supplier' && account?.capabilities?.canCreateShop ? 'nha-cung-cap/ho-so' :
-              account?.requestedRole === 'Supplier' ? 'dang-ky-nha-cung-cap' : 'trang-chu';
+        const destination = postLoginRoute(account, returnPage);
         window.location.replace(`/#${encodeURI(destination)}`);
       })
       .catch((requestError) => {

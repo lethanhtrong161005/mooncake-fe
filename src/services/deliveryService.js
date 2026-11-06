@@ -7,6 +7,9 @@ export const deliveryService = {
   async listMine() {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.LIST));
   },
+  async listMinePaged(params = {}, signal) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.LIST, { params, signal }));
+  },
 
   async get(id) {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.DETAILS(id)));

@@ -1,0 +1,162 @@
+[
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/admin/audit-logs",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "2",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "25",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "20",
+      "role": "Supplier"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "user250@"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "user250@"
+    }
+  },
+  {
+    "pathname": "/api/v1/admin/audit-logs",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "no-matching-record-999"
+    }
+  },
+  {
+    "pathname": "/api/v1/users",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
+  }
+]

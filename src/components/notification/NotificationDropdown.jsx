@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Empty, Spin } from 'antd';
 import {
   BellOutlined,
@@ -129,11 +129,11 @@ export default function NotificationDropdown({
     onClose?.();
     if (item.actionUrl) {
       const target = item.actionUrl.replace(/^\/?#?\/?/, '');
-      onNavigate?.(target);
+      onNavigate?.(target.startsWith('dat-hang-thiet-ke?id=') ? 'don-hang-cua-toi' : target);
     } else {
       // Fallback navigation based on category
       const cat = (item.category || '').toLowerCase();
-      if (cat.includes('order')) onNavigate?.('dat-hang-thiet-ke');
+      if (cat.includes('order')) onNavigate?.('don-hang-cua-toi');
       else if (cat.includes('contract')) onNavigate?.('hop-dong-tien-do');
       else if (cat.includes('pay')) onNavigate?.('thanh-toan-danh-gia');
       else if (cat.includes('rfq')) onNavigate?.('so-sanh-bao-gia');
