@@ -9,7 +9,7 @@ export const paymentService = {
     return this.createContractVnPayUrl(contractId, milestoneId, returnUrl);
   },
 
-  // 1. Tạo liên kết VNPay Sandbox cho Đơn hàng sỉ
+  // 1. Tạo liên kết VNPay Sandbox cho Đơn hàng
   async createOrderVnPayUrl(orderId, returnUrl) {
     const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.ORDER_VNPAY_URL, {
       orderId,
