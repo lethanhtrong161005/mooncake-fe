@@ -28,6 +28,8 @@ import {
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import contractService from '../../services/contractService';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
 
 const { Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -61,8 +63,9 @@ const milestoneStatusMap = {
 };
 
 export default function ContractManage({ onNavigate }) {
-  const [contracts, setContracts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const contractPage = usePagedList(contractService.listMinePaged);
+  const contracts = contractPage.items;
+  const loading = contractPage.loading;
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractDetails, setContractDetails] = useState(null);
@@ -81,22 +84,8 @@ export default function ContractManage({ onNavigate }) {
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [progressForm] = Form.useForm();
 
-  const loadContracts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await contractService.listMine();
-      setContracts(data || []);
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(loadContracts, 0);
-    return () => window.clearTimeout(timeout);
-  }, [loadContracts]);
+  const loadContracts = contractPage.refresh;
+  useEffect(() => { if (contractPage.error) message.error(errorMessage(contractPage.error)); }, [contractPage.error]);
 
   const handleOpenSign = async (record) => {
     setSelectedContract(record);
@@ -346,12 +335,18 @@ export default function ContractManage({ onNavigate }) {
         style={{ borderRadius: 10 }}
         extra={<Button icon={<ReloadOutlined />} onClick={loadContracts}>Tải lại</Button>}
       >
+        <FilterBar search={contractPage.search} onSearchChange={contractPage.setSearch}
+          status={contractPage.query.status} onStatusChange={contractPage.setStatus}
+          onReset={contractPage.reset} placeholder="Tìm mã hợp đồng"
+          statusOptions={Object.keys(statusMap).map((value) => ({ value, label: statusMap[value][1] }))} />
         <Table
           columns={columns}
           dataSource={contracts}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ current: contractPage.query.page, pageSize: contractPage.query.pageSize,
+            total: contractPage.totalCount, onChange: contractPage.setPage, showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100] }}
           scroll={{ x: 950 }}
         />
       </Card>

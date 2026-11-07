@@ -8,6 +8,9 @@ export const adminService = {
     const response = await apiClient.get(API_ENDPOINTS.DISPUTES.LIST, { params });
     return unwrap(response);
   },
+  async getDisputesPaged(params = {}, signal) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DISPUTES.LIST, { params, signal }));
+  },
 
   async resolveDispute(disputeId, payload) {
     const response = await apiClient.post(API_ENDPOINTS.DISPUTES.RESOLVE(disputeId), payload);

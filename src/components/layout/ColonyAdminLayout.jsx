@@ -104,6 +104,11 @@ export default function ColonyAdminLayout({
   ];
 
   const supplierMenuItems = [
+    {
+      key: 'nha-cung-cap/dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard Tổng quan',
+    },
     { key: 'nha-cung-cap/giao-dien-gian-hang', icon: <SettingOutlined />, label: 'Giao diện gian hàng' },
     {
       key: 'nha-cung-cap/thiet-lap-gian-hang',
@@ -131,7 +136,7 @@ export default function ColonyAdminLayout({
       label: (
         <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>Đơn hàng & In ấn logo</span>
-          <Badge count={2} style={{ backgroundColor: '#2e7d32' }} />
+          <Badge count={1} style={{ backgroundColor: '#2e7d32' }} />
         </span>
       ),
     },
@@ -159,9 +164,9 @@ export default function ColonyAdminLayout({
 
   const currentMenuItems = isAdmin ? adminMenuItems : supplierMenuItems.map((item) => ({
     ...item,
-    disabled: item.key !== 'nha-cung-cap/xac-minh' && !user?.capabilities?.canCreateShop &&
+    disabled: item.key !== 'nha-cung-cap/xac-minh' && item.key !== 'nha-cung-cap/dashboard' && !user?.capabilities?.canCreateShop &&
       !(user?.capabilities?.canFulfillExistingOrders && [
-        'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong',
+        'nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong',
         'nha-cung-cap/quan-ly-giao-hang',
       ].includes(item.key)),
   }));
@@ -183,8 +188,8 @@ export default function ColonyAdminLayout({
     {
       key: 'home',
       icon: <HomeOutlined />,
-      label: 'Về Cổng Khách hàng (B2B)',
-      onClick: () => onNavigate?.('trang-chu'),
+      label: 'Trang tổng quan',
+      onClick: () => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard'),
     },
     {
       type: 'divider',
@@ -231,7 +236,7 @@ export default function ColonyAdminLayout({
             borderBottom: '1px solid #f0f0f0',
             cursor: 'pointer',
           }}
-          onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/thiet-lap-gian-hang')}
+          onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')}
         >
           <img
             src="/logo.svg"
@@ -302,7 +307,7 @@ export default function ColonyAdminLayout({
             />
             {!compact && <Breadcrumb
               items={[
-                { title: <HomeOutlined onClick={() => onNavigate?.('trang-chu')} style={{ cursor: 'pointer' }} /> },
+                { title: <HomeOutlined onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')} style={{ cursor: 'pointer' }} /> },
                 { title: isAdmin ? 'Ban Quản Trị HQ' : 'Kênh Nhà Cung Cấp' },
                 { title: title || 'Tổng quan' },
               ]}

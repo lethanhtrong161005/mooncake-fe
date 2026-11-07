@@ -7,6 +7,9 @@ export const contractService = {
   async listMine() {
     return unwrap(await apiClient.get(API_ENDPOINTS.CONTRACTS.LIST));
   },
+  async listMinePaged(params = {}, signal) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.CONTRACTS.LIST, { params, signal }));
+  },
 
   async get(contractId) {
     return unwrap(await apiClient.get(API_ENDPOINTS.CONTRACTS.DETAILS(contractId)));

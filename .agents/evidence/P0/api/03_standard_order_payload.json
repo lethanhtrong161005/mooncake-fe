@@ -1,0 +1,71 @@
+{
+  "requestSentByFE": {
+    "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+    "items": [
+      {
+        "productId": "a38818a7-8860-4954-a918-df91046fe89d",
+        "variantId": "83d930bb-df50-4f65-ab57-00904ec7cf81",
+        "quantity": 10
+      }
+    ],
+    "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+    "recipientName": "TEST Nguyen Van Alpha",
+    "recipientPhone": "0988000101",
+    "deliveryDateExpected": "2026-11-18",
+    "notes": "TEST-P0 standard order clean delivery note"
+  },
+  "responseFromBE": {
+    "status": 201,
+    "body": {
+      "status": 201,
+      "message": "Order placed successfully.",
+      "data": {
+        "id": "ee5e84a5-3d98-43da-be6c-c82b4f9bb177",
+        "orderNumber": "MC-20261104145305-9327952408",
+        "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+        "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+        "status": "Pending",
+        "subtotal": 3000000,
+        "discountAmount": 0,
+        "taxAmount": 0,
+        "shippingFee": 0,
+        "packagingFee": 0,
+        "totalAmount": 3000000,
+        "deliveryAddress": "101 Le Loi, Ben Nghe, District 1, Ho Chi Minh City",
+        "recipientName": "TEST Nguyen Van Alpha",
+        "recipientPhone": "0988000101",
+        "deliveryDateExpected": "2026-11-18",
+        "notes": "TEST-P0 standard order clean delivery note",
+        "createdAtUtc": "2026-11-04T14:53:05.6207382Z",
+        "items": [
+          {
+            "productId": "a38818a7-8860-4954-a918-df91046fe89d",
+            "variantId": "83d930bb-df50-4f65-ab57-00904ec7cf81",
+            "productName": "TEST-Classic Lotus Seed Standard Box",
+            "variantName": "4-Piece White Lotus Single Yolk",
+            "sku": "TEST-SA-P2-V1",
+            "quantity": 10,
+            "unitPrice": 300000,
+            "discountAmount": 0,
+            "subtotal": 3000000
+          }
+        ],
+        "customPackaging": null
+      },
+      "path": "/api/v1/orders",
+      "traceId": "aeff99a5d6c0425898706cbecf2ceb69",
+      "time": "2026-11-04T14:53:06.539159Z"
+    }
+  },
+  "forgedPackagingOnStandardProductRejected": {
+    "status": 422,
+    "body": {
+      "errorCode": "PACKAGING_NOT_SUPPORTED",
+      "status": 422,
+      "message": "Custom packaging is not supported for one or more products in this order.",
+      "path": "/api/v1/orders",
+      "traceId": "7c5662e883c543cb88742f89cd3cd252",
+      "time": "2026-11-04T14:53:08.0266601Z"
+    }
+  }
+}

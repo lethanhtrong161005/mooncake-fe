@@ -1,0 +1,46 @@
+{
+  "test1_stockConcurrencyRace": {
+    "initialStock": 10,
+    "requestedByCustA": 7,
+    "requestedByCustB": 7,
+    "winner": {},
+    "loser": {},
+    "finalStockInPostgres": 3
+  },
+  "test2_stateTransitionRace": {
+    "orderId": "534f0d60-fc5e-4281-a9c9-c663405cce72",
+    "taskOutcomes": [
+      "ConfirmRejected:409:STATE_CONFLICT",
+      "CancelSucceeded",
+      "ExpireProcessed:0"
+    ],
+    "finalStatus": "Cancelled",
+    "releaseMovementCount": 1,
+    "stockBefore": 2000,
+    "stockAfter": 2000
+  },
+  "test3_enterprise250mMultiPartPackagingAndPayout": {
+    "orderId": "5fbcd0b6-c5e0-4333-bd6c-a1e25d7b7ca4",
+    "orderNumber": "MC-20261105021141-B4A9E7E315",
+    "initialQuoteTotal": 270000000.00,
+    "finalOrderTotalWithPackagingDelta": 276000000.00,
+    "obligationsCount": 3,
+    "partAmounts": [
+      81000000.00,
+      100000000.00,
+      89000000.00,
+      6000000.00
+    ],
+    "duplicateIpnCapturedEntries": 1,
+    "payoutRequestNumber": "PYT-20261105-0A778BF",
+    "paidOutSimulatedAmount": 276000000.00
+  },
+  "test4_lateIpnAfterExpiryAutoRefund": {
+    "orderId": "7802e403-c66d-4163-9716-3e33c0a6179a",
+    "orderNumber": "MC-20261105021157-75AB3836BA",
+    "statusAfterLateIpn": "Expired",
+    "latePaymentNumber": "PAY-20261105-3BDE61E03",
+    "autoRefundCaseNumber": "RFD-20261105-AA13C9E",
+    "refundedSimulatedAmount": 2895000.00
+  }
+}

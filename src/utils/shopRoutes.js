@@ -7,6 +7,12 @@ export function currentRoute() {
   return clean || 'trang-chu';
 }
 
+export function currentHashQuery() {
+  const raw = window.location.hash || '';
+  const queryIdx = raw.indexOf('?');
+  return queryIdx !== -1 ? raw.substring(queryIdx) : '';
+}
+
 export function routeUrl(key) {
   return key.startsWith('shop/') ? `/${key}` : `/#${encodeURI(key)}`;
 }

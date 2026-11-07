@@ -1,0 +1,439 @@
+{
+  "orderId": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+  "shipment": {
+    "status": 200,
+    "message": "Order marked as shipped.",
+    "data": {
+      "id": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+      "orderNumber": "MC-20261105024309-D73CEAAA45",
+      "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+      "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+      "status": "Shipped",
+      "subtotal": 10000000,
+      "discountAmount": 500000,
+      "taxAmount": 0,
+      "shippingFee": 150000,
+      "packagingFee": 0,
+      "totalAmount": 9650000,
+      "deliveryAddress": "202 Nguyen Hue, District 1, Ho Chi Minh City",
+      "recipientName": "PoD Receiver Alpha",
+      "recipientPhone": "0988000101",
+      "deliveryDateExpected": "2026-11-20",
+      "notes": null,
+      "createdAtUtc": "2026-11-05T02:43:09.161581Z",
+      "items": [
+        {
+          "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+          "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+          "productName": "TEST-Imperial Golden Mooncake Gift Box",
+          "variantName": "4-Piece Abalone Mixed Nuts Box",
+          "sku": "TEST-SA-P1-V1",
+          "quantity": 20,
+          "unitPrice": 500000,
+          "discountAmount": 500000,
+          "subtotal": 9500000
+        }
+      ],
+      "customPackaging": null,
+      "version": 6,
+      "shopName": "TEST-NguyetPho-ShopA",
+      "customerName": "TEST Customer Alpha Corp",
+      "responseDeadlineAtUtc": "2026-11-05T14:43:09.161581Z",
+      "reservationExpiresAtUtc": null,
+      "confirmedAtUtc": "2026-11-05T02:43:10.681381Z",
+      "confirmedDeliveryDate": "2026-11-20",
+      "proposedDeliveryDate": null,
+      "deliveryProposalReason": null,
+      "deliveryApprovalDeadlineAtUtc": null,
+      "cancelledAtUtc": null,
+      "cancellationReason": null,
+      "priceSnapshotVersion": "qv1_3f3c6a4dc9b1ff2e9590847e",
+      "shippingZoneCode": "HCM_INNER",
+      "shippingZoneName": "TP.HCM Noi Thanh",
+      "taxIncluded": true,
+      "taxRate": 8,
+      "depositRequired": true,
+      "depositPercent": 30,
+      "canStartProduction": false,
+      "canMarkShipped": false,
+      "allowedActions": [
+        "CreateShipment"
+      ],
+      "paymentSummary": {
+        "orderId": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+        "totalOrderAmount": 9650000,
+        "totalScheduledAmount": 9650000,
+        "totalPaidAmount": 9650000,
+        "totalRefundedAmount": 0,
+        "remainingAmount": 0,
+        "canStartProduction": false,
+        "canMarkShipped": false,
+        "vnPayMaxAmountPerPart": 100000000,
+        "obligations": [
+          {
+            "id": "17182676-0f0c-4b43-a2d6-e232fb3c1dea",
+            "sequenceNo": 1,
+            "obligationType": "Deposit",
+            "title": "Order deposit (30%)",
+            "totalAmount": 2895000,
+            "paidAmount": 2895000,
+            "remainingAmount": 0,
+            "status": "Paid",
+            "isRequiredBeforeProduction": true,
+            "isRequiredBeforeShipping": true,
+            "dueAtUtc": "2026-11-06T02:43:10.844698Z",
+            "paidAtUtc": "2026-11-05T02:43:12.709906Z",
+            "parts": [
+              {
+                "id": "a064e29e-e818-498c-9fe5-5cd76070cbb7",
+                "obligationId": "17182676-0f0c-4b43-a2d6-e232fb3c1dea",
+                "partIndex": 1,
+                "totalParts": 1,
+                "amount": 2895000,
+                "status": "Paid",
+                "paidAtUtc": "2026-11-05T02:43:12.709906Z",
+                "activePaymentNumber": "PAY-20261105-509A4B61C",
+                "transactionId": null
+              }
+            ]
+          },
+          {
+            "id": "bbdba62d-78cb-45b0-87a4-86416a46698a",
+            "sequenceNo": 2,
+            "obligationType": "RemainingBalance",
+            "title": "Remaining balance before shipping",
+            "totalAmount": 6755000,
+            "paidAmount": 6755000,
+            "remainingAmount": 0,
+            "status": "Paid",
+            "isRequiredBeforeProduction": false,
+            "isRequiredBeforeShipping": true,
+            "dueAtUtc": null,
+            "paidAtUtc": "2026-11-05T02:43:14.116829Z",
+            "parts": [
+              {
+                "id": "ab759e41-0249-4081-838b-4b7769b86bcb",
+                "obligationId": "bbdba62d-78cb-45b0-87a4-86416a46698a",
+                "partIndex": 1,
+                "totalParts": 1,
+                "amount": 6755000,
+                "status": "Paid",
+                "paidAtUtc": "2026-11-05T02:43:14.116829Z",
+                "activePaymentNumber": "PAY-20261105-BE93D4795",
+                "transactionId": null
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "id": "f6e06da3-80f0-42c9-a0bc-4e538523ffc0",
+            "partId": "ab759e41-0249-4081-838b-4b7769b86bcb",
+            "paymentNumber": "PAY-20261105-BE93D4795",
+            "amount": 6755000,
+            "refundedAmount": 0,
+            "method": "VNPay",
+            "status": "Completed",
+            "transactionId": null,
+            "createdAtUtc": "2026-11-05T02:43:13.810438Z",
+            "paidAtUtc": "2026-11-05T02:43:14.116829Z"
+          },
+          {
+            "id": "e290e2c2-f90a-424b-bfd2-1ec7d98caf46",
+            "partId": "a064e29e-e818-498c-9fe5-5cd76070cbb7",
+            "paymentNumber": "PAY-20261105-509A4B61C",
+            "amount": 2895000,
+            "refundedAmount": 0,
+            "method": "VNPay",
+            "status": "Completed",
+            "transactionId": null,
+            "createdAtUtc": "2026-11-05T02:43:12.405188Z",
+            "paidAtUtc": "2026-11-05T02:43:12.709906Z"
+          }
+        ]
+      },
+      "financialSummary": {
+        "orderId": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+        "sandboxSimulationOnly": true,
+        "productionPayoutEnabled": false,
+        "capturedAmount": 9650000,
+        "heldAmount": 9650000,
+        "disputedLockedAmount": 0,
+        "refundedSimulatedAmount": 0,
+        "eligibleAmount": 0,
+        "payoutRequestedAmount": 0,
+        "paidOutSimulatedAmount": 0,
+        "ledgerEntries": [
+          {
+            "id": "59ca4012-6bcb-4979-9f8e-557eaf78a1a1",
+            "entryType": "Captured",
+            "balanceBucket": "Held",
+            "amount": 6755000,
+            "description": "Payment captured 6,755,000 VND (PAY-20261105-BE93D4795) into platform Held balance.",
+            "createdAtUtc": "2026-11-05T02:43:14.116829Z"
+          },
+          {
+            "id": "2ffa1eb8-5c19-4ff6-b0c5-a78b00173066",
+            "entryType": "Captured",
+            "balanceBucket": "Held",
+            "amount": 2895000,
+            "description": "Payment captured 2,895,000 VND (PAY-20261105-509A4B61C) into platform Held balance.",
+            "createdAtUtc": "2026-11-05T02:43:12.709906Z"
+          }
+        ],
+        "refundCases": [],
+        "payoutRequests": []
+      },
+      "latestDelivery": null,
+      "feeChangeRequests": [],
+      "pendingCancellationRequest": null,
+      "activeDispute": null
+    },
+    "path": "/api/v1/orders/3f755ebe-e727-45f3-8895-903ce7223fe9/ship",
+    "traceId": "e675199a4f054d988ef701be3decb9fa",
+    "time": "2026-11-05T02:43:17.6513815Z"
+  },
+  "deliveryId": "9c83b6bb-d42c-427d-bb3c-bd436b92bcf9",
+  "supplierProofSubmission": {
+    "status": 201,
+    "message": "Proof of delivery submitted successfully.",
+    "data": {
+      "id": "0b65df64-3321-4699-a9a5-17cc8057755d",
+      "deliveryId": "9c83b6bb-d42c-427d-bb3c-bd436b92bcf9",
+      "proofType": "Delivery",
+      "photoUrl": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48",
+      "signatureUrl": null,
+      "takenBy": "Nguyen Van Nhan Hang",
+      "takenAt": "2026-11-05T02:43:18.2075209Z",
+      "locationLat": null,
+      "locationLng": null,
+      "notes": "Handed over at building loading dock with recipient signature stamp",
+      "tamperProofHash": "ce1327ced00a41830ab487e1c453c105f304386fbb10756eb675b23bad001cb4",
+      "isVerified": true,
+      "createdAt": "2026-11-05T02:43:18.2076054Z"
+    },
+    "path": "/api/v1/deliveries/9c83b6bb-d42c-427d-bb3c-bd436b92bcf9/proofs",
+    "traceId": "4233d34ffd08468a99f35c3ae74cced2",
+    "time": "2026-11-05T02:43:18.3587607Z"
+  },
+  "customerReceiptConfirmation": {
+    "status": 200,
+    "message": "Order delivery confirmed and funds unlocked to eligible balance.",
+    "data": {
+      "id": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+      "orderNumber": "MC-20261105024309-D73CEAAA45",
+      "customerId": "671d8a69-cad3-4227-a363-0ecf44f41ed2",
+      "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+      "status": "Delivered",
+      "subtotal": 10000000,
+      "discountAmount": 500000,
+      "taxAmount": 0,
+      "shippingFee": 150000,
+      "packagingFee": 0,
+      "totalAmount": 9650000,
+      "deliveryAddress": "202 Nguyen Hue, District 1, Ho Chi Minh City",
+      "recipientName": "PoD Receiver Alpha",
+      "recipientPhone": "0988000101",
+      "deliveryDateExpected": "2026-11-20",
+      "notes": null,
+      "createdAtUtc": "2026-11-05T02:43:09.161581Z",
+      "items": [
+        {
+          "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+          "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+          "productName": "TEST-Imperial Golden Mooncake Gift Box",
+          "variantName": "4-Piece Abalone Mixed Nuts Box",
+          "sku": "TEST-SA-P1-V1",
+          "quantity": 20,
+          "unitPrice": 500000,
+          "discountAmount": 500000,
+          "subtotal": 9500000
+        }
+      ],
+      "customPackaging": null,
+      "version": 8,
+      "shopName": "TEST-NguyetPho-ShopA",
+      "customerName": "TEST Customer Alpha Corp",
+      "responseDeadlineAtUtc": "2026-11-05T14:43:09.161581Z",
+      "reservationExpiresAtUtc": null,
+      "confirmedAtUtc": "2026-11-05T02:43:10.681381Z",
+      "confirmedDeliveryDate": "2026-11-20",
+      "proposedDeliveryDate": null,
+      "deliveryProposalReason": null,
+      "deliveryApprovalDeadlineAtUtc": null,
+      "cancelledAtUtc": null,
+      "cancellationReason": null,
+      "priceSnapshotVersion": "qv1_3f3c6a4dc9b1ff2e9590847e",
+      "shippingZoneCode": "HCM_INNER",
+      "shippingZoneName": "TP.HCM Noi Thanh",
+      "taxIncluded": true,
+      "taxRate": 8,
+      "depositRequired": true,
+      "depositPercent": 30,
+      "canStartProduction": false,
+      "canMarkShipped": false,
+      "allowedActions": [
+        "ReportDeliveryDispute"
+      ],
+      "paymentSummary": {
+        "orderId": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+        "totalOrderAmount": 9650000,
+        "totalScheduledAmount": 9650000,
+        "totalPaidAmount": 9650000,
+        "totalRefundedAmount": 0,
+        "remainingAmount": 0,
+        "canStartProduction": false,
+        "canMarkShipped": false,
+        "vnPayMaxAmountPerPart": 100000000,
+        "obligations": [
+          {
+            "id": "17182676-0f0c-4b43-a2d6-e232fb3c1dea",
+            "sequenceNo": 1,
+            "obligationType": "Deposit",
+            "title": "Order deposit (30%)",
+            "totalAmount": 2895000,
+            "paidAmount": 2895000,
+            "remainingAmount": 0,
+            "status": "Paid",
+            "isRequiredBeforeProduction": true,
+            "isRequiredBeforeShipping": true,
+            "dueAtUtc": "2026-11-06T02:43:10.844698Z",
+            "paidAtUtc": "2026-11-05T02:43:12.709906Z",
+            "parts": [
+              {
+                "id": "a064e29e-e818-498c-9fe5-5cd76070cbb7",
+                "obligationId": "17182676-0f0c-4b43-a2d6-e232fb3c1dea",
+                "partIndex": 1,
+                "totalParts": 1,
+                "amount": 2895000,
+                "status": "Paid",
+                "paidAtUtc": "2026-11-05T02:43:12.709906Z",
+                "activePaymentNumber": "PAY-20261105-509A4B61C",
+                "transactionId": null
+              }
+            ]
+          },
+          {
+            "id": "bbdba62d-78cb-45b0-87a4-86416a46698a",
+            "sequenceNo": 2,
+            "obligationType": "RemainingBalance",
+            "title": "Remaining balance before shipping",
+            "totalAmount": 6755000,
+            "paidAmount": 6755000,
+            "remainingAmount": 0,
+            "status": "Paid",
+            "isRequiredBeforeProduction": false,
+            "isRequiredBeforeShipping": true,
+            "dueAtUtc": null,
+            "paidAtUtc": "2026-11-05T02:43:14.116829Z",
+            "parts": [
+              {
+                "id": "ab759e41-0249-4081-838b-4b7769b86bcb",
+                "obligationId": "bbdba62d-78cb-45b0-87a4-86416a46698a",
+                "partIndex": 1,
+                "totalParts": 1,
+                "amount": 6755000,
+                "status": "Paid",
+                "paidAtUtc": "2026-11-05T02:43:14.116829Z",
+                "activePaymentNumber": "PAY-20261105-BE93D4795",
+                "transactionId": null
+              }
+            ]
+          }
+        ],
+        "transactions": [
+          {
+            "id": "f6e06da3-80f0-42c9-a0bc-4e538523ffc0",
+            "partId": "ab759e41-0249-4081-838b-4b7769b86bcb",
+            "paymentNumber": "PAY-20261105-BE93D4795",
+            "amount": 6755000,
+            "refundedAmount": 0,
+            "method": "VNPay",
+            "status": "Completed",
+            "transactionId": null,
+            "createdAtUtc": "2026-11-05T02:43:13.810438Z",
+            "paidAtUtc": "2026-11-05T02:43:14.116829Z"
+          },
+          {
+            "id": "e290e2c2-f90a-424b-bfd2-1ec7d98caf46",
+            "partId": "a064e29e-e818-498c-9fe5-5cd76070cbb7",
+            "paymentNumber": "PAY-20261105-509A4B61C",
+            "amount": 2895000,
+            "refundedAmount": 0,
+            "method": "VNPay",
+            "status": "Completed",
+            "transactionId": null,
+            "createdAtUtc": "2026-11-05T02:43:12.405188Z",
+            "paidAtUtc": "2026-11-05T02:43:12.709906Z"
+          }
+        ]
+      },
+      "financialSummary": {
+        "orderId": "3f755ebe-e727-45f3-8895-903ce7223fe9",
+        "sandboxSimulationOnly": true,
+        "productionPayoutEnabled": false,
+        "capturedAmount": 9650000,
+        "heldAmount": 0,
+        "disputedLockedAmount": 0,
+        "refundedSimulatedAmount": 0,
+        "eligibleAmount": 9650000,
+        "payoutRequestedAmount": 0,
+        "paidOutSimulatedAmount": 0,
+        "ledgerEntries": [
+          {
+            "id": "c322c4f4-3d29-4ae9-8f8f-8810111404f9",
+            "entryType": "EligibleUnlocked",
+            "balanceBucket": "Eligible",
+            "amount": 9650000,
+            "description": "Held balance (9,650,000 VND) unlocked to Eligible after delivery confirmation.",
+            "createdAtUtc": "2026-11-05T02:43:18.598184Z"
+          },
+          {
+            "id": "59ca4012-6bcb-4979-9f8e-557eaf78a1a1",
+            "entryType": "Captured",
+            "balanceBucket": "Held",
+            "amount": 6755000,
+            "description": "Payment captured 6,755,000 VND (PAY-20261105-BE93D4795) into platform Held balance.",
+            "createdAtUtc": "2026-11-05T02:43:14.116829Z"
+          },
+          {
+            "id": "2ffa1eb8-5c19-4ff6-b0c5-a78b00173066",
+            "entryType": "Captured",
+            "balanceBucket": "Held",
+            "amount": 2895000,
+            "description": "Payment captured 2,895,000 VND (PAY-20261105-509A4B61C) into platform Held balance.",
+            "createdAtUtc": "2026-11-05T02:43:12.709906Z"
+          }
+        ],
+        "refundCases": [],
+        "payoutRequests": []
+      },
+      "latestDelivery": {
+        "deliveryId": "9c83b6bb-d42c-427d-bb3c-bd436b92bcf9",
+        "deliveryNumber": "DEL-202611-6954",
+        "status": "Delivered",
+        "trackingCode": "SHIP-TEST-001",
+        "scheduledDate": "2026-11-20",
+        "actualDeliveryDate": "2026-11-05",
+        "proofCount": 1,
+        "proofs": [
+          {
+            "id": "0b65df64-3321-4699-a9a5-17cc8057755d",
+            "proofType": "Delivery",
+            "photoUrl": "https://images.unsplash.com/photo-1549465220-1a8b9238cd48",
+            "takenBy": "Nguyen Van Nhan Hang",
+            "takenAtUtc": "2026-11-05T02:43:18.20752Z",
+            "notes": "Handed over at building loading dock with recipient signature stamp"
+          }
+        ]
+      },
+      "feeChangeRequests": [],
+      "pendingCancellationRequest": null,
+      "activeDispute": null
+    },
+    "path": "/api/v1/orders/3f755ebe-e727-45f3-8895-903ce7223fe9/delivery/confirm-receipt",
+    "traceId": "83d540a2d38e41e6ad0151a8c264bb9b",
+    "time": "2026-11-05T02:43:19.7296592Z"
+  },
+  "finalOrderStatus": "Delivered"
+}

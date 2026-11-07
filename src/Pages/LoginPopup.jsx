@@ -5,6 +5,7 @@ import authService from '../services/authService';
 import AppLogo from '../components/layout/AppLogo';
 import LoginForm from './Auth/LoginForm';
 import ForgotPasswordForm from './Auth/ForgotPasswordForm';
+import { postLoginRoute } from '../utils/roleNavigation';
 
 export default function LoginPopup(props) {
   if (!props.isOpen) return null;
@@ -75,9 +76,7 @@ function LoginPopupContent({
       setPassword('');
       onClose?.();
       const account = response?.data?.user;
-      onNavigate?.(account?.role === 'Admin' ? 'admin/phe-duyet' :
-        account?.role === 'Supplier' && account?.capabilities?.canCreateShop ? 'nha-cung-cap/ho-so' :
-          returnPage || (account?.requestedRole === 'Supplier' ? 'dang-ky-nha-cung-cap' : 'trang-chu'));
+      onNavigate?.(postLoginRoute(account, returnPage));
     } catch (error) {
       setErrorMsg(error.message || 'Số điện thoại hoặc mật khẩu không chính xác.');
     } finally {

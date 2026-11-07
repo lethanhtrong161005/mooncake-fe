@@ -1,0 +1,81 @@
+{
+  "supBOrderListCount": 0,
+  "leakedShopAOrdersInSupB": 0,
+  "supBGetShopAOrder": {
+    "status": 404,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 404,
+      "message": "Order was not found.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5",
+      "traceId": "f9c8a94b7d5a44a582a3c0ae8564f7ac",
+      "time": "2026-11-04T14:53:19.3020924Z"
+    }
+  },
+  "supBConfirmShopAOrder": {
+    "status": 404,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 404,
+      "message": "Order was not found.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5/confirm",
+      "traceId": "55d7b7a0aa6442b280aac92bd1402129",
+      "time": "2026-11-04T14:53:19.5293676Z"
+    }
+  },
+  "supBRejectShopAOrder": {
+    "status": 404,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 404,
+      "message": "Order was not found.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5/reject",
+      "traceId": "23a01519f49d4ac1a9ab91e8ca5f3573",
+      "time": "2026-11-04T14:53:19.7228191Z"
+    }
+  },
+  "supBGetShopAPackaging": {
+    "status": 404,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 404,
+      "message": "Custom packaging request was not found.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5/custom-packaging",
+      "traceId": "54adb8c9804f4df780780a7fc166bd71",
+      "time": "2026-11-04T14:53:19.9129638Z"
+    }
+  },
+  "supBCreateDeliveryShopA": {
+    "status": 403,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 403,
+      "message": "You do not have permission to manage this delivery.",
+      "path": "/api/v1/deliveries",
+      "traceId": "2dcd7bf05ae3405d99ba7aff0e918930",
+      "time": "2026-11-04T14:53:20.1286581Z"
+    }
+  },
+  "custBGetCustAOrder": {
+    "status": 404,
+    "body": {
+      "errorCode": "TENANT_FORBIDDEN",
+      "status": 404,
+      "message": "Order was not found.",
+      "path": "/api/v1/orders/f994e9a6-628b-4074-987f-8a416e86e7f5",
+      "traceId": "c28aaaf566724713915cac61527287b9",
+      "time": "2026-11-04T14:53:20.2402402Z"
+    }
+  },
+  "directOrderVietQrBlocked": {
+    "status": 422,
+    "body": {
+      "errorCode": "PAYMENT_METHOD_NOT_SUPPORTED",
+      "status": 422,
+      "message": "Direct bank transfer is disabled for direct bulk orders. Please pay via VNPay.",
+      "path": "/api/v1/payments/bank-transfer",
+      "traceId": "a2c2350115614ae082d9ccb8f6638907",
+      "time": "2026-11-04T14:53:20.3444302Z"
+    }
+  }
+}

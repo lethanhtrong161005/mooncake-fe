@@ -6,6 +6,8 @@ import {
 import { PlusOutlined, ReloadOutlined, SolutionOutlined, TeamOutlined } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import rfqService from '../../services/rfqService';
+import usePagedList from '../../hooks/usePagedList';
+import FilterBar from '../../components/common/FilterBar';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -14,8 +16,9 @@ const errorMessage = (error) => error?.response?.data?.message || error?.message
 const statusColor = { Draft: 'default', Open: 'processing', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 
 export default function BiddingAndQuoteComparison({ onNavigate }) {
-  const [rfqs, setRfqs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const rfqPage = usePagedList(rfqService.listMinePaged);
+  const rfqs = rfqPage.items;
+  const loading = rfqPage.loading;
   const [createOpen, setCreateOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -26,21 +29,8 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
 
-  const loadRfqs = useCallback(async () => {
-    setLoading(true);
-    try {
-      setRfqs(await rfqService.listMine());
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(loadRfqs, 0);
-    return () => window.clearTimeout(timeout);
-  }, [loadRfqs]);
+  const loadRfqs = rfqPage.refresh;
+  useEffect(() => { if (rfqPage.error) message.error(errorMessage(rfqPage.error)); }, [rfqPage.error]);
 
   const createRfq = async (values) => {
     setActionLoading(true);
@@ -154,7 +144,13 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
       <Space direction="vertical" size={4} style={{ marginBottom: 20 }}><Title level={2} style={{ margin: 0 }}>Yêu cầu báo giá & đấu thầu</Title><Text type="secondary">Phát hành RFQ, mời xưởng đã xác minh và chọn báo giá phù hợp.</Text></Space>
       <Alert type="info" showIcon style={{ marginBottom: 20 }} message="Báo giá được niêm phong" description="Chỉ doanh nghiệp tạo RFQ mới xem và so sánh toàn bộ báo giá." />
       <Card extra={<Space><Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setCreateOpen(true); }}>Tạo RFQ</Button></Space>}>
-        <Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 1000 }} />
+        <FilterBar search={rfqPage.search} onSearchChange={rfqPage.setSearch}
+          status={rfqPage.query.status} onStatusChange={rfqPage.setStatus} onReset={rfqPage.reset}
+          placeholder="Tìm mã RFQ hoặc tiêu đề"
+          statusOptions={Object.keys(statusColor).map((value) => ({ value, label: value }))} />
+        <Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 1000 }}
+          pagination={{ current: rfqPage.query.page, pageSize: rfqPage.query.pageSize, total: rfqPage.totalCount,
+            onChange: rfqPage.setPage, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} />
       </Card>
     </main>
 

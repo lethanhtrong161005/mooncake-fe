@@ -1,0 +1,125 @@
+{
+  "request": {
+    "shopId": "bbd5db09-f029-43ab-903d-524a4a65fac6",
+    "shippingZoneCode": "HCM_INNER",
+    "items": [
+      {
+        "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+        "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+        "quantity": 50
+      },
+      {
+        "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+        "variantId": "e2945aa5-650f-4b5f-b1d1-b83af9cc1697",
+        "quantity": 50
+      }
+    ],
+    "customPackagingBrief": {
+      "boxStyle": "Premium Gold Leaf Box",
+      "pantoneColorCode": "PANTONE 872 C",
+      "notes": "Debossed gold foil enterprise branding"
+    }
+  },
+  "response": {
+    "status": 200,
+    "ok": true,
+    "data": {
+      "status": 200,
+      "message": "Quote preview calculated successfully.",
+      "data": {
+        "subtotal": 62500000,
+        "totalDiscount": 3125000,
+        "finalTotal": 59375000,
+        "effectiveDiscountRate": 5,
+        "lineBreakdown": [
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "26903438-d59d-4409-b484-415e5c209c12",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "4-Piece Abalone Mixed Nuts Box",
+            "sku": "TEST-SA-P1-V1",
+            "quantity": 50,
+            "originalUnitPrice": 500000,
+            "discountedUnitPrice": 475000,
+            "lineSubtotal": 25000000,
+            "lineDiscount": 1250000,
+            "lineTotal": 23750000,
+            "appliedPromotion": {
+              "id": "795780dc-0da5-4c15-891b-4889043e9de9",
+              "name": "TEST Tier 1 (20-99 Boxes - 5% Off)",
+              "discountType": "Percentage",
+              "discountValue": 5
+            },
+            "availableStock": 1500
+          },
+          {
+            "productId": "022deb30-1359-45e4-b0c9-2be003237dc7",
+            "variantId": "e2945aa5-650f-4b5f-b1d1-b83af9cc1697",
+            "productName": "TEST-Imperial Golden Mooncake Gift Box",
+            "variantName": "6-Piece Salted Egg Lava Box",
+            "sku": "TEST-SA-P1-V2",
+            "quantity": 50,
+            "originalUnitPrice": 750000,
+            "discountedUnitPrice": 712500,
+            "lineSubtotal": 37500000,
+            "lineDiscount": 1875000,
+            "lineTotal": 35625000,
+            "appliedPromotion": {
+              "id": "795780dc-0da5-4c15-891b-4889043e9de9",
+              "name": "TEST Tier 1 (20-99 Boxes - 5% Off)",
+              "discountType": "Percentage",
+              "discountValue": 5
+            },
+            "availableStock": 1450
+          }
+        ],
+        "priceVersion": "qv1_25f76881f89d3bc97e0cee19",
+        "taxIncluded": true,
+        "taxRate": 8,
+        "taxAmount": 0,
+        "shippingZoneCode": "HCM_INNER",
+        "shippingZoneName": "TP.HCM Noi Thanh",
+        "shippingFee": 0,
+        "payableTotal": 59375000,
+        "depositRequired": true,
+        "depositPercent": 30,
+        "depositAmount": 17812500,
+        "balanceBeforeShippingAmount": 41562500,
+        "vnPayMaxAmountPerPart": 100000000,
+        "estimatedInitialPaymentParts": 1,
+        "availableShippingRates": [
+          {
+            "id": "649052d0-d6f1-4202-bd09-3d67aa30d143",
+            "regionCode": "SELF_PICKUP",
+            "regionName": "Nhan Truc Tiep Tai Xuong",
+            "feeAmount": 0,
+            "freeShippingThreshold": null,
+            "estimatedDays": 0,
+            "isSupported": true
+          },
+          {
+            "id": "67b8099d-db75-4e43-8648-7926a915f4ff",
+            "regionCode": "HCM_INNER",
+            "regionName": "TP.HCM Noi Thanh",
+            "feeAmount": 150000,
+            "freeShippingThreshold": 20000000,
+            "estimatedDays": 1,
+            "isSupported": true
+          },
+          {
+            "id": "7893f7ee-5994-407a-bfc7-0c4dbe261392",
+            "regionCode": "SOUTH_PROVINCE",
+            "regionName": "Mien Nam Lien Tinh",
+            "feeAmount": 350000,
+            "freeShippingThreshold": 50000000,
+            "estimatedDays": 3,
+            "isSupported": true
+          }
+        ]
+      },
+      "path": "/api/v1/orders/preview",
+      "traceId": "85aedce3e2fc4380b05e483b390e6311",
+      "time": "2026-11-05T02:43:02.113746Z"
+    }
+  }
+}

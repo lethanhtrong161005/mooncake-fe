@@ -235,22 +235,23 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
   });
 
   test('Khách hàng xem chi tiết sản phẩm, chọn biến thể và khởi tạo giỏ đặt hàng B2B', async ({ page }) => {
-    const state = await setupSession(page, { role: 'Customer' });
+    await setupSession(page, { role: 'Customer' });
     await page.goto(`/#san-pham/${productDetailFixture.id}`);
 
     // Verify Title and Shop Information
     await expect(page.locator('h1')).toContainText('Bánh Trung Thu Hoàng Kim B2B');
     await expect(page.locator('text=Xưởng Bánh Hoàng Triều')).toBeVisible();
-    await expect(page.locator('text=Hạt sen Huế, trứng muối thượng hạng')).toBeVisible();
+    await page.getByRole('tab', { name: /Thành Phần & ATTP/ }).click();
+    await expect(page.getByText(/Hạt sen Huế, trứng muối thượng hạng/)).toBeVisible();
 
     // Verify Variants radio group
     await expect(page.locator('text=Thập cẩm jambon bát bửu (200g)')).toBeVisible();
     await expect(page.locator('text=Hạt sen trứng muối 2 trứng (250g)')).toBeVisible();
-    await expect(page.locator('text=Hết hàng')).toBeVisible(); // 3rd variant is out of stock
+    await expect(page.getByText('Tạm hết')).toBeVisible(); // 3rd variant is out of stock
 
     // Select variant 2 and check price update
     await page.locator('text=Hạt sen trứng muối 2 trứng (250g)').click();
-    await expect(page.locator('h3:has-text("180.000 đ")')).toBeVisible();
+    await expect(page.locator('span.text-3xl').filter({ hasText: '180.000 ₫' })).toBeVisible();
 
     // Click Order button
     const orderButton = page.locator('button:has-text("Đặt hàng doanh nghiệp")');

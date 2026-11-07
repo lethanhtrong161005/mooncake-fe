@@ -142,8 +142,8 @@ export default function NotificationDrawer({
                 if (!notif.isRead) onMarkAsRead(notif.id);
                 if (notif.actionUrl) {
                   onClose();
-                  const target = notif.actionUrl.replace(/^#\/?/, '');
-                  onNavigate?.(target);
+                  const target = notif.actionUrl.replace(/^\/?#?\/?/, '');
+                  onNavigate?.(target.startsWith('dat-hang-thiet-ke?id=') ? 'don-hang-cua-toi' : target);
                 }
               }}
               className={`p-3 rounded-xl border transition-all cursor-pointer relative ${

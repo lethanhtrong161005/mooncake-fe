@@ -1,0 +1,23 @@
+{
+  "idempotencyKey": "P3-IDEMP-1793846582115",
+  "call1_initial_creation": {
+    "status": 201,
+    "orderId": "b08b96a7-87b0-44e4-90f6-50a58fd67cb4"
+  },
+  "call2_exact_replay": {
+    "status": 201,
+    "orderId": "b08b96a7-87b0-44e4-90f6-50a58fd67cb4",
+    "matched": true
+  },
+  "call3_altered_payload_conflict": {
+    "status": 409,
+    "error": {
+      "errorCode": "IDEMPOTENCY_CONFLICT",
+      "status": 409,
+      "message": "This Idempotency-Key was already used with a different order request.",
+      "path": "/api/v1/orders",
+      "traceId": "66a4fbab3f874b16bcb3372dd0b86c72",
+      "time": "2026-11-05T02:43:04.8133645Z"
+    }
+  }
+}
