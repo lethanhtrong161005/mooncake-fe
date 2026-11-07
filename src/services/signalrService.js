@@ -1,5 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { API_BASE_URL } from '../constants/apiConfiguration';
 
 class SignalRManager {
   constructor() {
@@ -16,8 +17,10 @@ class SignalRManager {
 
     try {
       this.isConnecting = true;
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8089';
-      const hubUrl = `${baseURL}${API_ENDPOINTS.NOTIFICATIONS.HUB_URL}`;
+      const hubUrl = new URL(
+        `${API_BASE_URL.replace(/\/$/, '')}${API_ENDPOINTS.NOTIFICATIONS.HUB_URL}`,
+        window.location.origin,
+      ).href;
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
@@ -66,7 +69,7 @@ class SignalRManager {
     if (this.connection) {
       try {
         await this.connection.stop();
-      } catch {}
+      } catch { /* An already closed connection needs no further cleanup. */ }
       this.connection = null;
     }
   }
