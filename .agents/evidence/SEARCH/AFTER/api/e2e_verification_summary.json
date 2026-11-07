@@ -1,0 +1,170 @@
+{
+  "executedAt": "2026-11-07T09:53:31.268Z",
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "Initial Load (pageSize=9 fixed, pageNumber=1, full price catalog, no pageSize changer)",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?M2UwOTJhMWI1NzE2=M2UwOTRmNDg1ZjExNjE1ZjBiNzIwNzIzMDY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "apiUrl": "http://localhost:8089/api/v1/products?sort=relevance&page=1&pageNumber=1&pageSize=9",
+      "totalCount": 64,
+      "renderedCards": 9,
+      "screenshot": "AFTER/S1_01_initial_load_pageSize10_all_prices.png"
+    },
+    {
+      "id": "S2",
+      "name": "Pagination Page 2 Navigation & Disjoint Item Verification",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?M2UwOTJhMWI1NzE2=M2UwOTRmNGI1ZjQwNjM1YTViN2E1NDc1MDU&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "apiUrl": "http://localhost:8089/api/v1/products?sort=relevance&page=2&pageNumber=2&pageSize=9",
+      "overlapCount": 0,
+      "screenshot": "AFTER/S2_01_pagination_page2_disjoint_items.png"
+    },
+    {
+      "id": "S3",
+      "name": "Enforce Fixed pageSize=10 When URL Tampered (?pageSize=100 -> pageSize=10)",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?M2UwOTJhMWI1NzE2=M2UwOTRmNDg1ZjExNjE1ZjBiNzIwNzIzMDY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "renderedCards": 9,
+      "screenshot": "AFTER/S3_01_pageSize20_resets_to_page1.png"
+    },
+    {
+      "id": "S4",
+      "name": "Keyword Search (\"Hoàng Kim\") & Active Filter Chip",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?q=Ho%C3%A0ng+Kim&M2UwOTJhMWI1NzE2=M2UwOTRmNDg1ZjExNjE1ZjBiNzIwNzIzMDY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "matchedCount": 12,
+      "screenshot": "AFTER/S4_01_keyword_search_hoang_kim.png"
+    },
+    {
+      "id": "S5",
+      "name": "Multi-Filter Consistency: Category (\"Bánh nướng truyền thống\") + Region (\"HCM\")",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?categoryIds=7f5e3f83-2d3b-4f43-9dd1-8f8d32b9a101&regionCodes=HCM&M2UwOTJhMWI1NzE2=M2UwOTRmNDg1ZjExNjE1ZjBiNzIwNzIzMDY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "matchedCount": 5,
+      "verifiedAllItemsMatch": true,
+      "screenshot": "AFTER/S5_01_category_and_region_filter.png"
+    },
+    {
+      "id": "S6",
+      "name": "Price Range Filter & Slider Ceiling Preservation (>= 3.6M VND)",
+      "status": "PASSED",
+      "highPriceProductCount": 18,
+      "preservedSliderCeiling": 3600000,
+      "screenshot": "AFTER/S6_01_price_filter_and_ceiling_preserved.png"
+    },
+    {
+      "id": "S7",
+      "name": "B2B Combined Filters (Reputation >= 90, MOQ <= 20, Custom Packaging, In Stock)",
+      "status": "PASSED",
+      "url": "http://127.0.0.1:5173/#tim-kiem?minReputation=90&maxMinOrderQty=20&supportsCustomPackaging=true&inStockOnly=true&M2UwOTJhMWI1NzE2=M2UwOTRmNDg1ZjExNjE1ZjBiNzIwNzIzMDY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "matchedCount": 9,
+      "screenshot": "AFTER/S7_01_b2b_reputation_moq_custom_instock.png"
+    },
+    {
+      "id": "S8",
+      "name": "Sort by Price Descending (\"priceDesc\") & List View Mode",
+      "status": "PASSED",
+      "topPrices": [
+        3600000,
+        3200000,
+        2800000,
+        2450000,
+        2100000
+      ],
+      "screenshot": "AFTER/S8_01_sort_priceDesc_and_list_view.png"
+    },
+    {
+      "id": "S9",
+      "name": "URL Deep-Link & Out-of-Range Page Auto-Clamping (pageNumber=999 -> 8)",
+      "status": "PASSED",
+      "clampedUrl": "http://127.0.0.1:5173/#tim-kiem?M2UwOTJhMWI1NzE2=M2UwOTRmNDE1ZjRjMzUwZTVlMjAwMzdiNTY&M2UxNDJhMWI1NzE2=M2UxNDRmNDA1ZjRkMzU1YjVjNzEwNjcyMGE",
+      "renderedCards": 1,
+      "screenshot": "AFTER/S9_01_out_of_range_page_auto_clamped.png"
+    },
+    {
+      "id": "S10",
+      "name": "Empty Search Result State & One-Click Filter Reset",
+      "status": "PASSED",
+      "restoredCardsAfterReset": 9,
+      "screenshot": "AFTER/S10_01_empty_state_with_reset_cta.png"
+    },
+    {
+      "id": "S11",
+      "name": "API 500 Error Alert & Retry Button Recovery",
+      "status": "PASSED",
+      "errorAlertDisplayed": true,
+      "recoveredOnRetry": true,
+      "screenshot": "AFTER/S11_01_api_error_alert_with_retry.png"
+    }
+  ],
+  "responsiveChecks": [
+    {
+      "viewport": "375x812",
+      "name": "mobile_sm_375x812",
+      "clientWidth": 375,
+      "scrollWidth": 375,
+      "horizontalOverflow": false,
+      "status": "PASSED",
+      "screenshot": "responsive/resp_01_mobile_375x812.png"
+    },
+    {
+      "viewport": "430x932",
+      "name": "mobile_lg_430x932",
+      "clientWidth": 430,
+      "scrollWidth": 430,
+      "horizontalOverflow": false,
+      "status": "PASSED",
+      "screenshot": "responsive/resp_02_mobile_large_430x932.png"
+    },
+    {
+      "viewport": "768x1024",
+      "name": "tablet_768x1024",
+      "clientWidth": 768,
+      "scrollWidth": 768,
+      "horizontalOverflow": false,
+      "status": "PASSED",
+      "screenshot": "responsive/resp_03_tablet_768x1024.png"
+    },
+    {
+      "viewport": "1440x900",
+      "name": "desktop_1440x900",
+      "clientWidth": 1440,
+      "scrollWidth": 1440,
+      "horizontalOverflow": false,
+      "status": "PASSED",
+      "screenshot": "responsive/resp_04_desktop_1440x900.png"
+    },
+    {
+      "viewport": "1920x1080",
+      "name": "fhd_1920x1080",
+      "clientWidth": 1920,
+      "scrollWidth": 1920,
+      "horizontalOverflow": false,
+      "status": "PASSED",
+      "screenshot": "responsive/resp_05_fhd_1920x1080.png"
+    }
+  ],
+  "apiValidationChecks": [
+    {
+      "check": "Default pageSize=9 & page=1",
+      "status": "PASSED",
+      "totalCount": 64
+    },
+    {
+      "check": "pageNumber=2 parameter binding",
+      "status": "PASSED",
+      "page": 2
+    },
+    {
+      "check": "pageSize=101 rejected with 400 Bad Request",
+      "status": "PASSED",
+      "httpStatus": 400
+    },
+    {
+      "check": "sort=invalidSort rejected with 400 Bad Request",
+      "status": "PASSED",
+      "httpStatus": 400
+    }
+  ]
+}

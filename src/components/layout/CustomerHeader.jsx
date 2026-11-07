@@ -231,7 +231,7 @@ export default function CustomerHeader({
           />}
 
           {/* Notifications */}
-          <NotificationBell onNavigate={onNavigate} />
+          {isLoggedIn && <NotificationBell onNavigate={onNavigate} />}
 
           {!compact && <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />}
 

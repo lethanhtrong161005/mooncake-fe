@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import { API_BASE_URL } from '../constants/apiConfiguration';
+import storage from '../utils/storage';
 
 class SignalRManager {
   constructor() {
@@ -10,6 +11,10 @@ class SignalRManager {
   }
 
   async startConnection(token) {
+    const resolvedToken = token || storage.get('auth_token');
+    if (!resolvedToken) {
+      return null;
+    }
     if (this.connection?.state === signalR.HubConnectionState.Connected) {
       return this.connection;
     }
@@ -24,7 +29,7 @@ class SignalRManager {
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
-          accessTokenFactory: () => token || localStorage.getItem('token') || '',
+          accessTokenFactory: () => token || storage.get('auth_token') || '',
           skipNegotiation: false,
           transport: signalR.HttpTransportType.WebSockets,
         })

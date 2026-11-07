@@ -1,19 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Badge,
   Breadcrumb,
   Button,
-  Card,
   Col,
   Descriptions,
-  Divider,
   Empty,
   Image,
   InputNumber,
   Rate,
   Row,
-  Space,
   Spin,
   Tabs,
   Tag,
@@ -34,7 +30,6 @@ import {
   ShopOutlined,
   ShoppingOutlined,
   StarFilled,
-  ThunderboltFilled,
   TruckOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
@@ -43,26 +38,28 @@ import ReputationBadge from '../../components/reviews/ReputationBadge';
 import ProductReviewStream from '../../components/reviews/ProductReviewStream';
 import productService from '../../services/productService';
 
-const { Title, Paragraph, Text } = Typography;
+const { Paragraph } = Typography;
 const money = (value) => Number(value || 0).toLocaleString('vi-VN');
 
 export default function ProductInformation({ onNavigate, productId }) {
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(Boolean(productId));
+  const [loadedProductId, setLoadedProductId] = useState(null);
   const [variantId, setVariantId] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const loading = Boolean(productId) && loadedProductId !== productId;
 
   useEffect(() => {
     if (!productId) return undefined;
     const controller = new AbortController();
-    setLoading(true);
 
     productService
       .detail(productId, controller.signal)
       .then((result) => {
+        if (controller.signal.aborted) return;
         setProduct(result);
+        setActiveImageIdx(0);
         const initialVariant = result.variants?.find((item) => item.isAvailable) || result.variants?.[0];
         setVariantId(initialVariant?.id || null);
         const initialMin = Math.max(1, Number(result.minOrderQty ?? 1));
@@ -74,13 +71,20 @@ export default function ProductInformation({ onNavigate, productId }) {
         setQuantity(initialQty);
         productService.recordView(productId, { source: 'Direct' }).catch(() => {});
       })
-      .catch(() => setProduct(null))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setProduct(null);
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setLoadedProductId(productId);
+      });
 
     // Fetch related products
     productService
       .related(productId, controller.signal)
       .then((res) => {
+        if (controller.signal.aborted) return;
         if (Array.isArray(res)) {
           setRelatedProducts(res.slice(0, 4));
         } else if (res?.items && Array.isArray(res.items)) {
@@ -95,11 +99,11 @@ export default function ProductInformation({ onNavigate, productId }) {
   // Enforce strict min / max constraints
   const minQty = useMemo(() => {
     return Math.max(1, Number(product?.minOrderQty ?? 1));
-  }, [product?.minOrderQty]);
+  }, [product]);
 
   const maxQty = useMemo(() => {
     return product?.maxOrderQty ? Math.max(minQty, Number(product.maxOrderQty)) : null;
-  }, [product?.maxOrderQty, minQty]);
+  }, [product, minQty]);
 
   const clampQuantity = useCallback(
     (val) => {
@@ -194,7 +198,7 @@ export default function ProductInformation({ onNavigate, productId }) {
           <div className="bg-white rounded-2xl p-12 text-center shadow-xs border border-stone-200">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="Sản phẩm không tồn tại hoặc đã tạm dừng phân phối"
+              description="Sản phẩm không tồn tại hoặc chưa được xuất bản"
             />
             <Button
               type="primary"
@@ -207,16 +211,39 @@ export default function ProductInformation({ onNavigate, productId }) {
         ) : (
           <>
             {/* Top Navigation & Breadcrumbs */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-3 border-b border-stone-200/70">
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #ebdcd5',
+                borderRadius: 12,
+                padding: '10px 16px',
+                marginBottom: 24,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                boxShadow: '0 2px 8px rgba(140, 21, 36, 0.04)',
+              }}
+            >
               <Breadcrumb
+                separator={<span style={{ color: '#d4b5a9', margin: '0 2px' }}>/</span>}
                 items={[
                   {
                     title: (
                       <span
                         onClick={() => onNavigate?.('trang-chu')}
-                        className="cursor-pointer text-stone-600 hover:text-[#8c1524] transition-colors flex items-center gap-1 text-xs sm:text-sm"
+                        style={{
+                          cursor: 'pointer',
+                          color: '#595959',
+                          fontSize: 13,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                        }}
                       >
-                        <HomeOutlined /> Trang chủ
+                        <HomeOutlined style={{ color: '#8c1524' }} />
+                        <span>Trang chủ</span>
                       </span>
                     ),
                   },
@@ -224,7 +251,11 @@ export default function ProductInformation({ onNavigate, productId }) {
                     title: (
                       <span
                         onClick={() => onNavigate?.('tim-kiem')}
-                        className="cursor-pointer text-stone-600 hover:text-[#8c1524] transition-colors text-xs sm:text-sm"
+                        style={{
+                          cursor: 'pointer',
+                          color: '#595959',
+                          fontSize: 13,
+                        }}
                       >
                         Sản phẩm B2B
                       </span>
@@ -234,28 +265,69 @@ export default function ProductInformation({ onNavigate, productId }) {
                     ? [
                         {
                           title: (
-                            <span className="text-stone-600 text-xs sm:text-sm">
+                            <Tag
+                              onClick={() =>
+                                onNavigate?.(
+                                  product.category?.id
+                                    ? `tim-kiem?categoryIds=${product.category.id}`
+                                    : 'tim-kiem'
+                                )
+                              }
+                              style={{
+                                margin: 0,
+                                cursor: 'pointer',
+                                background: '#fdf5f0',
+                                borderColor: '#e8cfc4',
+                                color: '#8c1524',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 500,
+                              }}
+                            >
                               {product.category.name}
-                            </span>
+                            </Tag>
                           ),
                         },
                       ]
                     : []),
                   {
                     title: (
-                      <span className="font-semibold text-stone-900 text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">
-                        {product.name}
-                      </span>
+                      <Tooltip title={product.name}>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color: '#1f1f1f',
+                            fontSize: 13,
+                            display: 'inline-block',
+                            maxWidth: 360,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            verticalAlign: 'bottom',
+                          }}
+                        >
+                          {product.name}
+                        </span>
+                      </Tooltip>
                     ),
                   },
                 ]}
               />
 
               <Button
-                type="text"
+                size="small"
                 icon={<ArrowLeftOutlined />}
                 onClick={() => onNavigate?.('tim-kiem')}
-                className="text-stone-600 hover:text-[#8c1524] text-xs sm:text-sm font-medium p-0"
+                style={{
+                  background: '#fdf6f3',
+                  borderColor: '#e2c2b5',
+                  color: '#8c1524',
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  padding: '0 12px',
+                  height: 30,
+                  fontSize: 12,
+                }}
               >
                 Quay lại danh mục
               </Button>

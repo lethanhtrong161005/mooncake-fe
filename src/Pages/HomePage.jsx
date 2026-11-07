@@ -31,7 +31,7 @@ export default function HomePage({ onNavigate }) {
   useEffect(() => {
     const controller = new AbortController();
     productService.categories(controller.signal)
-      .then((items) => setCategories(Array.isArray(items) ? items : []))
+      .then((items) => setCategories(Array.isArray(items) ? items.slice(0, 4) : []))
       .catch(() => setCategories([]))
       .finally(() => setCategoriesLoading(false));
 
@@ -205,7 +205,7 @@ export default function HomePage({ onNavigate }) {
                 {categoriesLoading && [1, 2, 3, 4].map((item) => (
                   <div key={item} className="animate-pulse rounded-2xl bg-stone-100 aspect-[4/3]" />
                 ))}
-                {!categoriesLoading && categories.map((cat) => (
+                {!categoriesLoading && categories.slice(0, 4).map((cat) => (
                   <div
                     key={cat.id}
                     onClick={() => onNavigate?.('tim-kiem')}

@@ -56,10 +56,14 @@ export default function ShopRenderer({ shop, products = [], appearance, preview 
     if (section === 'Reviews') return <div key={section}>{reviews || <Card title="Đánh giá"><Empty description="Chưa có đánh giá" /></Card>}</div>;
     return <Contact key={section} shop={shop} />;
   });
-  return <ConfigProvider theme={{ token: { colorPrimary: theme.primaryColor, colorText: theme.textColor,
-    colorTextSecondary: theme.textColor, colorTextLightSolid: theme.buttonTextColor,
-    colorLink: theme.textColor, colorLinkHover: theme.textColor,
-    colorBgContainer: theme.surfaceColor, borderRadius: theme.borderRadiusPx, fontSize: Math.round(14 * theme.fontScale) } }}>
+  return <ConfigProvider theme={{
+    token: {
+      colorPrimary: theme.primaryColor, colorText: theme.textColor,
+      colorTextSecondary: theme.textColor, colorTextLightSolid: theme.buttonTextColor,
+      colorLink: theme.textColor, colorLinkHover: theme.textColor,
+      colorBgContainer: theme.surfaceColor, borderRadius: theme.borderRadiusPx, fontSize: Math.round(14 * theme.fontScale)
+    }
+  }}>
     <div className={`shop-root shop-${renderer}`} style={shopVariables(theme)}>
       {preview && <Tag color="blue" style={{ marginBottom: 16 }}>Bản xem trước · Chưa xuất bản thay đổi</Tag>}
       {renderer === 'royal-gift' ? <Row gutter={[24, 24]} align="middle"><Col xs={24} md={12}><Brand shop={shop} /></Col><Col xs={24} md={12}>{banner}</Col></Row> :
