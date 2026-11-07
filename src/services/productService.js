@@ -3,8 +3,27 @@ import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 const unwrap = (response) => response.data;
 const headers = (key) => ({ headers: { 'Idempotency-Key': key } });
+
+const serializeParams = (params) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item !== undefined && item !== null && item !== '') {
+          searchParams.append(key, String(item));
+        }
+      });
+      return;
+    }
+    searchParams.append(key, String(value));
+  });
+  return searchParams.toString();
+};
+
 const getPublic = (path, params, signal) => apiClient.get(path, {
   params,
+  paramsSerializer: { serialize: serializeParams },
   signal,
   skipAuthHeader: true,
   skipAuthRefresh: true,

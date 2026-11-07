@@ -1,0 +1,46 @@
+{
+  "bugId": "B1_B3_INITIAL_LOAD_HIDDEN_PRODUCTS",
+  "feRequestsFiredOnLoad": [
+    {
+      "method": "GET",
+      "url": "http://localhost:8089/api/v1/products?maxPrice=1000000&inStockOnly=false&sort=relevance&page=1&pageSize=24"
+    }
+  ],
+  "unfilteredCatalogTotalCount": 64,
+  "unfilteredMaxPriceFacet": 3600000,
+  "initialLoadTotalCountWithDefault1MCeiling": 51,
+  "hiddenProductsAbove1MCount": 13,
+  "sampleHiddenProductsAbove1M": [
+    {
+      "productId": "9665a21d-4bde-4b7d-9649-89904c142cc3",
+      "name": "TEST-SEARCH-P36 Hộp Bánh Hạt Dinh Dưỡng Thực Dưỡng (DN)",
+      "minPrice": 1550000,
+      "shopName": "TEST-NguyetPho-ShopC-DaNang"
+    },
+    {
+      "productId": "477ab288-cbff-4510-94f7-6cc1b72ef437",
+      "name": "TEST-SEARCH-P28 Hộp Bánh Hạt Dinh Dưỡng Thực Dưỡng (HCM)",
+      "minPrice": 3600000,
+      "shopName": "TEST-NguyetPho-ShopA"
+    },
+    {
+      "productId": "2e71749e-0c3c-4d46-b618-c1011dc5e147",
+      "name": "TEST-SEARCH-P27 Hộp Bánh Sơn Mài Long Phụng VIP (DN)",
+      "minPrice": 3200000,
+      "shopName": "TEST-NguyetPho-ShopC-DaNang"
+    },
+    {
+      "productId": "41a67cfc-dd61-469b-b378-4066db44e467",
+      "name": "TEST-SEARCH-P26 Hộp Bánh Tuyết Liên Hạt Sen (HN)",
+      "minPrice": 2800000,
+      "shopName": "TEST-NguyetPho-ShopB"
+    },
+    {
+      "productId": "caf86a17-cd3b-4206-b1a3-4ae9899e9d83",
+      "name": "TEST-SEARCH-P25 Hộp Bánh Hoàng Kim Bào Ngư (HCM)",
+      "minPrice": 2450000,
+      "shopName": "TEST-NguyetPho-ShopA"
+    }
+  ],
+  "locationHashAfterLoad": "#tim-kiem"
+}
