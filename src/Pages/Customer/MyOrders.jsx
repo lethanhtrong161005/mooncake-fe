@@ -339,7 +339,7 @@ export default function MyOrders({ onNavigate }) {
 
       {loadingOrders ? (
         <div className="py-20 text-center bg-white rounded-2xl border border-stone-200">
-          <Spin size="large" tip="Đang tải danh sách đơn hàng..." />
+          <Spin size="large" description="Đang tải danh sách đơn hàng..." />
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-xs">

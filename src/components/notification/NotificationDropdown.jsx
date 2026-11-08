@@ -223,7 +223,7 @@ export default function NotificationDropdown({
       <div className="max-h-[380px] overflow-y-auto divide-y divide-stone-100">
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
-            <Spin tip="Đang tải thông báo từ máy chủ..." />
+            <Spin description="Đang tải thông báo từ máy chủ..." />
           </div>
         ) : filteredItems.length === 0 ? (
           <Empty

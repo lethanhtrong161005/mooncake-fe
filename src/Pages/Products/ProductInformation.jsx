@@ -188,7 +188,7 @@ export default function ProductInformation({ onNavigate, productId }) {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-28">
-            <Spin size="large" tip="Đang tải dữ liệu sản phẩm..." />
+            <Spin size="large" description="Đang tải dữ liệu sản phẩm..." />
           </div>
         ) : !product ? (
           <div className="bg-white rounded-2xl p-12 text-center shadow-xs border border-stone-200">

@@ -30,7 +30,7 @@ function TemplateEditor({ template, onClose, onSaved }) {
     if (result.ok) { setDirty(false); message.success(template ? 'Đã phát hành phiên bản mới. Gian hàng cũ giữ phiên bản đang dùng.' : 'Đã tạo mẫu giao diện.'); onSaved(); }
   };
   return <Drawer open size="large" title={template ? `Phát hành phiên bản mới · ${template.code} · version ${template.version}` : 'Tạo mẫu giao diện'}
-    onClose={close} maskClosable={!dirty && !mutation.busy} closable={!mutation.busy}>
+    onClose={close} mask={{ closable: !dirty && !mutation.busy }} closable={!mutation.busy}>
     <Form form={form} layout="vertical" initialValues={initial} onValuesChange={() => setDirty(true)} onFinish={save} disabled={mutation.busy}>
       {!template && <Form.Item name="code" label="Mã mẫu (cố định)" rules={[{ required: true, min: 3, max: 50, pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: '3–50 ký tự chữ thường, số và dấu gạch ngang.' }]}><Input maxLength={50} /></Form.Item>}
       <Form.Item name="name" label="Tên mẫu" rules={[{ required: true, whitespace: true, min: 2, max: 100 }]}><Input maxLength={100} /></Form.Item>

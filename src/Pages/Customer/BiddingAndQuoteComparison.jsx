@@ -8,12 +8,48 @@ import CustomerHeader from '../../components/layout/CustomerHeader';
 import rfqService from '../../services/rfqService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import dayjs from 'dayjs';
+import { signalRManager } from '../../services/signalrService';
+
+const minDeliveryDate = () => dayjs().add(7, 'day').startOf('day');
+const minBidDeadline = () => dayjs().add(1, 'day');
+const formatBudgetInput = (value) => {
+  if (value === undefined || value === null || value === '') return '';
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return value;
+  if (amount >= 1_000_000) {
+    return `${(amount / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} triệu`;
+  }
+  return amount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+};
+function BudgetInput({ value, onChange, ...props }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const displayValue = editing ? draft : formatBudgetInput(value);
+
+  const beginEditing = () => {
+    setDraft(value === undefined || value === null || value === ''
+      ? ''
+      : Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 }));
+    setEditing(true);
+  };
+
+  const updateValue = (event) => {
+    const next = event.target.value;
+    setDraft(next);
+    const normalized = next.replace(/,/g, '').trim();
+    onChange(normalized === '' ? null : Number.isFinite(Number(normalized)) ? Number(normalized) : value);
+  };
+
+  return <Input {...props} inputMode="decimal" value={displayValue} onFocus={beginEditing}
+    onChange={updateValue} onBlur={() => setEditing(false)} />;
+}
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
-const statusColor = { Draft: 'default', Open: 'processing', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
+const statusColor = { Draft: 'default', Open: 'processing', InNegotiation: 'warning', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 
 export default function BiddingAndQuoteComparison({ onNavigate }) {
   const rfqPage = usePagedList(rfqService.listMinePaged);
@@ -24,6 +60,8 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selectedRfq, setSelectedRfq] = useState(null);
   const [bids, setBids] = useState([]);
+  const [supplierProfiles, setSupplierProfiles] = useState([]);
+  const [detailBid, setDetailBid] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
@@ -31,6 +69,17 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
 
   const loadRfqs = rfqPage.refresh;
   useEffect(() => { if (rfqPage.error) message.error(errorMessage(rfqPage.error)); }, [rfqPage.error]);
+  useEffect(() => {
+    const refreshRfqs = (notification) => {
+      if (notification?.type?.startsWith('bid.') || notification?.type?.startsWith('rfq.')) loadRfqs();
+    };
+    signalRManager.on('ReceiveNotification', refreshRfqs);
+    signalRManager.on('MarketplaceChanged', refreshRfqs);
+    return () => {
+      signalRManager.off('ReceiveNotification', refreshRfqs);
+      signalRManager.off('MarketplaceChanged', refreshRfqs);
+    };
+  }, [loadRfqs]);
 
   const createRfq = async (values) => {
     setActionLoading(true);
@@ -70,7 +119,11 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     setCompareOpen(true);
     setActionLoading(true);
     try {
-      setBids(await rfqService.listBids(rfq.id));
+      const [nextBids, nextSuppliers] = await Promise.all([
+        rfqService.listBids(rfq.id), rfqService.suggestedSuppliers(rfq.id),
+      ]);
+      setBids(nextBids);
+      setSupplierProfiles(nextSuppliers);
     } catch (error) {
       message.error(errorMessage(error));
     } finally {
@@ -110,12 +163,11 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const acceptBid = async (bid) => {
     setActionLoading(true);
     try {
-      const contract = await rfqService.acceptBid(selectedRfq.id, bid.id,
+      const result = await rfqService.acceptBid(selectedRfq.id, bid.id,
         'Báo giá đáp ứng tiến độ và yêu cầu kỹ thuật.');
-      message.success(`Đã chọn thầu. Hợp đồng ${contract.contractNumber} đã được tạo.`);
+      message.success(result.message || 'Đã gửi yêu cầu cho supplier xác nhận.');
       setCompareOpen(false);
       await loadRfqs();
-      onNavigate?.('hop-dong-tien-do');
     } catch (error) {
       message.error(errorMessage(error));
     } finally {
@@ -123,15 +175,29 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     }
   };
 
+  const confirmBidSelection = (bid) => {
+    const deadlineNotPassed = selectedRfq?.bidDeadline && new Date(selectedRfq.bidDeadline) > new Date();
+    const submit = () => acceptBid(bid);
+    if (!deadlineNotPassed) return submit();
+    Modal.confirm({
+      title: 'Chọn supplier trước hạn báo giá?',
+      content: 'RFQ sẽ tạm đóng và không nhận thêm báo giá. Supplier được chọn sẽ nhận thông báo để xác nhận; hợp đồng chỉ được tạo sau khi supplier đồng ý.',
+      okText: 'Gửi yêu cầu chọn',
+      cancelText: 'Xem lại',
+      onOk: submit,
+    });
+  };
+
   const bestBidId = useMemo(() => bids.filter((bid) => !bid.isExpired && bid.status === 'Submitted')
     .sort((left, right) => Number(left.totalPrice) - Number(right.totalPrice))[0]?.id, [bids]);
+  const supplierForBid = (bid) => supplierProfiles.find((supplier) => supplier.supplierProfileId === bid.supplierId);
   const columns = [
     { title: 'RFQ', dataIndex: 'rfqNumber', render: (value) => <Text strong>{value}</Text> },
     { title: 'Nhu cầu', dataIndex: 'title', render: (value, item) => <Space direction="vertical" size={0}><Text>{value}</Text><Text type="secondary">{item.items?.reduce((total, line) => total + line.quantity, 0)} sản phẩm</Text></Space> },
     { title: 'Ngân sách', render: (_, item) => `${money(item.budgetRangeMin)} – ${money(item.budgetRangeMax)}` },
     { title: 'Hạn nhận thầu', dataIndex: 'bidDeadline', render: (value) => new Date(value).toLocaleString('vi-VN') },
     { title: 'Báo giá', dataIndex: 'bidCount', align: 'center', render: (value) => <Tag color={value ? 'blue' : 'default'}>{value}</Tag> },
-    { title: 'Trạng thái', dataIndex: 'status', render: (value) => <Tag color={statusColor[value]}>{value}</Tag> },
+    { title: 'Trạng thái', dataIndex: 'status', render: (value) => <Tag color={statusColor[value]}>{value === 'InNegotiation' ? 'Chờ supplier xác nhận' : value}</Tag> },
     { title: 'Thao tác', render: (_, item) => <Space wrap>
       {item.status === 'Open' && <Button icon={<TeamOutlined />} onClick={() => openInvite(item)}>Mời xưởng</Button>}
       <Button type="primary" icon={<SolutionOutlined />} disabled={!item.bidCount} onClick={() => openCompare(item)}>So sánh</Button>
@@ -158,7 +224,8 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
       <Form form={form} layout="vertical" onFinish={createRfq} initialValues={{ items: [{ unit: 'Hộp', quantity: 100 }] }}>
         <Row gutter={16}><Col xs={24} md={12}><Form.Item name="title" label="Tiêu đề" rules={[{ required: true, min: 5 }]}><Input /></Form.Item></Col><Col xs={24} md={12}><Form.Item name="deliveryAddress" label="Địa chỉ giao" rules={[{ required: true, min: 10 }]}><Input /></Form.Item></Col></Row>
         <Form.Item name="description" label="Mô tả"><TextArea rows={2} maxLength={5000} showCount /></Form.Item>
-        <Row gutter={16}><Col xs={24} md={8}><Form.Item name="deliveryDateRequired" label="Ngày giao" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={8}><Form.Item name="bidDeadline" label="Hạn nhận báo giá" rules={[{ required: true }]}><DatePicker showTime style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
+        <Row gutter={16}><Col xs={24} md={8}><Form.Item name="deliveryDateRequired" label="Ngày giao" rules={[{ required: true }]}><DatePicker disabledDate={(date) => date && date.isBefore(minDeliveryDate(), 'day')} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={8}><Form.Item name="bidDeadline" label="Hạn nhận báo giá" rules={[{ required: true }, { validator: (_, value) => !value || !value.isBefore(minBidDeadline()) ? Promise.resolve() : Promise.reject(new Error("Hạn nhận báo giá phải cách hiện tại ít nhất 24 giờ.")) }]}><DatePicker showTime disabledDate={(date) => date && date.isBefore(minBidDeadline(), 'day')} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
+        <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 16 }}>Ngân sách nhập bằng đồng (VND), không phải nghìn hay triệu. Ví dụ: 1.000.000 = một triệu đồng.</Text>
         <Form.List name="items">{(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }}>
           {fields.map((field) => <Card key={field.key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label="Quy cách"><Input /></Form.Item></Card>)}
           <Button onClick={() => add({ unit: 'Hộp', quantity: 1 })}>Thêm mặt hàng</Button>
@@ -172,12 +239,25 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     </Modal>
 
     <Drawer title={`So sánh báo giá · ${selectedRfq?.rfqNumber || ''}`} open={compareOpen} onClose={() => setCompareOpen(false)} width={960}>
+      {selectedRfq?.awardedBidId && <Alert type="success" showIcon style={{ marginBottom: 16 }} message={`Bạn đã chọn báo giá ${bids.find((bid) => bid.id === selectedRfq.awardedBidId)?.bidNumber || ''}.`} description="Supplier đang xác nhận lựa chọn của bạn." />}
       <Table rowKey="id" loading={actionLoading} dataSource={bids} pagination={false} scroll={{ x: 850 }} columns={[
-        { title: 'Mã bid', dataIndex: 'bidNumber' }, { title: 'Tổng giá', dataIndex: 'totalPrice', render: (value, bid) => <Text strong type={bid.id === bestBidId ? 'success' : undefined}>{money(value)}{bid.id === bestBidId && ' · Tốt nhất'}</Text> },
+        { title: 'Supplier', render: (_, bid) => { const supplier = supplierForBid(bid); return <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => setDetailBid(bid)}>{supplier?.companyName || 'Xem supplier'}</Button>; } },
+        { title: 'Mã bid', dataIndex: 'bidNumber', render: (value, bid) => <Button type="link" style={{ padding: 0 }} onClick={() => setDetailBid(bid)}>{value}</Button> }, { title: 'Tổng giá', dataIndex: 'totalPrice', render: (value, bid) => <Space>{bid.id === selectedRfq?.awardedBidId && <Tag color="green">Đã chọn</Tag>}<Text strong type={bid.id === bestBidId ? 'success' : undefined}>{money(value)}{bid.id === bestBidId && ' · Tốt nhất'}</Text></Space> },
         { title: 'Giao hàng', dataIndex: 'estimatedDeliveryDays', render: (value) => `${value} ngày` }, { title: 'Hiệu lực', dataIndex: 'validityDays', render: (value) => `${value} ngày` }, { title: 'Trạng thái', dataIndex: 'status', render: (value) => <Tag>{value}</Tag> },
-        { title: 'Chọn thầu', render: (_, bid) => <Button type="primary" disabled={bid.status !== 'Submitted' || bid.isExpired} loading={actionLoading} onClick={() => acceptBid(bid)}>Chấp thuận</Button> },
+        { title: 'Chọn thầu', render: (_, bid) => <Button type="primary" disabled={selectedRfq?.status === 'InNegotiation' || bid.status !== 'Submitted' || bid.isExpired} loading={actionLoading} onClick={() => confirmBidSelection(bid)}>Chọn supplier</Button> },
       ]} />
-      {bids.map((bid) => <Card key={bid.id} size="small" title={bid.bidNumber} style={{ marginTop: 16 }}><Descriptions size="small" column={1}>{bid.items.map((line) => <Descriptions.Item key={line.rfqItemId} label={`${line.productName} × ${line.quantity}`}>{money(line.unitPrice)} / {line.unit} · {money(line.subtotal)}</Descriptions.Item>)}</Descriptions></Card>)}
     </Drawer>
+    <Modal title={detailBid ? `Chi tiết báo giá · ${detailBid.bidNumber}` : 'Chi tiết báo giá'} open={Boolean(detailBid)} onCancel={() => setDetailBid(null)} footer={<Button onClick={() => setDetailBid(null)}>Đóng</Button>} width={680}>
+      {detailBid && <><Descriptions bordered size="small" column={1} style={{ marginBottom: 20 }}>
+        <Descriptions.Item label="Supplier">{supplierForBid(detailBid)?.companyName || `Supplier ${detailBid.supplierId}`}</Descriptions.Item>
+        {supplierForBid(detailBid)?.address && <Descriptions.Item label="Địa chỉ">{supplierForBid(detailBid).address}</Descriptions.Item>}
+        {supplierForBid(detailBid)?.averageRating != null && <Descriptions.Item label="Đánh giá">{supplierForBid(detailBid).averageRating}</Descriptions.Item>}
+        {supplierForBid(detailBid)?.reputationScore != null && <Descriptions.Item label="Điểm uy tín">{supplierForBid(detailBid).reputationScore}</Descriptions.Item>}
+        <Descriptions.Item label="Tổng giá">{money(detailBid.totalPrice)}</Descriptions.Item>
+        <Descriptions.Item label="Giao hàng">{detailBid.estimatedDeliveryDays} ngày</Descriptions.Item>
+        <Descriptions.Item label="Hiệu lực">{detailBid.validityDays} ngày</Descriptions.Item>
+        <Descriptions.Item label="Trạng thái">{detailBid.id === selectedRfq?.awardedBidId ? 'Đã chọn · chờ supplier xác nhận' : detailBid.status}</Descriptions.Item>
+      </Descriptions><Title level={5}>Chi tiết từng mặt hàng</Title><Descriptions bordered size="small" column={1}>{detailBid.items.map((line) => <Descriptions.Item key={line.rfqItemId} label={`${line.productName} × ${line.quantity}`}>{money(line.unitPrice)} / {line.unit} · Thành tiền {money(line.subtotal)}{line.notes ? ` · ${line.notes}` : ''}</Descriptions.Item>)}</Descriptions></>}
+    </Modal>
   </div>;
 }

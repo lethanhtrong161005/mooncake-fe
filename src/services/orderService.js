@@ -34,12 +34,28 @@ export const orderService = {
     return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST));
   },
   async listSupplierOrdersPaged(params = {}, signal) {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_PAGED, {
-      params, signal, paramsSerializer: { indexes: null },
-    }));
+    const result = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST, { signal }));
+    if (!Array.isArray(result)) return result;
+    const query = String(params.q || '').trim().toLocaleLowerCase();
+    const filtered = result.filter((order) => {
+      const searchable = `${order.orderNumber || ''} ${order.recipientName || ''} ${order.status || ''}`.toLocaleLowerCase();
+      return (!query || searchable.includes(query)) && (!params.status || order.status === params.status);
+    });
+    const page = Math.max(1, Number(params.page) || 1);
+    const pageSize = Math.max(1, Number(params.pageSize) || filtered.length || 1);
+    const offset = (page - 1) * pageSize;
+    return { items: filtered.slice(offset, offset + pageSize), totalCount: filtered.length };
   },
   async getSupplierDashboardSummary() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_DASHBOARD_SUMMARY));
+    const result = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST));
+    const orders = Array.isArray(result) ? result : result?.items || [];
+    return {
+      totalOrders: orders.length,
+      pendingOrders: orders.filter((order) => order.status === 'Pending').length,
+      processingOrders: orders.filter((order) => ['Confirmed', 'Processing'].includes(order.status)).length,
+      packagingOrders: orders.filter((order) => Boolean(order.customPackaging)).length,
+      totalRevenue: orders.reduce((total, order) => total + Number(order.totalAmount || 0), 0),
+    };
   },
   async getFinancialLedgerPage(orderId, params = {}, signal) {
     return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.FINANCIAL_LEDGER(orderId), { params, signal }));
@@ -114,9 +130,6 @@ export const orderService = {
   async upsertMySupplierPayoutAccount(payload) {
     return unwrap(await apiClient.put(API_ENDPOINTS.SUPPLIERS.PAYOUT_ACCOUNT, payload));
   },
-  async getMySupplierFinancialOverview() {
-    return unwrap(await apiClient.get(API_ENDPOINTS.SUPPLIERS.FINANCIAL_OVERVIEW));
-  },
   async getAdminOperations() {
     return unwrap(await apiClient.get(API_ENDPOINTS.ADMIN_ORDERS.OPERATIONS));
   },
@@ -140,9 +153,6 @@ export const orderService = {
   },
   async resolveAdminDeliveryDispute(disputeId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ADMIN_ORDERS.RESOLVE_DELIVERY_DISPUTE(disputeId), payload));
-  },
-  async getSupplierFinancialOverview() {
-    return this.getMySupplierFinancialOverview();
   },
   async getMyPayoutAccount() {
     return this.getMySupplierPayoutAccount();

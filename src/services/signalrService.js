@@ -1,11 +1,16 @@
 import * as signalR from '@microsoft/signalr';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { API_BASE_URL } from '../constants/apiConfiguration';
+import { getValidAccessToken } from './apiClient';
 
 class SignalRManager {
   constructor() {
     this.connection = null;
     this.isConnecting = false;
     this.listeners = new Map();
+    this.retryTimer = null;
+    this.retryAttempt = 0;
+    this.stopped = false;
   }
 
   async startConnection(token) {
@@ -16,12 +21,12 @@ class SignalRManager {
 
     try {
       this.isConnecting = true;
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8089';
+      const baseURL = API_BASE_URL.replace(/\/$/, '');
       const hubUrl = `${baseURL}${API_ENDPOINTS.NOTIFICATIONS.HUB_URL}`;
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
-          accessTokenFactory: () => token || localStorage.getItem('token') || '',
+          accessTokenFactory: token ? () => token : getValidAccessToken,
           skipNegotiation: false,
           transport: signalR.HttpTransportType.WebSockets,
         })
@@ -33,13 +38,27 @@ class SignalRManager {
         callbacks.forEach((cb) => this.connection.on(eventName, cb));
       });
 
+      this.stopped = false;
+      this.connection.onreconnected(() => { this.retryAttempt = 0; });
+      this.connection.onclose(() => this.scheduleReconnect());
       await this.connection.start();
+      this.retryAttempt = 0;
       return this.connection;
     } catch {
+      window.setTimeout(() => this.scheduleReconnect(), 0);
       return null;
     } finally {
       this.isConnecting = false;
     }
+  }
+
+  scheduleReconnect() {
+    if (this.stopped || this.retryTimer || this.isConnecting) return;
+    const delay = Math.min(30000, 1000 * (2 ** this.retryAttempt++));
+    this.retryTimer = window.setTimeout(async () => {
+      this.retryTimer = null;
+      await this.startConnection();
+    }, delay);
   }
 
   on(eventName, callback) {
@@ -63,6 +82,9 @@ class SignalRManager {
   }
 
   async stopConnection() {
+    this.stopped = true;
+    window.clearTimeout(this.retryTimer);
+    this.retryTimer = null;
     if (this.connection) {
       try {
         await this.connection.stop();

@@ -26,13 +26,11 @@ import {
   FileDoneOutlined,
   OrderedListOutlined,
   ReloadOutlined,
-  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import contractService from '../../services/contractService';
 import paymentService from '../../services/paymentService';
-import PaymentCheckoutModal from '../../components/payment/PaymentCheckoutModal';
-import VietQrModal from '../../components/payment/VietQrModal';
+import { signalRManager } from '../../services/signalrService';
 
 const { Paragraph, Text, Title } = Typography;
 const { TextArea } = Input;
@@ -40,11 +38,69 @@ const { TextArea } = Input;
 const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 
+const parseContractTerms = (value) => {
+  if (value && typeof value === 'object') return value;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+function ContractTerms({ value }) {
+  const terms = parseContractTerms(value);
+  if (!terms) {
+    return <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
+      {value || 'Thực hiện theo quy cách sản phẩm, tiến độ giao hàng và cơ chế nghiệm thu đã thống nhất trong hợp đồng.'}
+    </Paragraph>;
+  }
+
+  const items = Array.isArray(terms.Items) ? terms.Items : [];
+  return (
+    <Space direction="vertical" size={12} style={{ width: '100%' }}>
+      <Descriptions bordered size="small" column={2}>
+        {terms.RfqNumber && <Descriptions.Item label="Mã yêu cầu báo giá">{terms.RfqNumber}</Descriptions.Item>}
+        {terms.BidNumber && <Descriptions.Item label="Mã báo giá">{terms.BidNumber}</Descriptions.Item>}
+        {terms.CompanyName && <Descriptions.Item label="Supplier">{terms.CompanyName}</Descriptions.Item>}
+        {terms.SupplierTaxCode && <Descriptions.Item label="Mã số thuế">{terms.SupplierTaxCode}</Descriptions.Item>}
+        {terms.DeliveryDateRequired && <Descriptions.Item label="Ngày giao dự kiến">{terms.DeliveryDateRequired}</Descriptions.Item>}
+        {terms.DeliveryAddress && <Descriptions.Item label="Địa chỉ giao hàng" span={2}>{terms.DeliveryAddress}</Descriptions.Item>}
+        {terms.Description && <Descriptions.Item label="Mô tả yêu cầu" span={2}>{terms.Description}</Descriptions.Item>}
+      </Descriptions>
+      {items.length > 0 && <Table
+        size="small"
+        pagination={false}
+        rowKey={(item, index) => `${item.ProductName || 'item'}-${index}`}
+        dataSource={items}
+        scroll={{ x: 560 }}
+        columns={[
+          {
+            title: 'Sản phẩm và yêu cầu',
+            dataIndex: 'ProductName',
+            render: (name, item) => <Space direction="vertical" size={2}>
+              <Text strong>{name || 'Sản phẩm'}</Text>
+              {item.Description && <Text type="secondary">{item.Description}</Text>}
+              {item.Specifications && <Text type="secondary">Quy cách: {item.Specifications}</Text>}
+              {item.PackagingRequirements && <Text type="secondary">Đóng gói: {item.PackagingRequirements}</Text>}
+              {item.Notes && <Text type="secondary">Ghi chú: {item.Notes}</Text>}
+            </Space>,
+          },
+          { title: 'Số lượng', render: (_, item) => `${item.Quantity ?? 0} ${item.Unit || ''}` },
+          { title: 'Đơn giá', dataIndex: 'UnitPrice', align: 'right', render: money },
+          { title: 'Thành tiền', dataIndex: 'Subtotal', align: 'right', render: money },
+        ]}
+      />}
+    </Space>
+  );
+}
+
 const statusMap = {
   Draft: ['default', 'Bản nháp'],
-  PendingSignature: ['processing', 'Chờ ký'],
-  Signed: ['processing', 'Đã ký'],
-  PendingDeposit: ['warning', 'Chờ cọc M1'],
+  PendingSignature: ['processing', 'Chờ supplier ký xác nhận'],
+  Signed: ['processing', 'Supplier đã xác nhận'],
+  PendingDeposit: ['warning', 'Chờ bạn xác nhận điều khoản & thanh toán cọc M1'],
   Active: ['success', 'Đang hiệu lực'],
   CompletedOnTime: ['success', 'Hoàn tất đúng hạn (+10đ)'],
   CompletedLate: ['orange', 'Hoàn tất trễ hạn (+3đ)'],
@@ -65,6 +121,14 @@ const milestoneStatusMap = {
   Failed: ['error', 'Từ chối / Cần sửa'],
 };
 
+const paymentStatusMap = {
+  Pending: ['gold', 'Chờ thanh toán'],
+  Processing: ['processing', 'Đang đối soát'],
+  Completed: ['green', 'Thành công'],
+  Failed: ['red', 'Thất bại'],
+  Refunded: ['purple', 'Đã hoàn tiền'],
+};
+
 export default function ContractsAndMilestone({ onNavigate }) {
   const [contracts, setContracts] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -72,13 +136,9 @@ export default function ContractsAndMilestone({ onNavigate }) {
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // OTP Modal
-  const [otpOpen, setOtpOpen] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
+  const [paymentReviewOpen, setPaymentReviewOpen] = useState(false);
+  const [paymentTermsConfirmed, setPaymentTermsConfirmed] = useState(false);
 
-  // Payment Modal
-  const [paymentOpen, setPaymentOpen] = useState(false);
-  const [vietQrData, setVietQrData] = useState(null);
 
   // Milestones Drawer
   const [milestonesDrawerOpen, setMilestonesDrawerOpen] = useState(false);
@@ -104,10 +164,10 @@ export default function ContractsAndMilestone({ onNavigate }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [contractData, paymentData] = await Promise.all([
-        contractService.listMine(),
-        paymentService.listMine(),
-      ]);
+      // Listing contracts may complete supplier acceptance for legacy accepted bids
+      // and create the M1 payment, so fetch payments after the contract list returns.
+      const contractData = await contractService.listMine();
+      const paymentData = await paymentService.listMine();
       setContracts(contractData || []);
       setPayments(paymentData || []);
     } catch (error) {
@@ -122,63 +182,57 @@ export default function ContractsAndMilestone({ onNavigate }) {
     return () => window.clearTimeout(timeout);
   }, [load]);
 
+  useEffect(() => {
+    const refreshContracts = (event) => {
+      if (!event || ['contract', 'payment'].includes(event.category) || /^(contract|payment)\./.test(event.type || '')) load();
+    };
+    signalRManager.on('MarketplaceChanged', refreshContracts);
+    signalRManager.on('ReceiveNotification', refreshContracts);
+    return () => {
+      signalRManager.off('MarketplaceChanged', refreshContracts);
+      signalRManager.off('ReceiveNotification', refreshContracts);
+    };
+  }, [load]);
+
   const paymentByContract = useMemo(
     () => new Map(payments.filter((payment) => payment.contractId).map((payment) => [payment.contractId, payment])),
     [payments]
   );
 
-  const requestOtp = async (contract) => {
+  const openPaymentReview = async (contract) => {
     setActionLoading(true);
     try {
-      await contractService.requestSignatureOtp(contract.id);
-      setSelected(contract);
-      setOtpCode('');
-      setOtpOpen(true);
-      message.success('Mã OTP ký hợp đồng đã được gửi đến email của bạn.');
+      const details = await contractService.get(contract.id);
+      setSelected({ ...contract, ...details });
+      setPaymentTermsConfirmed(false);
+      setPaymentReviewOpen(true);
     } catch (error) {
       message.error(errorMessage(error));
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const sign = async () => {
-    if (!otpCode.trim()) {
-      message.warning('Vui lòng nhập mã OTP.');
-      return;
-    }
-    setActionLoading(true);
-    try {
-      await contractService.sign(selected.id, otpCode.trim(), true);
-      message.success('Đã ghi nhận chữ ký điện tử.');
-      setOtpOpen(false);
-      await load();
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const openPayment = (contract) => {
-    if (!paymentByContract.get(contract.id)?.milestoneId) {
-      message.warning('Khoản cọc M1 đang được khởi tạo. Vui lòng tải lại sau ít phút.');
-      return;
-    }
-    setSelected(contract);
-    setPaymentOpen(true);
   };
 
   const payWithVnPay = async () => {
-    const payment = paymentByContract.get(selected.id);
-    if (!payment?.milestoneId) return;
+    if (!paymentTermsConfirmed) {
+      message.warning('Vui lòng xác nhận đã đọc điều khoản hợp đồng trước khi tiếp tục thanh toán.');
+      return;
+    }
+    const contract = selected;
+    const payment = paymentByContract.get(contract.id);
+    if (!payment?.milestoneId) {
+      message.warning('Chưa tìm thấy khoản cọc M1. Hãy tải lại danh sách hợp đồng để đồng bộ khoản thanh toán.');
+      return;
+    }
+    setSelected(contract);
     setActionLoading(true);
     try {
       const result = await paymentService.createVnPayUrl(
-        selected.id,
+        contract.id,
         payment.milestoneId,
         `${window.location.origin}/#/hop-dong-tien-do`
       );
+      setPaymentReviewOpen(false);
       window.location.assign(result.paymentUrl);
     } catch (error) {
       message.error(errorMessage(error));
@@ -338,13 +392,14 @@ export default function ContractsAndMilestone({ onNavigate }) {
       render: (value) => value || '—',
     },
     {
-      title: 'Ký điện tử',
+      title: 'Các bước xác nhận',
       render: (_, item) =>
-        item.signedByCustomerAt ? (
-          <Tag color="success" icon={<CheckCircleOutlined />}>Đã ký</Tag>
-        ) : (
-          <Tag color="processing">Chờ bạn ký</Tag>
-        ),
+        <Space direction="vertical" size={2}>
+          {item.signedBySupplierAt
+            ? <Tag color="success" icon={<CheckCircleOutlined />}>Supplier đã ký</Tag>
+            : <Tag color="processing">Đang chờ supplier ký</Tag>}
+          {item.status === 'PendingDeposit' && <Tag color="warning">Bạn cần xác nhận điều khoản và thanh toán M1</Tag>}
+        </Space>,
     },
     {
       title: 'Trạng thái',
@@ -379,27 +434,16 @@ export default function ContractsAndMilestone({ onNavigate }) {
             </Button>
           )}
 
-          {item.status === 'PendingSignature' && !item.signedByCustomerAt && (
-            <Button
-              type="primary"
-              size="small"
-              style={{ background: '#8c1524', borderColor: '#8c1524' }}
-              icon={<SafetyCertificateOutlined />}
-              loading={actionLoading}
-              onClick={() => requestOtp(item)}
-            >
-              Ký OTP
-            </Button>
-          )}
-
           {item.status === 'PendingDeposit' && (
             <Button
               type="primary"
               size="small"
               icon={<DollarOutlined />}
-              onClick={() => openPayment(item)}
+              loading={actionLoading}
+              disabled={!paymentByContract.get(item.id)?.milestoneId}
+              onClick={() => openPaymentReview(item)}
             >
-              Thanh toán M1
+              Xem hợp đồng & xác nhận thanh toán
             </Button>
           )}
 
@@ -440,8 +484,6 @@ export default function ContractsAndMilestone({ onNavigate }) {
     },
   ];
 
-  const currentPayment = selected ? paymentByContract.get(selected.id) : null;
-
   return (
     <div style={{ background: '#f5f5f7', minHeight: '100vh' }}>
       <CustomerHeader activeKey="hop-dong-tien-do" onNavigate={onNavigate} />
@@ -451,7 +493,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
             Hợp đồng & tiến độ thanh toán
           </Title>
           <Text type="secondary">
-            Ký số điện tử SHA-256, nộp cọc bảo chứng VNPay và đối soát biên bản nghiệm thu theo từng mốc.
+          Supplier xác nhận hợp đồng, customer xem lại điều khoản và thanh toán cọc VNPay trước khi bắt đầu sản xuất.
           </Text>
         </Space>
 
@@ -476,69 +518,83 @@ export default function ContractsAndMilestone({ onNavigate }) {
             scroll={{ x: 900 }}
           />
         </Card>
+
+        <Card
+          title="Lịch sử thanh toán"
+          bordered={false}
+          style={{ borderRadius: 10, marginTop: 16 }}
+        >
+          <Table
+            rowKey="id"
+            size="small"
+            pagination={{ pageSize: 8, showSizeChanger: false }}
+            dataSource={payments}
+            locale={{ emptyText: 'Chưa có giao dịch thanh toán nào.' }}
+            columns={[
+              { title: 'Mã giao dịch', dataIndex: 'paymentNumber', key: 'paymentNumber' },
+              {
+                title: 'Hợp đồng / đơn hàng',
+                key: 'reference',
+                render: (_, payment) => payment.contractId
+                  ? <span>Hợp đồng · {contracts.find((contract) => contract.id === payment.contractId)?.contractNumber || payment.contractId.slice(0, 8)}</span>
+                  : <span>{payment.orderId ? `Đơn hàng · ${payment.orderId.slice(0, 8)}` : '—'}</span>,
+              },
+              { title: 'Số tiền', dataIndex: 'amount', key: 'amount', align: 'right', render: money },
+              { title: 'Phương thức', dataIndex: 'method', key: 'method', render: (method) => method === 'VNPay' ? 'VNPay' : method },
+              {
+                title: 'Trạng thái', dataIndex: 'status', key: 'status',
+                render: (status) => <Tag color={paymentStatusMap[status]?.[0] || 'default'}>{paymentStatusMap[status]?.[1] || status}</Tag>,
+              },
+              {
+                title: 'Thời gian', key: 'time',
+                render: (_, payment) => {
+                  const value = payment.paidAt || payment.createdAt || payment.expiresAt;
+                  return value ? new Date(value).toLocaleString('vi-VN') : '—';
+                },
+              },
+            ]}
+          />
+        </Card>
       </main>
 
-      {/* Modal Ký OTP */}
       <Modal
-        title="Ký Hợp Đồng Bằng Mã OTP"
-        open={otpOpen}
-        onCancel={() => setOtpOpen(false)}
-        onOk={sign}
+        title={`Xem lại hợp đồng và thanh toán · ${selected?.contractNumber || ''}`}
+        open={paymentReviewOpen}
+        onCancel={() => setPaymentReviewOpen(false)}
+        onOk={payWithVnPay}
         confirmLoading={actionLoading}
-        okText="Xác nhận ký điện tử"
-        okButtonProps={{ style: { background: '#8c1524', borderColor: '#8c1524' } }}
-        cancelText="Hủy"
+        okText="Xác nhận điều khoản & tiếp tục thanh toán"
+        okButtonProps={{ disabled: !paymentTermsConfirmed, style: { background: '#8c1524', borderColor: '#8c1524' } }}
+        cancelText="Quay lại"
+        width={760}
       >
-        <Alert
-          type="info"
-          showIcon
-          message="Hệ thống đã gửi mã OTP xác thực ký số về email đăng ký của bạn."
-          style={{ marginBottom: 16 }}
-        />
-        <Input
-          value={otpCode}
-          onChange={(event) => setOtpCode(event.target.value)}
-          inputMode="numeric"
-          maxLength={12}
-          placeholder="Nhập 6 chữ số OTP"
-          style={{ fontSize: 20, textAlign: 'center', letterSpacing: 6, height: 48 }}
-        />
-        <div style={{ marginTop: 12, fontSize: 12, color: '#888' }}>
-          Việc ký số đồng nghĩa bạn đã đọc và đồng thuận với các điều khoản bảo mật, quy cách sản phẩm và cơ chế giải quyết tranh chấp.
-        </div>
+        {selected && <>
+          <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Supplier đã xác nhận hợp đồng. Vui lòng kiểm tra toàn bộ nội dung trước khi thanh toán khoản cọc M1." />
+          <Descriptions bordered size="small" column={2}>
+            <Descriptions.Item label="Mã hợp đồng">{selected.contractNumber}</Descriptions.Item>
+            <Descriptions.Item label="Tên hợp đồng">{selected.title || 'Hợp đồng RFQ'}</Descriptions.Item>
+            <Descriptions.Item label="Tổng giá trị">{money(selected.totalValue)}</Descriptions.Item>
+            <Descriptions.Item label="Hạn giao hàng">{selected.deliveryDeadline || '—'}</Descriptions.Item>
+            <Descriptions.Item label="Khoản thanh toán">Đặt cọc M1 · {paymentByContract.get(selected.id)?.amount ? money(paymentByContract.get(selected.id).amount) : '—'}</Descriptions.Item>
+            <Descriptions.Item label="Supplier xác nhận">{selected.signedBySupplierAt ? new Date(selected.signedBySupplierAt).toLocaleString('vi-VN') : 'Đã xác nhận'}</Descriptions.Item>
+            <Descriptions.Item label="Chi tiết thỏa thuận" span={2}><ContractTerms value={selected.termsAndConditions} /></Descriptions.Item>
+          </Descriptions>
+          {selected.milestones?.length > 0 && <div style={{ marginTop: 16 }}>
+            <Text strong>Lịch thanh toán, sản xuất và nghiệm thu</Text>
+            {selected.milestones.map((milestone) => <Card key={milestone.id} size="small" style={{ marginTop: 8 }}>
+              <Space direction="vertical" size={2}>
+                <Text strong>{milestone.sequenceNumber}. {milestone.name}</Text>
+                <Text>{money(milestone.amount)} · Hạn: {milestone.dueDate || 'Theo tiến độ hợp đồng'} · {milestone.description || ''}</Text>
+              </Space>
+            </Card>)}
+          </div>}
+          <Checkbox checked={paymentTermsConfirmed} onChange={(event) => setPaymentTermsConfirmed(event.target.checked)} style={{ marginTop: 18 }}>
+            Tôi đã đọc, hiểu và xác nhận các thông tin, điều khoản hợp đồng và khoản cọc M1 ở trên.
+          </Checkbox>
+        </>}
       </Modal>
 
       {/* Modal Thanh toán Ký quỹ M1 */}
-      <PaymentCheckoutModal
-        open={paymentOpen}
-        onClose={() => setPaymentOpen(false)}
-        title="Thanh toán tiền cọc M1"
-        contract={selected}
-        milestone={{
-          id: currentPayment?.milestoneId,
-          name: 'Đặt cọc M1 kích hoạt sản xuất',
-          amount: currentPayment?.amount || (selected?.totalValue ? selected.totalValue * 0.3 : 0),
-          paymentNumber: currentPayment?.paymentNumber,
-        }}
-        onSuccess={() => {
-          setPaymentOpen(false);
-          load();
-        }}
-        onOpenVietQr={(data) => {
-          setVietQrData(data);
-        }}
-      />
-
-      <VietQrModal
-        open={Boolean(vietQrData)}
-        onClose={() => setVietQrData(null)}
-        transferData={vietQrData}
-        onUploadSuccess={() => {
-          setVietQrData(null);
-          load();
-        }}
-      />
-
       {/* Drawer Xem Tiến Độ & Nghiệm Thu Milestones */}
       <Drawer
         title={`Tiến độ & Mốc nghiệm thu: ${selected?.contractNumber || ''}`}

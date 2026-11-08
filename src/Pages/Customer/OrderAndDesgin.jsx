@@ -462,7 +462,7 @@ export default function OrderAndDesgin({ onNavigate }) {
 
   const createTab = loadingProduct ? (
     <div className="py-24 text-center bg-white rounded-2xl border border-stone-200">
-      <Spin size="large" tip="Đang kết nối dữ liệu sản phẩm..." />
+      <Spin size="large" description="Đang kết nối dữ liệu sản phẩm..." />
     </div>
   ) : !product ? (
     <div className="bg-white rounded-2xl p-12 text-center border border-stone-200/80 shadow-xs max-w-2xl mx-auto">
