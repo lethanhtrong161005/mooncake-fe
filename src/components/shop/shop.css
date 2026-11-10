@@ -7,10 +7,34 @@
   width: 100%;
   overflow-wrap: anywhere;
 }
-.shop-root .shop-product-card { height: 100%; }
-.shop-heritage { border-top: 6px solid var(--shop-primary); }
-.shop-royal-gift { border: 2px solid var(--shop-primary); }
-.shop-minimal-grid { border-radius: 0; }
-.shop-artisan-story { border-left: 6px solid var(--shop-primary); }
-.shop-modern-catalog .shop-catalog-item { border-left: 3px solid var(--shop-primary); }
-.shop-live-preview { max-height: 760px; overflow: auto; border: 1px solid #e5ddd7; border-radius: 12px; }
+
+.shop-root .shop-product-card {
+  height: 100%;
+}
+
+.shop-heritage {
+  border-top: 6px solid var(--shop-primary);
+}
+
+.shop-royal-gift {
+  border: 2px solid var(--shop-primary);
+}
+
+.shop-minimal-grid {
+  border-radius: 0;
+}
+
+.shop-artisan-story {
+  border-left: 6px solid var(--shop-primary);
+}
+
+.shop-modern-catalog .shop-catalog-item {
+  border-left: 3px solid var(--shop-primary);
+}
+
+.shop-live-preview {
+  max-height: 760px;
+  overflow: auto;
+  border: 1px solid #e5ddd7;
+  border-radius: 12px;
+}

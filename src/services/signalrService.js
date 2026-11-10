@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import { API_BASE_URL } from '../constants/apiConfiguration';
+import storage from '../utils/storage';
 
 class SignalRManager {
   constructor() {
@@ -9,6 +11,10 @@ class SignalRManager {
   }
 
   async startConnection(token) {
+    const resolvedToken = token || storage.get('auth_token');
+    if (!resolvedToken) {
+      return null;
+    }
     if (this.connection?.state === signalR.HubConnectionState.Connected) {
       return this.connection;
     }
@@ -16,12 +22,14 @@ class SignalRManager {
 
     try {
       this.isConnecting = true;
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8089';
-      const hubUrl = `${baseURL}${API_ENDPOINTS.NOTIFICATIONS.HUB_URL}`;
+      const hubUrl = new URL(
+        `${API_BASE_URL.replace(/\/$/, '')}${API_ENDPOINTS.NOTIFICATIONS.HUB_URL}`,
+        window.location.origin,
+      ).href;
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
-          accessTokenFactory: () => token || localStorage.getItem('token') || '',
+          accessTokenFactory: () => token || storage.get('auth_token') || '',
           skipNegotiation: false,
           transport: signalR.HttpTransportType.WebSockets,
         })
@@ -66,7 +74,7 @@ class SignalRManager {
     if (this.connection) {
       try {
         await this.connection.stop();
-      } catch {}
+      } catch { /* An already closed connection needs no further cleanup. */ }
       this.connection = null;
     }
   }

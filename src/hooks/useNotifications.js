@@ -2,14 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { notificationService } from '../services/notificationService';
 import { signalRManager } from '../services/signalrService';
 import { playLuxuryChime } from '../utils/audioUtils';
+import { useAuth } from './useAuth';
+import storage from '../utils/storage';
 
 export const useNotifications = () => {
+  const { isLoggedIn } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  const canFetch = Boolean(isLoggedIn && storage.get('auth_token'));
+
   const fetchNotifications = useCallback(async () => {
+    if (!canFetch) {
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await notificationService.getNotifications({ category: selectedCategory });
@@ -22,13 +30,41 @@ export const useNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCategory]);
+  }, [canFetch, selectedCategory]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (!canFetch) return undefined;
+    let cancelled = false;
+    notificationService
+      .getNotifications({ category: selectedCategory })
+      .then((data) => {
+        if (!cancelled && data) {
+          setNotifications(data.items || []);
+          setUnreadCount(data.unreadCount ?? 0);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.warn('Failed to fetch notifications:', err);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canFetch, selectedCategory]);
 
   useEffect(() => {
+    if (!canFetch) {
+      signalRManager.stopConnection();
+      return undefined;
+    }
+
     const handleReceive = (newNotif) => {
       setNotifications((prev) => [newNotif, ...prev]);
       setUnreadCount((prev) => prev + 1);
@@ -66,9 +102,10 @@ export const useNotifications = () => {
       signalRManager.off('NotificationsMarkedAsRead', handleMarkedRead);
       signalRManager.off('AllNotificationsRead', handleAllRead);
     };
-  }, []);
+  }, [canFetch]);
 
   const markAsRead = async (id) => {
+    if (!canFetch) return;
     try {
       await notificationService.markAsRead(id);
       setNotifications((prev) =>
@@ -81,6 +118,7 @@ export const useNotifications = () => {
   };
 
   const markAllAsRead = async () => {
+    if (!canFetch) return;
     try {
       await notificationService.markAllAsRead(selectedCategory);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
@@ -91,9 +129,9 @@ export const useNotifications = () => {
   };
 
   return {
-    notifications,
-    unreadCount,
-    isLoading,
+    notifications: canFetch ? notifications : [],
+    unreadCount: canFetch ? unreadCount : 0,
+    isLoading: canFetch ? isLoading : false,
     selectedCategory,
     setSelectedCategory,
     markAsRead,
@@ -103,4 +141,3 @@ export const useNotifications = () => {
 };
 
 export default useNotifications;
-
