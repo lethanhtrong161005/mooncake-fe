@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Row,
@@ -13,26 +13,47 @@ import {
   message,
   Typography,
   Alert,
+  Select,
+  Spin,
+  Space,
 } from 'antd';
 import {
   UploadOutlined,
+  CheckCircleOutlined,
+  ShoppingOutlined,
+  StarOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import ReputationBadge from '../../components/reviews/ReputationBadge';
 import reviewService from '../../services/reviewService';
+import orderService from '../../services/orderService';
+import { useAuth } from '../../hooks/useAuth';
 
-const { Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 export default function PaymentAndRate({ onNavigate }) {
+  const { user } = useAuth();
   const [rateForm] = Form.useForm();
   const [hasSubmittedReview, setHasSubmittedReview] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [selectedOrderId, setSelectedOrderId] = useState(() => {
+    const hash = window.location.hash || '';
+    const qIdx = hash.indexOf('?');
+    if (qIdx !== -1) {
+      const params = new URLSearchParams(hash.substring(qIdx));
+      return params.get('orderId') || null;
+    }
+    return null;
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   // Reviews History
   const [reviews, setReviews] = useState([
     {
       key: '1',
-      contractNo: 'HD-2025-08500',
+      contractNo: 'HD-2026-08500',
       supplierName: 'Hữu Nghị Luxury Mooncake',
       variant: 'Set Hộp VIP Dạ Nguyệt 6 Bánh',
       qualityRating: 5,
@@ -41,14 +62,39 @@ export default function PaymentAndRate({ onNavigate }) {
       overallRating: 5,
       comment: 'Bánh rất ngon, vị ngọt thanh vừa phải, vỏ hộp sơn mài bóng bẩy sang trọng. Cán bộ nhân viên tập đoàn khen ngợi rất nhiều.',
       supplierResponse: 'Cảm ơn quý tập đoàn đã tin tưởng lựa chọn Hữu Nghị Luxury! Rất vinh hạnh được phục vụ mùa vụ tiếp theo.',
-      reviewedAt: '2025-08-11',
+      reviewedAt: '11/08/2026',
     },
   ]);
 
-  const handleSubmitReview = async (values) => {
+  // Load completed orders for review
+  const loadOrders = useCallback(async () => {
+    setLoadingOrders(true);
     try {
+      const res = await orderService.listMine({ page: 1, pageSize: 20 });
+      const items = res?.items || res?.data || (Array.isArray(res) ? res : []);
+      setOrders(items);
+      if (!selectedOrderId && items.length > 0) {
+        setSelectedOrderId(items[0].id);
+      }
+    } catch (err) {
+      console.warn('Could not load completed orders:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, [selectedOrderId]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const selectedOrder = orders.find((o) => o.id === selectedOrderId) || (orders.length > 0 ? orders[0] : null);
+
+  const handleSubmitReview = async (values) => {
+    setSubmitting(true);
+    try {
+      const activeId = selectedOrderId || selectedOrder?.id || 'ord-202610-001';
       const payload = {
-        orderId: 'ord-202610-001',
+        orderId: activeId,
         qualityRating: values.quality || 5,
         deliveryRating: values.delivery || 5,
         serviceRating: values.service || 5,
@@ -61,23 +107,25 @@ export default function PaymentAndRate({ onNavigate }) {
 
       const newRev = {
         key: `${Date.now()}`,
-        contractNo: 'HD-2025-08910',
-        supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân',
-        variant: 'Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)',
+        contractNo: selectedOrder?.orderCode || selectedOrder?.contractNumber || `ĐH-${activeId.slice(0, 8)}`,
+        supplierName: selectedOrder?.shopName || selectedOrder?.supplierName || 'Xưởng Bánh Nghệ Nhân',
+        variant: selectedOrder?.items?.[0]?.productName || 'Bánh Trung Thu Thượng Hạng',
         qualityRating: values.quality || 5,
         deliveryRating: values.delivery || 5,
         serviceRating: values.service || 5,
         overallRating: values.overall || 5,
-        comment: values.comment || 'Chất lượng xuất sắc, đóng gói cẩn thận, in logo sắc nét.',
+        comment: values.comment,
         supplierResponse: null,
         reviewedAt: 'Vừa xong',
       };
 
-      setReviews([newRev, ...reviews]);
+      setReviews((prev) => [newRev, ...prev]);
       setHasSubmittedReview(true);
-      message.success(`Đã gửi đánh giá thành công! Xưởng Bánh Tràng An được cộng ${result.reputationScoreDelta > 0 ? `+${result.reputationScoreDelta}` : result.reputationScoreDelta} điểm uy tín nhờ đánh giá 5 sao từ quý khách.`);
+      message.success(`Đã gửi đánh giá thành công! Xưởng bánh được cộng ${result?.reputationScoreDelta > 0 ? `+${result.reputationScoreDelta}` : 3} điểm uy tín.`);
     } catch (err) {
       message.error(err.message || 'Không thể gửi đánh giá.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -153,14 +201,31 @@ export default function PaymentAndRate({ onNavigate }) {
         <Row gutter={[20, 20]}>
           {/* Left: Review Form */}
           <Col xs={24} lg={11}>
-            <Card title="Gửi Đánh Giá Cho Đơn Hàng Hoàn Thành Gần Nhất" bordered={false} style={{ borderRadius: 10 }}>
+            <Card title="Gửi Đánh Giá Cho Đơn Hàng Hoàn Thành" bordered={false} style={{ borderRadius: 10 }}>
               <Alert
-                message="Đánh giá xác thực giao dịch (Module 8 - Feature #21, #22)"
-                description="Hệ thống áp dụng cơ chế đánh giá 4 tiêu chí sao độc lập. Đánh giá 5★ cộng +3đ, đánh giá 1-2★ trừ 2đ vào điểm uy tín của xưởng."
+                message="Đánh giá xác thực giao dịch (Verified Purchase)"
+                description="Hệ thống áp dụng cơ chế đánh giá 4 tiêu chí sao độc lập. Đánh giá 5★ cộng +3đ, đánh giá 1-2★ trừ 2đ vào điểm uy tín của xưởng bánh."
                 type="info"
                 showIcon
                 style={{ marginBottom: 16 }}
               />
+
+              {orders.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 6 }}>
+                    Chọn Đơn Hàng Cần Đánh Giá:
+                  </Text>
+                  <Select
+                    style={{ width: '100%' }}
+                    value={selectedOrderId || orders[0].id}
+                    onChange={setSelectedOrderId}
+                    options={orders.map((o) => ({
+                      value: o.id,
+                      label: `${o.orderCode || o.orderNumber || o.id.slice(0, 8)} - ${o.shopName || 'Xưởng bánh'} (${Number(o.totalAmount || 0).toLocaleString('vi-VN')} ₫)`,
+                    }))}
+                  />
+                </div>
+              )}
 
               <Form
                 form={rateForm}
@@ -168,7 +233,7 @@ export default function PaymentAndRate({ onNavigate }) {
                 initialValues={{
                   quality: 5,
                   delivery: 5,
-                  service: 4,
+                  service: 5,
                   overall: 5,
                   comment: 'Bánh nướng đậm vị truyền thống, vỏ bánh vàng óng không bị khô, logo doanh nghiệp dập nổi rất tinh xảo.',
                 }}
@@ -185,12 +250,18 @@ export default function PaymentAndRate({ onNavigate }) {
                 )}
 
                 <div style={{ background: '#fff9f9', padding: 14, borderRadius: 8, marginBottom: 16 }}>
-                  <Text strong style={{ color: '#8c1524' }}>Hợp đồng #HD-2025-08910</Text>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Xưởng Bánh Tràng An Nghệ Nhân</span>
+                  <Text strong style={{ color: '#8c1524' }}>
+                    Đơn hàng: {selectedOrder?.orderCode || selectedOrder?.id || '#HD-2026-08910'}
+                  </Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {selectedOrder?.shopName || selectedOrder?.supplierName || 'Xưởng Bánh Tràng An Nghệ Nhân'}
+                    </span>
                     <ReputationBadge score={88.5} />
                   </div>
-                  <Tag color="purple" style={{ marginTop: 4 }}>Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)</Tag>
+                  <Tag color="purple" style={{ marginTop: 6 }}>
+                    {selectedOrder?.items?.[0]?.productName || 'Bánh Nướng Thập Cẩm Bát Bửu (SKU-TC-200)'}
+                  </Tag>
                 </div>
 
                 <Form.Item name="quality" label="1. Chất Lượng Bánh & An Toàn Thực Phẩm" rules={[{ required: true }]}>
@@ -210,12 +281,12 @@ export default function PaymentAndRate({ onNavigate }) {
                 </Form.Item>
 
                 <Form.Item name="comment" label="Nhận Xét Chi Tiết Về Sản Phẩm & Bao Bì" rules={[{ required: true }]}>
-                  <TextArea rows={4} />
+                  <TextArea rows={4} maxLength={1000} showCount />
                 </Form.Item>
 
                 <Form.Item label="Đính Kèm Ảnh Sản Phẩm Thực Tế Tại Bàn Tiệc (Tùy chọn)">
                   <Upload maxCount={3}>
-                    <Button icon={<UploadOutlined />}>Tải Ảnh Chụp Món Bánh</Button>
+                    <Button icon={<UploadOutlined />}>Tải Ảnh Chụp Bánh / Vỏ Hộp</Button>
                   </Upload>
                 </Form.Item>
 
@@ -224,6 +295,7 @@ export default function PaymentAndRate({ onNavigate }) {
                   block
                   size="large"
                   htmlType="submit"
+                  loading={submitting}
                   style={{ background: '#8c1524', borderColor: '#8c1524', fontWeight: 600 }}
                 >
                   Gửi Đánh Giá Xác Thực (Verified Review)
