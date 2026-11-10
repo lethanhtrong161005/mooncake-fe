@@ -25,6 +25,7 @@ import {
   ShoppingOutlined,
   FileTextOutlined,
   CarOutlined,
+  GiftOutlined,
   TrophyOutlined,
   SafetyCertificateOutlined,
   AuditOutlined,
@@ -149,6 +150,11 @@ export default function ColonyAdminLayout({
       key: 'nha-cung-cap/quan-ly-giao-hang',
       icon: <CarOutlined />,
       label: 'Giao vận & Bằng chứng PoD',
+    },
+    {
+      key: 'nha-cung-cap/khuyen-mai',
+      icon: <GiftOutlined />,
+      label: 'Khuyến mãi & Voucher',
     },
     {
       key: 'nha-cung-cap/xac-minh',

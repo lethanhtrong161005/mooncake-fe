@@ -31,6 +31,7 @@ import OrderManage from './Pages/Supplier/OrderManage';
 import ContractManage from './Pages/Supplier/ContractManage';
 import DeliverManage from './Pages/Supplier/DeliverManage';
 import SuppilerProfile from './Pages/Supplier/SuppilerProfile';
+import PromotionManage from './Pages/Supplier/PromotionManage';
 
 // Admin Pages
 import DashBoard from './Pages/Admin/DashBoard';
@@ -193,6 +194,9 @@ export default function App() {
         return <ContractManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/quan-ly-giao-hang':
         return <DeliverManage onNavigate={navigateTo} />;
+      case 'nha-cung-cap/khuyen-mai':
+      case 'nha-cung-cap/quan-ly-khuyen-mai':
+        return <PromotionManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/ho-so':
         return hasSupplierWorkspace(user) ? <SuppilerProfile onNavigate={navigateTo} /> :
           <SupplierRegistration onNavigate={navigateTo} />;
@@ -295,7 +299,8 @@ export default function App() {
         { key: 'nha-cung-cap/quan-ly-don-hang', label: '4. Đơn hàng & Mockup bao bì' },
         { key: 'nha-cung-cap/quan-ly-hop-dong', label: '5. Hợp đồng & Milestone' },
         { key: 'nha-cung-cap/quan-ly-giao-hang', label: '6. Giao vận & Bằng chứng PoD' },
-        { key: 'nha-cung-cap/ho-so', label: '7. Hồ sơ & Điểm uy tín' },
+        { key: 'nha-cung-cap/khuyen-mai', label: '7. Khuyến mãi & Chiết khấu sỉ' },
+        { key: 'nha-cung-cap/ho-so', label: '8. Hồ sơ & Điểm uy tín' },
       ],
     },
     {
