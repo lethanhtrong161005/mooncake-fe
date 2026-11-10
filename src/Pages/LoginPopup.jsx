@@ -25,9 +25,11 @@ function LoginPopupContent({
   const [password, setPassword] = useState('');
   const { login } = useAuth();
   const [view, setView] = useState('login'); // 'login' | 'forgot'
-  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState(
     initialPhone ? 'Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.' : ''
@@ -103,27 +105,71 @@ function LoginPopupContent({
     }
   };
 
-  // Xử lý quên mật khẩu
-  const handleForgotSubmit = (e) => {
+  // Xử lý quên mật khẩu - gửi mã OTP qua Email
+  const handleForgotSubmit = async (e) => {
     e?.preventDefault?.();
     setErrorMsg('');
-    const cleanPhone = forgotPhone.trim().replace(/\s+/g, '');
-    if (!cleanPhone) {
-      setErrorMsg('Vui lòng nhập số điện thoại để nhận mã OTP');
+    setSuccessMsg('');
+    const cleanEmail = forgotEmail.trim();
+    if (!cleanEmail) {
+      setErrorMsg('Vui lòng nhập email đăng ký tài khoản.');
       return;
     }
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-    if (!phoneRegex.test(cleanPhone)) {
-      setErrorMsg('Số điện thoại không đúng định dạng');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg('Địa chỉ email không đúng định dạng.');
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await authService.forgotPassword(cleanEmail);
       setOtpSent(true);
-      setSuccessMsg(`Mã xác thực OTP đã được gửi tới SĐT ${forgotPhone}. Vui lòng kiểm tra tin nhắn.`);
-    }, 700);
+      setSuccessMsg(`Mã xác thực OTP đã được gửi tới email ${cleanEmail}. Vui lòng kiểm tra hộp thư.`);
+    } catch (error) {
+      setErrorMsg(error.message || 'Không thể gửi mã xác nhận. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Xử lý xác nhận OTP và đặt lại mật khẩu mới
+  const handleResetPasswordConfirm = async (e) => {
+    e?.preventDefault?.();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!otpCode.trim() || !/^[0-9]{6}$/.test(otpCode.trim())) {
+      setErrorMsg('Vui lòng nhập đúng 6 chữ số mã OTP.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMsg('Mật khẩu mới phải có tối thiểu 8 ký tự.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authService.resetPassword({
+        email: forgotEmail.trim(),
+        code: otpCode.trim(),
+        newPassword,
+      });
+      setSuccessMsg('Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.');
+      setView('login');
+      setOtpSent(false);
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      setErrorMsg(error.message || 'Không thể đặt lại mật khẩu. Mã OTP có thể đã hết hạn.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoToRegister = () => {
@@ -186,15 +232,17 @@ function LoginPopupContent({
           />
         ) : (
           <ForgotPasswordForm
-            forgotPhone={forgotPhone}
-            setForgotPhone={setForgotPhone}
+            forgotEmail={forgotEmail}
+            setForgotEmail={setForgotEmail}
             otpSent={otpSent}
             otpCode={otpCode}
             setOtpCode={setOtpCode}
+            newPassword={newPassword}
+            setNewPassword={setNewPassword}
+            confirmPassword={confirmPassword}
+            setConfirmPassword={setConfirmPassword}
             onSubmit={handleForgotSubmit}
-            onConfirmReset={() => {
-              setSuccessMsg('Đã xác thực OTP thành công! Vui lòng đặt mật khẩu mới.');
-            }}
+            onConfirmReset={handleResetPasswordConfirm}
             onBackToLogin={() => {
               setView('login');
               setErrorMsg('');
