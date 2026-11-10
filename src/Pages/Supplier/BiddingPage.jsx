@@ -12,6 +12,28 @@ import { signalRManager } from '../../services/signalrService';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
+const formatMoneyInput = (value) => value === undefined || value === null || value === '' ? '' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 });
+function MoneyInput({ value, onChange, ...props }) {
+  const update = (event) => {
+    const input = event.target;
+    const raw = input.value;
+    const digitsBeforeCursor = raw.slice(0, input.selectionStart ?? raw.length).replace(/\D/g, '').length;
+    const normalized = raw.replace(/,/g, '').replace(/[^\d.]/g, '');
+    const amount = normalized === '' ? null : Number(normalized);
+    if (normalized === '' || Number.isFinite(amount)) onChange?.(amount);
+    const formatted = formatMoneyInput(normalized);
+    requestAnimationFrame(() => {
+      let position = 0;
+      let digits = 0;
+      while (position < formatted.length && digits < digitsBeforeCursor) {
+        if (/\d/.test(formatted[position])) digits += 1;
+        position += 1;
+      }
+      input.setSelectionRange(position, position);
+    });
+  };
+  return <Input {...props} inputMode="decimal" value={formatMoneyInput(value)} onChange={update} />;
+}
 const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 const statusColor = { Open: 'processing', InNegotiation: 'warning', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
@@ -35,7 +57,11 @@ export default function BiddingPage({ onNavigate }) {
       if (notification?.type?.startsWith('bid.') || notification?.type?.startsWith('rfq.')) loadRfqs();
     };
     signalRManager.on('ReceiveNotification', refreshRfqs);
-    return () => signalRManager.off('ReceiveNotification', refreshRfqs);
+    signalRManager.on('MarketplaceChanged', refreshRfqs);
+    return () => {
+      signalRManager.off('ReceiveNotification', refreshRfqs);
+      signalRManager.off('MarketplaceChanged', refreshRfqs);
+    };
   }, [loadRfqs]);
 
   const openBid = async (rfq) => {
@@ -44,9 +70,10 @@ export default function BiddingPage({ onNavigate }) {
       const detail = await rfqService.get(rfq.id);
       setSelectedRfq(detail);
       const myBid = detail.myBid;
+      const remainingValidityDays = Math.max(1, Math.ceil((new Date(detail.bidDeadline).getTime() - Date.now()) / 86400000));
       form.setFieldsValue({
         estimatedDeliveryDays: myBid?.estimatedDeliveryDays ?? 7,
-        validityDays: myBid?.validityDays ?? 30,
+        validityDays: Math.min(myBid?.validityDays ?? 30, remainingValidityDays),
         notes: myBid?.notes ?? '',
         items: detail.items.map((item) => {
           const bidItem = myBid?.items.find((line) => line.rfqItemId === item.id);
@@ -150,8 +177,11 @@ export default function BiddingPage({ onNavigate }) {
     <Drawer title={`${selectedRfq?.myBid ? 'Sửa báo giá' : 'Nộp báo giá'} · ${selectedRfq?.rfqNumber || ''}`} width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)} footer={<Space><Button onClick={() => setDrawerOpen(false)}>Đóng</Button><Button type="primary" loading={submitting} onClick={() => form.submit()}>{selectedRfq?.myBid ? 'Cập nhật báo giá' : 'Gửi báo giá niêm phong'}</Button></Space>}>
       {selectedRfq && <><Descriptions bordered size="small" column={1} style={{ marginBottom: 18 }}><Descriptions.Item label="Gói thầu">{selectedRfq.title}</Descriptions.Item><Descriptions.Item label="Người tạo">{selectedRfq.customerName || 'Không rõ người tạo'}</Descriptions.Item><Descriptions.Item label="Thời gian tạo">{selectedRfq.createdAt ? new Date(selectedRfq.createdAt).toLocaleString('vi-VN') : 'Không có thời gian'}</Descriptions.Item><Descriptions.Item label="Hạn nộp">{new Date(selectedRfq.bidDeadline).toLocaleString('vi-VN')}</Descriptions.Item><Descriptions.Item label="Ngày giao">{selectedRfq.deliveryDateRequired}</Descriptions.Item></Descriptions>
         <Form form={form} layout="vertical" onFinish={submitBid}>
-          <Form.List name="items">{(fields) => <Space direction="vertical" style={{ width: '100%' }}>{fields.map((field, index) => { const item = selectedRfq.items[index]; return <Card key={field.key} size="small" title={`${item.productName} × ${item.quantity} ${item.unit}`}><Form.Item {...field} name={[field.name, 'rfqItemId']} hidden><Input /></Form.Item><Row gutter={12}><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'unitPrice']} label={helpLabel('Đơn giá', 'Giá cho một đơn vị sản phẩm (ví dụ: một hộp), tính bằng đồng. Tổng dòng hàng được tính bằng đơn giá nhân số lượng.')} rules={[{ required: true, message: 'Nhập đơn giá.' }]}><InputNumber min={0.01} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'notes']} label={helpLabel('Ghi chú dòng hàng', 'Thông tin riêng cho mặt hàng này như quy cách, bao bì, thương hiệu hoặc điều kiện giá.')}><Input /></Form.Item></Col></Row></Card>; })}</Space>}</Form.List>
-          <Row gutter={12} style={{ marginTop: 16 }}><Col span={12}><Form.Item name="estimatedDeliveryDays" label={helpLabel('Số ngày giao hàng', 'Số ngày dự kiến để chuẩn bị và giao đủ hàng theo yêu cầu của RFQ.')} rules={[{ required: true }]}><InputNumber min={1} max={365} style={{ width: '100%' }} /></Form.Item></Col><Col span={12}><Form.Item name="validityDays" label={helpLabel('Hiệu lực báo giá', 'Số ngày bạn cam kết giữ nguyên báo giá này kể từ ngày gửi.')} rules={[{ required: true }]}><InputNumber min={1} max={365} style={{ width: '100%' }} /></Form.Item></Col></Row>
+        <Form.List name="items">{(fields) => <Space direction="vertical" style={{ width: '100%' }}>{fields.map((field, index) => { const item = selectedRfq.items[index]; return <Card key={field.key} size="small" title={`${item.productName} × ${item.quantity} ${item.unit}`}><Form.Item {...field} name={[field.name, 'rfqItemId']} hidden><Input /></Form.Item><Row gutter={12}><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'unitPrice']} label={helpLabel('Đơn giá', 'Giá cho một đơn vị sản phẩm (ví dụ: một hộp), tính bằng đồng. Tổng dòng hàng được tính bằng đơn giá nhân số lượng.')} rules={[{ required: true, message: 'Nhập đơn giá.' }]}><MoneyInput min={0.01} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={12}><Form.Item {...field} name={[field.name, 'notes']} label={helpLabel('Ghi chú dòng hàng', 'Thông tin riêng cho mặt hàng này như quy cách, bao bì, thương hiệu hoặc điều kiện giá.')}><Input /></Form.Item></Col></Row></Card>; })}</Space>}</Form.List>
+          <Row gutter={12} style={{ marginTop: 16 }}><Col span={12}><Form.Item name="estimatedDeliveryDays" label={helpLabel('Số ngày giao hàng', 'Số ngày dự kiến để chuẩn bị và giao đủ hàng theo yêu cầu của RFQ.')} rules={[{ required: true }]}><InputNumber min={1} max={365} style={{ width: '100%' }} /></Form.Item></Col><Col span={12}><Form.Item name="validityDays" label={helpLabel('Hiệu lực báo giá', 'Báo giá có hiệu lực từ lúc gửi đến khi hết hạn nhận thầu.')} rules={[{ required: true }, { validator: (_, value) => {
+            const remaining = Math.ceil((new Date(selectedRfq.bidDeadline).getTime() - Date.now()) / 86400000);
+            return value <= Math.max(1, remaining) ? Promise.resolve() : Promise.reject(new Error('Hiệu lực không được vượt quá thời gian còn lại đến hạn nhận thầu.'));
+          } }]}><InputNumber min={1} max={Math.max(1, Math.ceil((new Date(selectedRfq.bidDeadline).getTime() - Date.now()) / 86400000))} style={{ width: '100%' }} /></Form.Item></Col></Row>
           <Form.Item name="notes" label={helpLabel('Cam kết / ưu đãi', 'Ghi điều kiện chung cho báo giá như phí vận chuyển, phương thức thanh toán, chiết khấu hoặc cam kết chất lượng.')}><TextArea rows={4} maxLength={4000} showCount /></Form.Item>
           <Card size="small"><Title level={5}>Tổng báo giá dự kiến: {money(total)}</Title></Card>
         </Form></>}

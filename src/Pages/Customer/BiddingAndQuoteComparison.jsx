@@ -17,32 +17,32 @@ const formatBudgetInput = (value) => {
   if (value === undefined || value === null || value === '') return '';
   const amount = Number(value);
   if (!Number.isFinite(amount)) return value;
-  if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toLocaleString('en-US', { maximumFractionDigits: 2 })} triệu`;
-  }
   return amount.toLocaleString('en-US', { maximumFractionDigits: 2 });
 };
 function BudgetInput({ value, onChange, ...props }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const displayValue = editing ? draft : formatBudgetInput(value);
-
-  const beginEditing = () => {
-    setDraft(value === undefined || value === null || value === ''
-      ? ''
-      : Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 }));
-    setEditing(true);
-  };
-
   const updateValue = (event) => {
     const next = event.target.value;
-    setDraft(next);
-    const normalized = next.replace(/,/g, '').trim();
-    onChange(normalized === '' ? null : Number.isFinite(Number(normalized)) ? Number(normalized) : value);
+    const input = event.target;
+    const cursor = input.selectionStart ?? next.length;
+    const digitsBeforeCursor = next.slice(0, cursor).replace(/\D/g, '').length;
+    const normalized = next.replace(/,/g, '').replace(/[^\d.]/g, '').trim();
+    const amount = normalized === '' ? null : Number(normalized);
+    if (normalized === '' || Number.isFinite(amount)) onChange(amount);
+
+    const formatted = normalized ? formatBudgetInput(normalized) : '';
+    requestAnimationFrame(() => {
+      const element = input;
+      let nextCursor = 0;
+      let digits = 0;
+      while (nextCursor < formatted.length && digits < digitsBeforeCursor) {
+        if (/\d/.test(formatted[nextCursor])) digits += 1;
+        nextCursor += 1;
+      }
+      element.setSelectionRange(nextCursor, nextCursor);
+    });
   };
 
-  return <Input {...props} inputMode="decimal" value={displayValue} onFocus={beginEditing}
-    onChange={updateValue} onBlur={() => setEditing(false)} />;
+  return <Input {...props} inputMode="decimal" value={formatBudgetInput(value)} onChange={updateValue} />;
 }
 
 const { Title, Text } = Typography;
@@ -224,10 +224,21 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
       <Form form={form} layout="vertical" onFinish={createRfq} initialValues={{ items: [{ unit: 'Hộp', quantity: 100 }] }}>
         <Row gutter={16}><Col xs={24} md={12}><Form.Item name="title" label="Tiêu đề" rules={[{ required: true, min: 5 }]}><Input /></Form.Item></Col><Col xs={24} md={12}><Form.Item name="deliveryAddress" label="Địa chỉ giao" rules={[{ required: true, min: 10 }]}><Input /></Form.Item></Col></Row>
         <Form.Item name="description" label="Mô tả"><TextArea rows={2} maxLength={5000} showCount /></Form.Item>
-        <Row gutter={16}><Col xs={24} md={8}><Form.Item name="deliveryDateRequired" label="Ngày giao" rules={[{ required: true }]}><DatePicker disabledDate={(date) => date && date.isBefore(minDeliveryDate(), 'day')} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={8}><Form.Item name="bidDeadline" label="Hạn nhận báo giá" rules={[{ required: true }, { validator: (_, value) => !value || !value.isBefore(minBidDeadline()) ? Promise.resolve() : Promise.reject(new Error("Hạn nhận báo giá phải cách hiện tại ít nhất 24 giờ.")) }]}><DatePicker showTime disabledDate={(date) => date && date.isBefore(minBidDeadline(), 'day')} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
+        <Row gutter={16}><Col xs={24} md={8}><Form.Item name="deliveryDateRequired" label="Ngày giao" rules={[{ required: true }]}><DatePicker disabledDate={(date) => date && date.isBefore(minDeliveryDate(), 'day')} style={{ width: '100%' }} /></Form.Item></Col><Col xs={24} md={8}><Form.Item name="bidDeadline" label="Hạn nhận báo giá" dependencies={['deliveryDateRequired']} rules={[{ required: true }, { validator: (_, value) => {
+          if (!value) return Promise.resolve();
+          if (value.isBefore(minBidDeadline())) return Promise.reject(new Error('Hạn nhận báo giá phải cách hiện tại ít nhất 24 giờ.'));
+          const deliveryDate = form.getFieldValue('deliveryDateRequired');
+          return !deliveryDate || !value.isAfter(deliveryDate.endOf('day'))
+            ? Promise.resolve()
+            : Promise.reject(new Error('Hạn nhận báo giá không được sau ngày giao hàng.'));
+        } }]}><DatePicker showTime disabledDate={(date) => {
+          if (!date) return false;
+          const deliveryDate = form.getFieldValue('deliveryDateRequired');
+          return date.isBefore(minBidDeadline(), 'day') || (deliveryDate && date.isAfter(deliveryDate, 'day'));
+        }} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
         <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 16 }}>Ngân sách nhập bằng đồng (VND), không phải nghìn hay triệu. Ví dụ: 1.000.000 = một triệu đồng.</Text>
         <Form.List name="items">{(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }}>
-          {fields.map((field) => <Card key={field.key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label="Quy cách"><Input /></Form.Item></Card>)}
+          {fields.map((field) => <Card key={field.key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label="Quy cách"><Input /></Form.Item></Card>)}
           <Button onClick={() => add({ unit: 'Hộp', quantity: 1 })}>Thêm mặt hàng</Button>
         </Space>}</Form.List>
         <Space style={{ marginTop: 18 }}><Button onClick={() => setCreateOpen(false)}>Hủy</Button><Button type="primary" htmlType="submit" loading={actionLoading}>Phát hành RFQ</Button></Space>

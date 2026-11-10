@@ -230,7 +230,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
       const result = await paymentService.createVnPayUrl(
         contract.id,
         payment.milestoneId,
-        `${window.location.origin}/#/hop-dong-tien-do`
+        `${window.location.origin}/#/thanh-toan/ket-qua`
       );
       setPaymentReviewOpen(false);
       window.location.assign(result.paymentUrl);
