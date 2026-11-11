@@ -10,7 +10,6 @@ import {
   Select,
   Slider,
   Space,
-  Tag,
   Typography,
 } from 'antd';
 import {
@@ -20,19 +19,15 @@ import {
   SafetyCertificateOutlined,
   TagsOutlined,
 } from '@ant-design/icons';
-import {
-  MOQ_OPTIONS,
-  PRICE_STEP,
-  REPUTATION_OPTIONS,
-} from '../../constants/productSearch';
+import { MOQ_OPTIONS, PRICE_STEP, REPUTATION_OPTIONS } from '../../constants/productSearch';
 import { formatNumber } from '../../utils/formatCurrency';
 
 const { Text } = Typography;
 
 const PRICE_PRESETS = [
-  { label: 'Dưới 500K', min: null, max: 500000 },
-  { label: '500K – 1 Triệu', min: 500000, max: 1000000 },
-  { label: 'Trên 1 Triệu', min: 1000000, max: null },
+  { label: 'Dưới 500k', min: null, max: 500000 },
+  { label: '500k–1tr', min: 500000, max: 1000000 },
+  { label: 'Trên 1tr', min: 1000000, max: null },
 ];
 
 export default function SearchFilterPanel({
@@ -61,10 +56,8 @@ export default function SearchFilterPanel({
     max: searchState.maxPrice,
   });
 
-  const minDraft =
-    priceDraft.key === committedKey ? priceDraft.min : searchState.minPrice;
-  const maxDraft =
-    priceDraft.key === committedKey ? priceDraft.max : searchState.maxPrice;
+  const minDraft = priceDraft.key === committedKey ? priceDraft.min : searchState.minPrice;
+  const maxDraft = priceDraft.key === committedKey ? priceDraft.max : searchState.maxPrice;
 
   const updateMinDraft = (val) => {
     setPriceDraft({
@@ -108,7 +101,7 @@ export default function SearchFilterPanel({
   };
 
   const filterContent = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="search-filter-content" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
         <div
           style={{
@@ -188,28 +181,22 @@ export default function SearchFilterPanel({
           )}
         </div>
 
-        <Space size={[6, 6]} wrap style={{ marginBottom: 10 }}>
+        <div className="search-filter-presets">
           {PRICE_PRESETS.map((preset) => {
             const isSelected =
-              searchState.minPrice === preset.min &&
-              searchState.maxPrice === preset.max;
+              searchState.minPrice === preset.min && searchState.maxPrice === preset.max;
             return (
-              <Tag
+              <Button
                 key={preset.label}
-                color={isSelected ? '#8c1524' : 'default'}
-                style={{
-                  cursor: 'pointer',
-                  borderRadius: 6,
-                  margin: 0,
-                  borderColor: isSelected ? '#8c1524' : '#e6d8d0',
-                }}
+                size="small"
+                className={`search-filter-preset${isSelected ? ' is-selected' : ''}`}
                 onClick={() => onPriceChange(preset.min, preset.max)}
               >
                 {preset.label}
-              </Tag>
+              </Button>
             );
           })}
-        </Space>
+        </div>
 
         <Slider
           range
@@ -240,9 +227,7 @@ export default function SearchFilterPanel({
             onChange={updateMinDraft}
             onPressEnter={handleApplyPriceInputs}
             placeholder="Từ (đ)"
-            formatter={(val) =>
-              val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
-            }
+            formatter={(val) => (val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
             parser={(val) => (val ? Number(val.replace(/\./g, '')) : null)}
             style={{ width: '100%' }}
             aria-label="Giá tối thiểu"
@@ -257,9 +242,7 @@ export default function SearchFilterPanel({
             onChange={updateMaxDraft}
             onPressEnter={handleApplyPriceInputs}
             placeholder="Đến (đ)"
-            formatter={(val) =>
-              val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
-            }
+            formatter={(val) => (val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
             parser={(val) => (val ? Number(val.replace(/\./g, '')) : null)}
             style={{ width: '100%' }}
             aria-label="Giá tối đa"
@@ -369,9 +352,7 @@ export default function SearchFilterPanel({
           >
             <span style={{ fontSize: 13 }}>
               Có bao bì tuỳ chỉnh
-              {facets?.customPackagingCount != null
-                ? ` (${facets.customPackagingCount})`
-                : ''}
+              {facets?.customPackagingCount != null ? ` (${facets.customPackagingCount})` : ''}
             </span>
           </Checkbox>
           <Checkbox
@@ -411,7 +392,7 @@ export default function SearchFilterPanel({
         title={
           <Space>
             <FilterOutlined style={{ color: '#8c1524' }} />
-            <span>Bộ lọc tìm kiếm B2B</span>
+            <span>Bộ lọc sản phẩm</span>
             {activeFilterCount > 0 && (
               <Badge count={activeFilterCount} style={{ backgroundColor: '#8c1524' }} />
             )}
@@ -444,10 +425,11 @@ export default function SearchFilterPanel({
 
   return (
     <Card
+      className="search-filter-panel"
       title={
         <Space size={8}>
           <FilterOutlined style={{ color: '#8c1524' }} />
-          <span style={{ fontWeight: 700, color: '#262626' }}>Bộ lọc chuyên sâu</span>
+          <span style={{ fontWeight: 700, color: '#262626' }}>Lọc sản phẩm</span>
           {activeFilterCount > 0 && (
             <Badge count={activeFilterCount} style={{ backgroundColor: '#8c1524' }} />
           )}
@@ -466,23 +448,6 @@ export default function SearchFilterPanel({
         ) : null
       }
       size="small"
-      style={{
-        borderRadius: 12,
-        borderColor: '#ebdcd5',
-        boxShadow: '0 2px 10px rgba(140, 21, 36, 0.04)',
-        position: 'sticky',
-        top: 84,
-      }}
-      styles={{
-        header: {
-          background: '#fdf8f5',
-          borderBottom: '1px solid #ebdcd5',
-          padding: '12px 16px',
-        },
-        body: {
-          padding: '16px',
-        },
-      }}
     >
       {filterContent}
     </Card>

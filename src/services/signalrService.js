@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { API_BASE_URL } from '../constants/apiConfiguration';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
+import storage from '../utils/storage';
 import { getValidAccessToken } from './apiClient';
 
 class SignalRManager {

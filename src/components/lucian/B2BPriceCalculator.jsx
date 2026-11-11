@@ -1,17 +1,18 @@
 // Lucian UX/UI Prompt #278 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#278
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRightOutlined } from '@ant-design/icons';
 import './B2BPriceCalculator.css';
 
 const TIERS = [
   { name: 'Đơn Khởi Điểm', discount: 10, min: 20, unitPrice: 450000, label: 'Bậc 20 - 49 hộp' },
   { name: 'Doanh Nghiệp Vừa', discount: 20, min: 50, unitPrice: 400000, label: 'Bậc 50 - 199 hộp' },
-  { name: 'Tập Đoàn VIP', discount: 35, min: 200, unitPrice: 325000, label: 'Bậc 200+ hộp' }
+  { name: 'Tập Đoàn VIP', discount: 35, min: 200, unitPrice: 325000, label: 'Bậc 200+ hộp' },
 ];
 
 const FEATURES = [
   'Hóa đơn VAT hợp lệ & Hợp đồng e-Contract',
   'Miễn phí khắc laser / ép kim logo lên nắp hộp',
-  'Giao xe lạnh chuyên dụng PoD đa điểm chi nhánh'
+  'Giao xe lạnh chuyên dụng PoD đa điểm chi nhánh',
 ];
 
 export default function B2BPriceCalculator({ onNavigate }) {
@@ -23,27 +24,20 @@ export default function B2BPriceCalculator({ onNavigate }) {
   const planTagRef = useRef(null);
   const [boxes, setBoxes] = useState(80);
   const [isEarlyBird, setIsEarlyBird] = useState(false);
-  const [activePlanIdx, setActivePlanIdx] = useState(1);
-  const [displayTotal, setDisplayTotal] = useState('');
-  const [displaySaved, setDisplaySaved] = useState('');
 
   const MIN = 20;
   const MAX = 400;
 
   // Calculate pricing
   const currentTier = boxes >= 200 ? 2 : boxes >= 50 ? 1 : 0;
-  const basePricePerBox = TIERS[currentTier].unitPrice;
-  const earlyBirdExtra = isEarlyBird ? 0.05 : 0; // extra 5% off
   const effectiveDiscount = TIERS[currentTier].discount + (isEarlyBird ? 5 : 0);
   const effectiveUnitPrice = Math.round(500000 * (1 - effectiveDiscount / 100));
   const totalPrice = effectiveUnitPrice * boxes;
   const savedAmount = (500000 - effectiveUnitPrice) * boxes;
+  const displayTotal = `${totalPrice.toLocaleString('vi-VN')} ₫`;
+  const displaySaved = `${savedAmount.toLocaleString('vi-VN')} ₫`;
 
   useEffect(() => {
-    setActivePlanIdx(currentTier);
-    setDisplayTotal(totalPrice.toLocaleString('vi-VN') + ' ₫');
-    setDisplaySaved(savedAmount.toLocaleString('vi-VN') + ' ₫');
-
     const pct = ((boxes - MIN) / (MAX - MIN)) * 100;
     if (fillRef.current) fillRef.current.style.width = `${pct}%`;
     if (thumbRef.current) thumbRef.current.style.left = `${pct}%`;
@@ -51,7 +45,7 @@ export default function B2BPriceCalculator({ onNavigate }) {
       bubbleRef.current.style.left = `${pct}%`;
       bubbleRef.current.textContent = `${boxes} hộp`;
     }
-  }, [boxes, isEarlyBird, currentTier, totalPrice, savedAmount]);
+  }, [boxes]);
 
   const updateFromPointer = (clientX) => {
     if (!trackRef.current) return;
@@ -67,7 +61,9 @@ export default function B2BPriceCalculator({ onNavigate }) {
     trackRef.current?.classList.add('is-drag');
     try {
       trackRef.current?.setPointerCapture(e.pointerId);
-    } catch {}
+    } catch {
+      // Ignore pointer capture errors
+    }
     updateFromPointer(e.clientX);
   };
 
@@ -219,7 +215,7 @@ export default function B2BPriceCalculator({ onNavigate }) {
             className="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-container transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
           >
             <span>Nhận Báo Giá Số Lượng Này</span>
-            <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+            <ArrowRightOutlined style={{ fontSize: 13 }} />
           </button>
         </div>
       </div>

@@ -2,13 +2,28 @@ import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 const unwrap = (response) => response?.data?.data ?? response?.data ?? response;
+const toListPage = (response, params = {}) => {
+  const result = unwrap(response);
+  if (!Array.isArray(result)) return result;
+
+  const query = String(params.q || '').trim().toLocaleLowerCase();
+  const filtered = result.filter((delivery) => {
+    const searchable = `${delivery.deliveryNumber || ''} ${delivery.deliveryCode || ''} ${delivery.contractNumber || ''} ${delivery.trackingCode || ''}`;
+    return (!query || searchable.toLocaleLowerCase().includes(query)) &&
+      (!params.status || delivery.status === params.status);
+  });
+  const page = Math.max(1, Number(params.page) || 1);
+  const pageSize = Math.max(1, Number(params.pageSize) || 10);
+  const start = (page - 1) * pageSize;
+  return { items: filtered.slice(start, start + pageSize), totalCount: filtered.length };
+};
 
 export const deliveryService = {
   async listMine() {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.LIST));
   },
   async listMinePaged(params = {}, signal) {
-    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.LIST, { params, signal }));
+    return toListPage(await apiClient.get(API_ENDPOINTS.DELIVERIES.LIST, { params, signal }), params);
   },
 
   async get(id) {

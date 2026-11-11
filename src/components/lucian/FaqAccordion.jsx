@@ -1,5 +1,5 @@
 // Lucian UX/UI Prompt #044 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#044
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './FaqAccordion.css';
 
 const FAQ_ITEMS = [
@@ -43,7 +43,7 @@ export default function FaqAccordion({ onNavigate }) {
   };
 
   const handleKeyDown = (e, idx) => {
-    let nextIdx = idx;
+    let nextIdx;
     if (e.key === 'ArrowDown') nextIdx = (idx + 1) % FAQ_ITEMS.length;
     else if (e.key === 'ArrowUp') nextIdx = (idx - 1 + FAQ_ITEMS.length) % FAQ_ITEMS.length;
     else if (e.key === 'Home') nextIdx = 0;
