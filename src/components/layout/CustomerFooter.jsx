@@ -259,7 +259,7 @@ export default function CustomerFooter({ onNavigate }) {
               <li>
                 <span
                   style={{ color: '#666', cursor: 'pointer' }}
-                  onClick={() => onNavigate?.('nha-cung-cap/dau-thau-rfq')}
+                  onClick={() => onNavigate?.('nha-cung-cap/dau-thau')}
                 >
                   Xem danh sách gói thầu báo giá
                 </span>
@@ -291,9 +291,9 @@ export default function CustomerFooter({ onNavigate }) {
           }}
         >
           <div>
-            © 2025 Sàn Giao Dịch Bánh Trung Thu Nguyệt Phố. Tất cả các quyền được bảo lưu.
+            © {new Date().getFullYear()} Sàn Giao Dịch Bánh Trung Thu Nguyệt Phố. Tất cả các quyền được bảo lưu.
           </div>
-          <Space split={<span style={{ color: '#ddd' }}>•</span>} size="small">
+          <Space separator={<span style={{ color: '#ddd' }}>•</span>} size="small">
             <span>Điều khoản dịch vụ</span>
             <span>Chính sách bảo mật</span>
             <span>Quy chế hoạt động sàn</span>

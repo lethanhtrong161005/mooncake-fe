@@ -261,7 +261,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
     }));
     await page.route('**/api/v1/notifications', (route) => route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0 } } }));
 
-    await page.route('**/api/v1/deliveries', (route) => route.fulfill({
+    await page.route('**/api/v1/deliveries?*', (route) => route.fulfill({
       status: 200,
       json: { status: 200, data: [mockDeliveryDelivered] },
     }));
@@ -272,16 +272,16 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
     }));
 
     await page.goto('/#giao-hang-pod');
-    await expect(page.getByRole('heading', { name: /Theo Dõi Giao Nhận & Xác Minh Bằng Chứng PoD/i })).toBeVisible();
-    await expect(page.getByText('DEL-202610-001')).toBeVisible();
-    await expect(page.getByText('Đã bàn giao (PoD)')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Từng chuyến giao, rõ từng lần bàn giao/i })).toBeVisible();
+    await expect(page.getByRole('table').getByText('DEL-202610-001')).toBeVisible();
+    await expect(page.getByRole('table').getByText('Đã bàn giao (PoD)')).toBeVisible();
 
     // Click "Xem PoD"
     await page.getByRole('button', { name: 'Xem PoD' }).first().click();
 
     // Verify PoDViewerModal contents
-    await expect(page.getByRole('dialog').getByText('Bằng Chứng Giao Nhận Điện Tử (PoD)')).toBeVisible();
-    await expect(page.getByRole('dialog').getByText('Toàn vẹn SHA-256')).toBeVisible();
+    await expect(page.getByRole('dialog').getByText(/Bằng chứng giao nhận/i)).toBeVisible();
+    await expect(page.getByRole('dialog').getByText('Đã xác minh')).toBeVisible();
     await expect(page.getByRole('dialog').getByText('Bàn giao thành công')).toBeVisible();
     await expect(page.getByRole('dialog').getByText('Bác Nguyễn Văn Hùng (Thủ kho)').first()).toBeVisible();
     await expect(page.getByRole('dialog').getByText('21.0168, 105.7838 (Xem Maps)')).toBeVisible();

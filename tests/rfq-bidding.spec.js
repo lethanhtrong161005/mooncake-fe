@@ -144,7 +144,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     await page.route('**/api/v1/auth/me', (route) => route.fulfill({ json: { status: 200, data: { id: customerId, role: 'Customer' } } }));
     await page.route('**/api/v1/notifications', (route) => route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0, totalCount: 0 } } }));
 
-    await page.route('**/api/v1/rfqs/mine', async (route) => {
+    await page.route('**/api/v1/rfqs/mine*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -181,14 +181,14 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     });
 
     await page.goto('/#so-sanh-bao-gia');
-    await expect(page.getByRole('heading', { name: 'Yêu cầu báo giá & đấu thầu' })).toBeVisible();
-    await expect(page.getByText('RFQ-2026-TEST01')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chọn đúng xưởng cho mùa quà của bạn.' })).toBeVisible();
+    await expect(page.getByRole('table').getByText('RFQ-2026-TEST01')).toBeVisible();
 
     await page.getByRole('button', { name: 'Tạo RFQ' }).click();
     await expect(page.getByText('Tạo yêu cầu báo giá')).toBeVisible();
 
     // Fill form
-    await page.getByLabel('Tiêu đề').fill('Gói Bánh Trung Thu Tri Ân Đối Tác VIP');
+    await page.getByRole('dialog').getByLabel('Tiêu đề', { exact: true }).fill('Gói Bánh Trung Thu Tri Ân Đối Tác VIP');
     await page.getByLabel('Địa chỉ giao').fill('Toà nhà Saigon Centre, 65 Lê Lợi, Q1, TP. HCM');
 
     // Required delivery date
@@ -290,7 +290,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     await page.route('**/api/v1/auth/me', (route) => route.fulfill({ json: { status: 200, data: { id: customerId, role: 'Customer' } } }));
     await page.route('**/api/v1/notifications', (route) => route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0, totalCount: 0 } } }));
 
-    await page.route('**/api/v1/rfqs/mine', async (route) => {
+    await page.route('**/api/v1/rfqs/mine*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -305,6 +305,11 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
         body: JSON.stringify({ success: true, data: bidsFixture }),
       });
     });
+
+    await page.route(`**/api/v1/rfqs/${rfqFixture.id}/suggested-suppliers`, (route) => route.fulfill({
+      status: 200,
+      json: { success: true, data: [] },
+    }));
 
     await page.route(`**/api/v1/rfqs/${rfqFixture.id}/bids/*/accept`, async (route) => {
       acceptedBidId = route.request().url().split('/').slice(-2, -1)[0];
@@ -332,22 +337,22 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     });
 
     await page.goto('/#so-sanh-bao-gia');
-    await expect(page.getByText(rfqFixture.rfqNumber)).toBeVisible();
+    await expect(page.getByRole('table').getByText(rfqFixture.rfqNumber)).toBeVisible();
 
     // Click "So sánh"
     await page.getByRole('button', { name: /So sánh/i }).click();
     await expect(page.getByText(`So sánh báo giá · ${rfqFixture.rfqNumber}`)).toBeVisible();
 
     // Check that best price is highlighted
-    await expect(page.getByText(/Tốt nhất/i)).toBeVisible();
+    await expect(page.getByRole('table').getByText(/Giá thấp nhất/i)).toBeVisible();
     await expect(page.getByRole('cell', { name: 'BID-2026-001' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'BID-2026-002' })).toBeVisible();
 
-    // Click "Chấp thuận" on best bid
-    const acceptButtons = page.getByRole('button', { name: 'Chấp thuận' });
-    await acceptButtons.first().click();
+    // Choose the lowest-priced bid and confirm the early selection.
+    await page.getByRole('button', { name: 'Chọn xưởng' }).first().click();
+    await page.getByRole('button', { name: 'Gửi yêu cầu chọn' }).click();
 
-    await expect(page.getByText(/Đã chọn thầu/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Đã gửi yêu cầu cho xưởng xác nhận/i)).toBeVisible({ timeout: 5000 });
     expect(acceptedBidId).toBe(bidsFixture[0].id);
   });
 

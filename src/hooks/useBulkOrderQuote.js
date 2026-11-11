@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import orderService from '../services/orderService';
 
-export default function useBulkOrderQuote(shopId, items = [], shippingZoneCode = 'HCM_INNER', customPackagingBrief = null) {
+export default function useBulkOrderQuote(shopId, items = [], shippingZoneCode = null, customPackagingBrief = null) {
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const validItems = Array.isArray(items)
-    ? items.filter((it) => it.productId && it.variantId && Number(it.quantity) > 0)
-    : [];
-  const itemsKey = JSON.stringify(validItems.map((it) => ({ p: it.productId, v: it.variantId, q: it.quantity })));
-  const briefKey = customPackagingBrief ? JSON.stringify(customPackagingBrief) : '';
+  const validItems = useMemo(
+    () => (Array.isArray(items)
+      ? items.filter((it) => it.productId && it.variantId && Number(it.quantity) > 0)
+      : []),
+    [items]
+  );
 
   useEffect(() => {
     if (!shopId || validItems.length === 0) {
@@ -24,7 +25,7 @@ export default function useBulkOrderQuote(shopId, items = [], shippingZoneCode =
       try {
         const result = await orderService.previewQuote({
           shopId,
-          shippingZoneCode: shippingZoneCode || 'HCM_INNER',
+          ...(shippingZoneCode ? { shippingZoneCode } : {}),
           items: validItems,
           customPackagingBrief: customPackagingBrief || undefined,
         }, controller.signal);
@@ -46,7 +47,7 @@ export default function useBulkOrderQuote(shopId, items = [], shippingZoneCode =
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [shopId, itemsKey, shippingZoneCode, briefKey]);
+  }, [shopId, validItems, shippingZoneCode, customPackagingBrief]);
 
   const refetchQuote = async () => {
     if (!shopId || validItems.length === 0) return null;
@@ -55,7 +56,7 @@ export default function useBulkOrderQuote(shopId, items = [], shippingZoneCode =
       setError('');
       const result = await orderService.previewQuote({
         shopId,
-        shippingZoneCode: shippingZoneCode || 'HCM_INNER',
+        ...(shippingZoneCode ? { shippingZoneCode } : {}),
         items: validItems,
         customPackagingBrief: customPackagingBrief || undefined,
       });

@@ -2,9 +2,17 @@ import { test, expect } from '@playwright/test';
 import { Buffer } from 'node:buffer';
 
 const categoryFixture = [
-  { id: '11111111-2222-3333-4444-555555555551', name: 'Bánh nướng truyền thống', slug: 'banh-nuong' },
+  {
+    id: '11111111-2222-3333-4444-555555555551',
+    name: 'Bánh nướng truyền thống',
+    slug: 'banh-nuong',
+  },
   { id: '11111111-2222-3333-4444-555555555552', name: 'Bánh dẻo cao cấp', slug: 'banh-deo' },
-  { id: '11111111-2222-3333-4444-555555555553', name: 'Hộp quà doanh nghiệp VIP', slug: 'hop-qua-vip' },
+  {
+    id: '11111111-2222-3333-4444-555555555553',
+    name: 'Hộp quà doanh nghiệp VIP',
+    slug: 'hop-qua-vip',
+  },
 ];
 
 const productDetailFixture = {
@@ -113,18 +121,25 @@ async function setupSession(page, { role = 'Customer' } = {}) {
     },
   };
 
-  await page.addInitScript(({ user, token }) => {
-    localStorage.setItem('mooncake_auth_user', JSON.stringify(user));
-    localStorage.setItem('mooncake_auth_token', JSON.stringify(token));
-    localStorage.setItem('mooncake_auth_refresh_token', JSON.stringify('test-refresh'));
-  }, {
-    user,
-    token: `test.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.test`,
-  });
+  await page.addInitScript(
+    ({ user, token }) => {
+      localStorage.setItem('mooncake_auth_user', JSON.stringify(user));
+      localStorage.setItem('mooncake_auth_token', JSON.stringify(token));
+      localStorage.setItem('mooncake_auth_refresh_token', JSON.stringify('test-refresh'));
+    },
+    {
+      user,
+      token: `test.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.test`,
+    }
+  );
 
-  await page.route('https://cdn.tailwindcss.com/**', (route) => route.fulfill({ body: 'window.tailwind = {};', contentType: 'text/javascript' }));
+  await page.route('https://cdn.tailwindcss.com/**', (route) =>
+    route.fulfill({ body: 'window.tailwind = {};', contentType: 'text/javascript' })
+  );
   await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
-  await page.route('**/hubs/supplier-verification/negotiate*', (route) => route.fulfill({ status: 503, json: {} }));
+  await page.route('**/hubs/supplier-verification/negotiate*', (route) =>
+    route.fulfill({ status: 503, json: {} })
+  );
 
   const state = {
     products: [...supplierProductListFixture.items],
@@ -192,7 +207,10 @@ async function setupSession(page, { role = 'Customer' } = {}) {
     }
 
     // Publication toggle
-    if (path === `/suppliers/me/products/${productDetailFixture.id}/publication` && req.method() === 'PATCH') {
+    if (
+      path === `/suppliers/me/products/${productDetailFixture.id}/publication` &&
+      req.method() === 'PATCH'
+    ) {
       state.publicationPayload = req.postDataJSON();
       const item = state.products.find((p) => p.productId === productDetailFixture.id);
       if (item) {
@@ -234,24 +252,26 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     await expect(page.locator('text=Xưởng Bánh Hoàng Triều')).toBeVisible();
   });
 
-  test('Khách hàng xem chi tiết sản phẩm, chọn biến thể và khởi tạo giỏ đặt hàng B2B', async ({ page }) => {
+  test('Khách hàng xem chi tiết sản phẩm, chọn biến thể và khởi tạo giỏ đặt hàng B2B', async ({
+    page,
+  }) => {
     await setupSession(page, { role: 'Customer' });
     await page.goto(`/#san-pham/${productDetailFixture.id}`);
 
     // Verify Title and Shop Information
     await expect(page.locator('h1')).toContainText('Bánh Trung Thu Hoàng Kim B2B');
     await expect(page.locator('text=Xưởng Bánh Hoàng Triều')).toBeVisible();
-    await page.getByRole('tab', { name: /Thành Phần & ATTP/ }).click();
+    await page.getByRole('tab', { name: /Thành phần/ }).click();
     await expect(page.getByText(/Hạt sen Huế, trứng muối thượng hạng/)).toBeVisible();
 
     // Verify Variants radio group
     await expect(page.locator('text=Thập cẩm jambon bát bửu (200g)')).toBeVisible();
     await expect(page.locator('text=Hạt sen trứng muối 2 trứng (250g)')).toBeVisible();
-    await expect(page.getByText('Tạm hết')).toBeVisible(); // 3rd variant is out of stock
+    await expect(page.getByText('Tạm hết', { exact: true })).toBeVisible(); // 3rd variant is out of stock
 
     // Select variant 2 and check price update
     await page.locator('text=Hạt sen trứng muối 2 trứng (250g)').click();
-    await expect(page.locator('span.text-3xl').filter({ hasText: '180.000 ₫' })).toBeVisible();
+    await expect(page.getByTestId('product-detail-unit-price')).toHaveText('180.000 ₫');
 
     // Click Order button
     const orderButton = page.locator('button:has-text("Đặt hàng doanh nghiệp")');
@@ -266,7 +286,9 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     expect(draft.quantity).toBe(20);
   });
 
-  test('Nhà cung cấp quản lý danh sách sản phẩm, bật/tắt đăng bán và xóa sản phẩm', async ({ page }) => {
+  test('Nhà cung cấp quản lý danh sách sản phẩm, bật/tắt đăng bán và xóa sản phẩm', async ({
+    page,
+  }) => {
     const state = await setupSession(page, { role: 'Supplier' });
     await page.goto('/#nha-cung-cap/quan-ly-san-pham');
 
@@ -280,7 +302,9 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     await expect(page.locator('text=Sản phẩm đã được ẩn khỏi catalog.')).toBeVisible();
 
     // Verify delete action with popconfirm
-    const deleteButton = page.locator('tr:has-text("Hộp Quà Thượng Uyển") button.ant-btn-dangerous');
+    const deleteButton = page.locator(
+      'tr:has-text("Hộp Quà Thượng Uyển") button.ant-btn-dangerous'
+    );
     await deleteButton.click();
     await page.locator('.ant-popover button:has-text("OK")').click();
 
@@ -295,4 +319,3 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     await expect(page.locator('text=Sản phẩm không tồn tại hoặc chưa được xuất bản')).toBeVisible();
   });
 });
-

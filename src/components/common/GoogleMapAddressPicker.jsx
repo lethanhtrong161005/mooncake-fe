@@ -1,15 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AutoComplete, Button, Input, Modal, Space, Tag, Tooltip, message } from 'antd';
+import { useMemo, useRef, useState } from 'react';
+import { AutoComplete, Button, Input, Modal, Space, message } from 'antd';
 import {
   CheckCircleFilled,
-  CompassOutlined,
   EnvironmentFilled,
   EnvironmentOutlined,
-  FullscreenOutlined,
-  GlobalOutlined,
   PushpinFilled,
   SearchOutlined,
-  ThunderboltFilled,
 } from '@ant-design/icons';
 
 // Top Vietnamese Corporate Hubs & Industrial Zones
@@ -58,20 +54,11 @@ export default function GoogleMapAddressPicker({
   placeholder = 'Nhập số nhà, tên đường, tòa nhà hoặc chọn từ Google Map...',
 }) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState(value || '');
   const [modalSearchText, setModalSearchText] = useState(value || '');
   const [mapQuery, setMapQuery] = useState(value || 'Thành phố Hồ Chí Minh, Việt Nam');
   const [options, setOptions] = useState([]);
-  const [searching, setSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
-
-  useEffect(() => {
-    setCurrentAddress(value || '');
-    if (value) {
-      setMapQuery(value);
-      setModalSearchText(value);
-    }
-  }, [value]);
+  const currentAddress = value || '';
 
   // Fetch online geocoding suggestions from OpenStreetMap Nominatim / Photon (Vietnam scope)
   const fetchAddressSuggestions = (query) => {
@@ -94,7 +81,6 @@ export default function GoogleMapAddressPicker({
       return;
     }
 
-    setSearching(true);
     // Filter local corporate presets first
     const localMatches = POPULAR_B2B_HUBS.filter(
       (h) =>
@@ -153,14 +139,10 @@ export default function GoogleMapAddressPicker({
       })
       .catch(() => {
         setOptions(localMatches);
-      })
-      .finally(() => {
-        setSearching(false);
       });
   };
 
   const handleSearchChange = (text) => {
-    setCurrentAddress(text);
     onChange?.(text);
 
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -170,7 +152,6 @@ export default function GoogleMapAddressPicker({
   };
 
   const handleSelect = (selectedAddress) => {
-    setCurrentAddress(selectedAddress);
     setMapQuery(selectedAddress);
     onChange?.(selectedAddress);
   };
@@ -190,7 +171,6 @@ export default function GoogleMapAddressPicker({
 
   const handleConfirmLocation = () => {
     const finalAddress = modalSearchText.trim() || mapQuery;
-    setCurrentAddress(finalAddress);
     onChange?.(finalAddress);
     setModalOpen(false);
     message.success('Đã lưu vị trí giao hàng từ Google Map.');
@@ -205,7 +185,7 @@ export default function GoogleMapAddressPicker({
   return (
     <div className="w-full">
       {/* 1. Address Input with AutoComplete and Google Map Trigger */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
         <AutoComplete
           value={currentAddress}
           options={options}
@@ -214,7 +194,7 @@ export default function GoogleMapAddressPicker({
           onFocus={() => {
             if (!currentAddress) fetchAddressSuggestions('');
           }}
-          className="flex-1"
+          className="w-full sm:flex-1"
         >
           <Input
             id={id}
@@ -231,6 +211,7 @@ export default function GoogleMapAddressPicker({
           size="large"
           icon={<EnvironmentFilled style={{ color: '#ea4335' }} />}
           onClick={handleOpenMap}
+          className="w-full sm:w-auto sm:min-w-[154px] justify-center"
           style={{
             borderRadius: 10,
             borderColor: '#ea4335',
@@ -242,7 +223,7 @@ export default function GoogleMapAddressPicker({
             gap: 4,
           }}
         >
-          <span className="hidden sm:inline">Chọn từ</span> Google Map
+          Mở Google Map
         </Button>
       </div>
 
