@@ -1,6 +1,6 @@
 import * as signalR from '@microsoft/signalr';
-import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import { API_BASE_URL } from '../constants/apiConfiguration';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import { getValidAccessToken } from './apiClient';
 
 class SignalRManager {
@@ -14,6 +14,10 @@ class SignalRManager {
   }
 
   async startConnection(token) {
+    const resolvedToken = token || storage.get('auth_token');
+    if (!resolvedToken) {
+      return null;
+    }
     if (this.connection?.state === signalR.HubConnectionState.Connected) {
       return this.connection;
     }
@@ -88,7 +92,7 @@ class SignalRManager {
     if (this.connection) {
       try {
         await this.connection.stop();
-      } catch {}
+      } catch { /* An already closed connection needs no further cleanup. */ }
       this.connection = null;
     }
   }

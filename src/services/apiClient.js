@@ -90,6 +90,13 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response.data,
   async (error) => {
+    if (
+      axios.isCancel(error) ||
+      error?.name === 'CanceledError' ||
+      error?.code === 'ERR_CANCELED'
+    ) {
+      return Promise.reject(error);
+    }
     const { response, config = {}, code } = error;
     const isAuthPath = AUTH_PATHS.includes(config.url);
     const refreshToken = storage.get('auth_refresh_token');

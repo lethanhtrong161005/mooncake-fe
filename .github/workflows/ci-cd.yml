@@ -1,0 +1,154 @@
+
+name: Mooncake Frontend - Staging CI/CD
+
+on:
+  push:
+    branches:
+      - stg
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: mooncake-frontend-stg
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: mooncake-fe
+  EC2_INSTANCE_ID: i-0dae2741564687541
+
+jobs:
+  build-and-deploy:
+    name: Build, Push and Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Frontend
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: /api
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          allowed-account-ids: '065636180854'
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set Docker image tag
+        id: image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          echo "uri=$REGISTRY/$ECR_REPOSITORY:$SHA" \
+            >> "$GITHUB_OUTPUT"
+
+      - name: Check existing image in ECR
+        id: image-check
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          DIGEST=$(aws ecr batch-get-image \
+            --region "$AWS_REGION" \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'images[0].imageId.imageDigest' \
+            --output text)
+
+          if [ "$DIGEST" != "None" ] && [ -n "$DIGEST" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Image already exists: $DIGEST"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Image not found. Build required."
+          fi
+
+      - name: Build Docker image
+        if: steps.image-check.outputs.exists == 'false'
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            --build-arg VITE_API_BASE_URL=/api \
+            -t "$IMAGE_URI" \
+            .
+
+      - name: Push Docker image to ECR
+        if: steps.image-check.outputs.exists == 'false'
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+        run: docker push "$IMAGE_URI"
+
+      - name: Deploy Frontend to EC2 via SSM
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          echo "Deploying Frontend: $IMAGE_TAG"
+
+          COMMAND_ID=$(aws ssm send-command \
+            --region "$AWS_REGION" \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=bash /opt/mooncake/deploy.sh frontend $IMAGE_TAG" \
+            --comment "Mooncake Frontend Staging Deployment" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM Command ID: $COMMAND_ID"
+
+          set +e
+          aws ssm wait command-executed \
+            --region "$AWS_REGION" \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID"
+
+          WAIT_RESULT=$?
+          set -e
+
+          aws ssm get-command-invocation \
+            --region "$AWS_REGION" \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' \
+            --output json
+
+          exit "$WAIT_RESULT"
+
+      - name: Deployment summary
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "### Mooncake Frontend Staging" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: Deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: stg" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image: \`$IMAGE_URI\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`$IMAGE_TAG\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Instance: \`$EC2_INSTANCE_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Service: frontend" >> "$GITHUB_STEP_SUMMARY"
