@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Card,
   Table,
   Button,
   Tag,
   Space,
-  Typography,
-  Alert,
+  Pagination,
   message,
   Tooltip,
 } from 'antd';
@@ -19,12 +17,13 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
+import CustomerFooter from '../../components/layout/CustomerFooter';
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import deliveryService from '../../services/deliveryService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
-
-const { Text } = Typography;
+import '../../styles/journey-pages.css';
 
 const STATUS_TAG_MAP = {
   Pending: { text: 'Chờ xếp xe', color: 'default' },
@@ -72,12 +71,12 @@ export default function DeliveryPoD({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Mã Vận Chuyển',
+      title: 'Mã chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
       render: (text, r) => (
         <div>
-          <span className="font-bold text-amber-700">{text || r.deliveryCode || 'DEL-N/A'}</span>
+          <span className="journey-delivery-code">{text || r.deliveryCode || 'Chưa có mã'}</span>
           <div className="text-[11px] text-slate-400">
             {r.deliveryType === 'SelfArranged' ? 'Xưởng tự chở' : 'Đơn vị VC'}
           </div>
@@ -85,7 +84,7 @@ export default function DeliveryPoD({ onNavigate }) {
       ),
     },
     {
-      title: 'Hợp Đồng / Đơn Hàng',
+      title: 'Hợp đồng / đơn hàng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
       render: (text, r) => (
@@ -96,19 +95,19 @@ export default function DeliveryPoD({ onNavigate }) {
       ),
     },
     {
-      title: 'Điểm Nhận Hàng & Người Nhận',
+      title: 'Điểm nhận & người nhận',
       key: 'destination',
       render: (_, r) => (
         <div className="text-xs">
           <div className="font-medium text-slate-800 truncate max-w-xs">{r.toAddress || 'Tại kho khách hàng'}</div>
           <div className="text-slate-500">
-            👤 {r.recipientName || 'Thủ kho'} ({r.recipientPhone || 'N/A'})
+            {r.recipientName || 'Chưa cập nhật'}{r.recipientPhone ? ` · ${r.recipientPhone}` : ''}
           </div>
         </div>
       ),
     },
     {
-      title: 'Mã Tracking',
+      title: 'Mã vận đơn',
       dataIndex: 'trackingCode',
       key: 'trackingCode',
       render: (t) => (
@@ -118,7 +117,7 @@ export default function DeliveryPoD({ onNavigate }) {
       ),
     },
     {
-      title: 'Ngày Dự Kiến',
+      title: 'Ngày dự kiến',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
       render: (d, r) => (
@@ -129,7 +128,7 @@ export default function DeliveryPoD({ onNavigate }) {
       ),
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
@@ -142,7 +141,7 @@ export default function DeliveryPoD({ onNavigate }) {
       },
     },
     {
-      title: 'Thao Tác Bằng Chứng',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
       render: (_, record) => {
@@ -159,7 +158,7 @@ export default function DeliveryPoD({ onNavigate }) {
             </Button>
 
             {!isDelivered && (
-              <Tooltip title="Mở giao diện Web Mobile-First giả lập tài xế nộp ảnh & ký tên">
+              <Tooltip title="Mở giao diện tài xế nộp ảnh và chữ ký bàn giao">
                 <Button
                   size="small"
                   icon={<MobileOutlined />}
@@ -168,7 +167,7 @@ export default function DeliveryPoD({ onNavigate }) {
                   }}
                   className="text-xs border-slate-300"
                 >
-                  Tài xế PoD
+                  Giao diện tài xế
                 </Button>
               </Tooltip>
             )}
@@ -195,7 +194,7 @@ export default function DeliveryPoD({ onNavigate }) {
                   onNavigate?.('hop-dong-tien-do');
                 }}
               >
-                Nghiệm thu Mốc
+                Xem mốc nghiệm thu
               </Button>
             )}
           </Space>
@@ -205,48 +204,31 @@ export default function DeliveryPoD({ onNavigate }) {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <CustomerHeader onNavigate={onNavigate} />
-
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="journey-page journey-page--delivery">
+      <CustomerHeader activeKey="giao-hang-pod" onNavigate={onNavigate} />
+      <CustomerBreadcrumbBar onNavigate={onNavigate} items={[{ label: 'Giao hàng & bằng chứng' }]} />
+      <main className="journey-page__main">
+        <section className="journey-hero journey-hero--delivery" aria-labelledby="delivery-title">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <CarOutlined className="text-amber-600" />
-              Theo Dõi Giao Nhận & Xác Minh Bằng Chứng PoD
-            </h1>
-            <Text type="secondary" className="text-sm">
-              Doanh nghiệp đối soát ảnh chụp hiện trường kiện bánh, chữ ký điện tử thủ kho và tọa độ GPS chống gian lận
-            </Text>
+            <span className="journey-hero__label">Theo dõi đơn hàng doanh nghiệp</span>
+            <h1 id="delivery-title">Từng chuyến giao, rõ từng lần bàn giao.</h1>
+            <p>Xem lộ trình và đối chiếu ảnh, chữ ký, thông tin người nhận của mỗi chuyến giao.</p>
           </div>
+          <div className="journey-hero__delivery-route" aria-hidden="true"><span>Xuất xưởng</span><CarOutlined /><span>Đến điểm nhận</span></div>
+        </section>
 
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchDeliveries}
-            loading={loading}
-            className="border-slate-300 font-medium self-start sm:self-auto"
-          >
-            Làm mới
-          </Button>
-        </div>
+        <div className="journey-note"><CameraOutlined aria-hidden="true" /><span><strong>Kiểm tra bằng chứng trước khi xác nhận.</strong> Mở PoD để xem ảnh và chữ ký được nộp cho chuyến giao.</span></div>
 
-        <Alert
-          type="info"
-          showIcon
-          className="bg-amber-50/70 border-amber-200"
-          message={
-            <div className="text-xs text-slate-700">
-              <strong>Bảo đảm quyền lợi pháp lý:</strong> Mỗi đợt giao bánh trung thu đều bắt buộc nhân viên giao vận chụp ảnh kiện hàng nguyên đai niêm phong kèm chữ ký số cảm ứng của người nhận tại kho. Bằng chứng được niêm phong bằng mã băm SHA-256 bất biến trên cơ sở dữ liệu.
-            </div>
-          }
-        />
-
-        <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
+        <section className="journey-section" aria-labelledby="delivery-list-title">
+          <div className="journey-section__head"><div><h2 id="delivery-list-title">Các chuyến giao</h2><p>{loading ? 'Đang tải chuyến giao…' : `${deliveryPage.totalCount} chuyến giao`}</p></div><Button icon={<ReloadOutlined />} onClick={fetchDeliveries} loading={loading}>Tải lại</Button></div>
+          <div className="journey-filters">
           <FilterBar search={deliveryPage.search} onSearchChange={deliveryPage.setSearch}
             status={deliveryPage.query.status} onStatusChange={deliveryPage.setStatus}
             onReset={deliveryPage.reset} placeholder="Tìm mã giao hàng"
             statusOptions={Object.keys(STATUS_TAG_MAP).filter((value) => value[0] === value[0].toUpperCase())
               .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))} />
+          </div>
+          <div className="journey-desktop-table">
           <Table
             columns={columns}
             dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
@@ -254,9 +236,22 @@ export default function DeliveryPoD({ onNavigate }) {
             pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
               total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
               pageSizeOptions: [10, 20, 50, 100] }}
-            scroll={{ x: 900 }}
+            scroll={{ x: 1200 }}
+            locale={{ emptyText: <div className="journey-empty"><CarOutlined /><strong>{deliveryPage.search || deliveryPage.query.status ? 'Không tìm thấy chuyến giao' : 'Chưa có chuyến giao'}</strong><p>{deliveryPage.search || deliveryPage.query.status ? 'Thử đổi từ khóa hoặc trạng thái.' : 'Khi xưởng tạo chuyến giao, hành trình sẽ xuất hiện ở đây.'}</p><Button onClick={deliveryPage.search || deliveryPage.query.status ? deliveryPage.reset : () => onNavigate?.('hop-dong-tien-do')}>{deliveryPage.search || deliveryPage.query.status ? 'Xóa bộ lọc' : 'Xem hợp đồng'}</Button></div> }}
           />
-        </Card>
+          </div>
+          <div className="journey-mobile-list">
+            {loading ? <p className="journey-empty">Đang tải chuyến giao…</p> : deliveries.length ? <>
+              {deliveries.map((record, index) => <article className="journey-record" key={record.id || record.key || index}>
+                <div className="journey-record__top"><strong>{record.deliveryNumber || record.deliveryCode || 'Chuyến giao'}</strong><Tag color={STATUS_TAG_MAP[record.status]?.color || 'default'}>{STATUS_TAG_MAP[record.status]?.text || record.status}</Tag></div>
+                <h3>{record.contractNumber || record.contractNo || 'Đơn hàng doanh nghiệp'}</h3>
+                <dl><div><dt>Điểm nhận</dt><dd>{record.toAddress || 'Tại kho khách hàng'}</dd></div><div><dt>Người nhận</dt><dd>{record.recipientName || 'Chưa cập nhật'}</dd></div><div><dt>Dự kiến</dt><dd>{record.scheduledDate || record.expectedDate || 'Đang cập nhật'}</dd></div><div><dt>Mã vận đơn</dt><dd>{record.trackingCode || 'Nội bộ xưởng'}</dd></div></dl>
+                <div className="journey-record__actions">{columns[6].render(null, record)}</div>
+              </article>)}
+              {deliveryPage.totalCount > deliveryPage.query.pageSize && <Pagination className="journey-mobile-pagination" size="small" current={deliveryPage.query.page} pageSize={deliveryPage.query.pageSize} total={deliveryPage.totalCount} onChange={deliveryPage.setPage} />}
+            </> : <div className="journey-empty"><CarOutlined /><strong>{deliveryPage.search || deliveryPage.query.status ? 'Không tìm thấy chuyến giao' : 'Chưa có chuyến giao'}</strong><p>{deliveryPage.search || deliveryPage.query.status ? 'Thử đổi từ khóa hoặc trạng thái.' : 'Khi xưởng tạo chuyến giao, hành trình sẽ xuất hiện ở đây.'}</p><Button onClick={deliveryPage.search || deliveryPage.query.status ? deliveryPage.reset : () => onNavigate?.('hop-dong-tien-do')}>{deliveryPage.search || deliveryPage.query.status ? 'Xóa bộ lọc' : 'Xem hợp đồng'}</Button></div>}
+          </div>
+        </section>
 
         <PoDViewerModal
           open={podModalOpen}
@@ -265,6 +260,7 @@ export default function DeliveryPoD({ onNavigate }) {
           proofs={currentProofs}
         />
       </main>
+      <CustomerFooter onNavigate={onNavigate} />
     </div>
   );
 }

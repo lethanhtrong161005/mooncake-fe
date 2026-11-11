@@ -20,31 +20,32 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
   return (
     <Modal
       title={
-        <div className="flex items-center gap-2 text-slate-800">
-          <SafetyCertificateOutlined className="text-amber-600 text-lg" />
-          <span>Bằng Chứng Giao Nhận Điện Tử (PoD) - {delivery?.deliveryNumber || 'DEL'}</span>
+        <div className="flex items-center gap-2 text-[#481b24]">
+          <SafetyCertificateOutlined className="text-[#8c1524] text-lg" />
+          <span>Bằng chứng giao nhận · {delivery?.deliveryNumber || 'Chuyến giao'}</span>
         </div>
       }
       open={open}
       onCancel={onClose}
       footer={[
-        <Button key="close" type="primary" className="bg-amber-600 hover:bg-amber-500" onClick={onClose}>
+        <Button key="close" type="primary" className="!bg-[#8c1524] hover:!bg-[#a41c2d]" onClick={onClose}>
           Đóng
         </Button>,
       ]}
       width={720}
       centered
+      rootClassName="journey-pod-modal"
     >
       <div className="py-2 space-y-4">
         {delivery && (
           <Alert
             type="info"
             className="border-amber-200 bg-amber-50/50"
-            message={
+            title={
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span><strong>Hợp đồng:</strong> {delivery.contractNumber || 'HD-B2B'}</span>
-                <span><strong>Người nhận:</strong> {delivery.recipientName} ({delivery.recipientPhone})</span>
-                <span><strong>Mã vận đơn:</strong> {delivery.trackingCode || 'TA-N/A'}</span>
+                <span><strong>Hợp đồng:</strong> {delivery.contractNumber || 'Chưa cập nhật'}</span>
+                <span><strong>Người nhận:</strong> {delivery.recipientName || 'Chưa cập nhật'}{delivery.recipientPhone ? ` (${delivery.recipientPhone})` : ''}</span>
+                <span><strong>Mã vận đơn:</strong> {delivery.trackingCode || 'Nội bộ xưởng'}</span>
               </div>
             }
           />
@@ -75,21 +76,21 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
                     </Text>
                   </Space>
 
-                  <Tag icon={<SafetyCertificateOutlined />} color="success" className="rounded-full">
-                    Toàn vẹn SHA-256
+                  <Tag icon={<SafetyCertificateOutlined />} color={proof.isVerified ? 'success' : 'default'} className="rounded-full">
+                    {proof.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
                   </Tag>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   <div>
                     <Text strong className="text-xs block mb-1 text-slate-600">
-                      📸 Ảnh chụp hiện trường kiện bánh:
+                      Ảnh kiện hàng tại điểm giao:
                     </Text>
                     {proof.photoUrl ? (
                       <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
                         <Image
                           src={proof.photoUrl}
-                          alt="PoD Photo"
+                          alt="Ảnh bằng chứng bàn giao"
                           className="object-cover w-full max-h-48 rounded-lg"
                         />
                       </div>
@@ -102,13 +103,13 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
 
                   <div>
                     <Text strong className="text-xs block mb-1 text-slate-600">
-                      ✍️ Chữ ký điện tử người nhận:
+                      Chữ ký người nhận:
                     </Text>
                     {proof.signatureUrl ? (
                       <div className="rounded-lg overflow-hidden border border-amber-200 bg-amber-50/30 p-2 flex items-center justify-center min-h-[120px]">
                         <Image
                           src={proof.signatureUrl}
-                          alt="Signature"
+                          alt="Chữ ký người nhận hàng"
                           className="max-h-28 object-contain"
                         />
                       </div>
@@ -120,7 +121,7 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
                   </div>
                 </div>
 
-                <Descriptions size="small" column={{ xs: 1, sm: 2 }} className="mt-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                <Descriptions size="small" column={1} className="mt-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                   <Descriptions.Item label={<span className="text-xs text-slate-500"><UserOutlined /> Người nộp</span>}>
                     <Text className="text-xs font-semibold">{proof.takenBy || 'Tài xế / Thủ kho'}</Text>
                   </Descriptions.Item>
@@ -142,18 +143,18 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
                   </Descriptions.Item>
 
                   {proof.notes && (
-                    <Descriptions.Item label={<span className="text-xs text-slate-500">Ghi chú</span>} span={2}>
+                    <Descriptions.Item label={<span className="text-xs text-slate-500">Ghi chú</span>}>
                       <Text className="text-xs italic text-slate-700">{proof.notes}</Text>
                     </Descriptions.Item>
                   )}
 
-                  <Descriptions.Item label={<span className="text-xs text-slate-500">Mã băm bất biến</span>} span={2}>
-                    <Tooltip title="Mã băm SHA-256 bảo đảm tính toàn vẹn của bằng chứng pháp lý">
+                  {proof.tamperProofHash && <Descriptions.Item label={<span className="text-xs text-slate-500">Mã băm SHA-256</span>}>
+                    <Tooltip title="Dùng mã này để đối chiếu tính toàn vẹn của bằng chứng">
                       <Paragraph copyable className="text-[10px] font-mono text-slate-500 mb-0 bg-white p-1 rounded border">
-                        {proof.tamperProofHash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+                        {proof.tamperProofHash}
                       </Paragraph>
                     </Tooltip>
-                  </Descriptions.Item>
+                  </Descriptions.Item>}
                 </Descriptions>
               </div>
             );

@@ -119,8 +119,17 @@ async function setupProductMock(page) {
 test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', () => {
   test('1. Customer submits 4-criteria transaction review for completed order (Feature #21)', async ({ page }) => {
     await setupAuth(page, 'Customer');
+    const orderId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    let submittedPayload = null;
+
+    await page.route('**/api/v1/reviews/transaction/eligible-orders', (route) => route.fulfill({
+      status: 200,
+      json: { status: 200, data: [{ orderId, orderNumber: 'ORD-2026-001', supplierName: 'Xưởng Bánh Tràng An Nghệ Nhân', totalAmount: 165000000 }] },
+    }));
+    await page.route('**/api/v1/payments/mine', (route) => route.fulfill({ json: { status: 200, data: [] } }));
 
     await page.route('**/api/v1/reviews/transaction', async (route) => {
+      submittedPayload = route.request().postDataJSON();
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -128,7 +137,7 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
           status: 201,
           data: {
             id: 'rev-trans-001',
-            orderId: 'ord-202610-001',
+            orderId,
             overallRating: 5,
             reputationScoreDelta: 3.0,
             newSupplierReputationScore: 91.5,
@@ -141,31 +150,26 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
     await page.goto('/#thanh-toan-danh-gia');
 
     // Verify page header
-    await expect(page.getByRole('heading', { name: /Đánh Giá Chất Lượng 4 Tiêu Chí/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Đánh giá trải nghiệm, ghi nhận chất lượng/i })).toBeVisible();
 
-    // Verify 4-criteria review form is present
-    await expect(page.getByText('Gửi Đánh Giá Cho Đơn Hàng Hoàn Thành Gần Nhất')).toBeVisible();
-    await expect(page.getByText('Xưởng Bánh Tràng An Nghệ Nhân')).toBeVisible();
+    // Only delivered, eligible orders are offered for review.
+    await expect(page.getByRole('heading', { name: 'Gửi đánh giá' })).toBeVisible();
+    await expect(page.getByText('Xưởng Bánh Tràng An Nghệ Nhân', { exact: true })).toBeVisible();
 
-    // Verify 4 criteria labels
-    await expect(page.getByText('1. Chất Lượng Bánh & An Toàn Thực Phẩm')).toBeVisible();
-    await expect(page.getByText('2. Đúng Hạn Giao Hàng & Bảo Quản Vận Chuyển')).toBeVisible();
-    await expect(page.getByText('3. Dịch Vụ Hỗ Trợ & Thiết Kế Logo Mockup')).toBeVisible();
-    await expect(page.getByText('4. Mức Độ Hài Lòng Tổng Thể')).toBeVisible();
+    await expect(page.getByText('Chất lượng bánh & an toàn thực phẩm')).toBeVisible();
+    await expect(page.getByText('Giao hàng & bảo quản')).toBeVisible();
+    await expect(page.getByText('Hỗ trợ & tư vấn')).toBeVisible();
+    await expect(page.getByText('Mức độ hài lòng chung')).toBeVisible();
 
-    // Fill in custom comment
-    const commentInput = page.getByRole('textbox', { name: /Nhận Xét Chi Tiết/i });
+    const commentInput = page.getByRole('textbox', { name: /Nhận xét của bạn/i });
     await commentInput.fill('Chất lượng bánh nướng thập cẩm rất đậm đà, bao bì sang trọng dập kim logo tập đoàn sắc nét. Giao hàng đúng cam kết.');
 
-    // Submit review
-    const submitBtn = page.getByRole('button', { name: /Gửi Đánh Giá Xác Thực/i });
+    const submitBtn = page.getByRole('button', { name: 'Gửi đánh giá' });
     await submitBtn.click();
 
-    // Verify success feedback with reputation score boost
-    await expect(page.getByText(/Đã gửi đánh giá thành công! Xưởng Bánh Tràng An được cộng \+3 điểm uy tín/i)).toBeVisible();
-
-    // Verify new review appears in enterprise history table (using exact: true to avoid substring clash with strong header)
-    await expect(page.getByText('HD-2025-08910', { exact: true })).toBeVisible();
+    await expect(page.getByText('Đã gửi đánh giá cho ORD-2026-001.')).toBeVisible();
+    expect(submittedPayload.orderId).toBe(orderId);
+    expect(submittedPayload.overallRating).toBe(5);
   });
 
   test('2. Product Detail Page displays Rating Histogram, Badges, and Social Review Stream (Feature #22)', async ({ page }) => {

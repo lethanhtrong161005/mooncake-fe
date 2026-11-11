@@ -1,10 +1,5 @@
-import { Badge, Button, Segmented, Select, Space, Typography } from 'antd';
-import {
-  AppstoreOutlined,
-  BarsOutlined,
-  FilterOutlined,
-  SortAscendingOutlined,
-} from '@ant-design/icons';
+import { Badge, Button, Segmented, Select, Typography } from 'antd';
+import { AppstoreOutlined, BarsOutlined, FilterOutlined } from '@ant-design/icons';
 import { SORT_OPTIONS } from '../../constants/productSearch';
 
 const { Text } = Typography;
@@ -15,71 +10,40 @@ export default function SearchToolbar({
   viewMode,
   activeFilterCount,
   isMobile,
+  isLoading,
   onSortChange,
   onViewModeChange,
   onOpenMobileDrawer,
 }) {
   return (
-    <div
-      data-testid="search-toolbar"
-      style={{
-        background: '#ffffff',
-        border: '1px solid #e7e5e4',
-        borderRadius: 10,
-        padding: isMobile ? '10px 12px' : '12px 16px',
-        marginBottom: 16,
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-      }}
-    >
-      <Space size={10} wrap>
-        {isMobile ? (
+    <div className="search-toolbar" data-testid="search-toolbar">
+      <div className="search-toolbar__summary" aria-live="polite">
+        <Text strong>{isLoading ? 'Đang tìm sản phẩm...' : `${Number(totalCount || 0).toLocaleString('vi-VN')} sản phẩm`}</Text>
+        <Text>Chọn mẫu phù hợp để xem giá và điều kiện đặt sỉ.</Text>
+      </div>
+
+      <div className="search-toolbar__controls">
+        {isMobile && (
           <Badge count={activeFilterCount} size="small" color="#8c1524">
             <Button
               icon={<FilterOutlined />}
               onClick={onOpenMobileDrawer}
               data-testid="mobile-filter-trigger"
-              style={{
-                borderColor: '#8c1524',
-                color: '#8c1524',
-                fontWeight: 600,
-              }}
             >
               Bộ lọc
             </Button>
           </Badge>
-        ) : (
-          <div>
-            <Text strong style={{ fontSize: 14, color: '#1c1917', display: 'block' }}>
-              {Number(totalCount || 0).toLocaleString('vi-VN')} sản phẩm phù hợp
-            </Text>
-            <Text type="secondary" style={{ fontSize: 11 }}>
-              Chọn sản phẩm để xem biến thể và điều kiện đặt hàng
-            </Text>
-          </div>
         )}
-      </Space>
-
-      <Space size={10} wrap style={{ marginLeft: 'auto' }}>
-        <Space size={6}>
-          {!isMobile && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              <SortAscendingOutlined /> Sắp xếp:
-            </Text>
-          )}
+        <label className="search-toolbar__sort">
+          {!isMobile && <span>Sắp xếp</span>}
           <Select
             value={sort}
             onChange={onSortChange}
             options={SORT_OPTIONS}
-            style={{ width: isMobile ? 165 : 190 }}
             data-testid="search-sort-select"
             aria-label="Sắp xếp sản phẩm"
           />
-        </Space>
-
+        </label>
         {!isMobile && (
           <Segmented
             value={viewMode}
@@ -89,9 +53,10 @@ export default function SearchToolbar({
               { value: 'list', icon: <BarsOutlined />, title: 'Dạng danh sách' },
             ]}
             data-testid="search-view-mode"
+            aria-label="Kiểu hiển thị sản phẩm"
           />
         )}
-      </Space>
+      </div>
     </div>
   );
 }

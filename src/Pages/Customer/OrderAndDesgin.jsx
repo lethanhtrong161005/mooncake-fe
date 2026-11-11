@@ -46,6 +46,7 @@ import customPackagingService from '../../services/customPackagingService';
 import packagingTemplateService from '../../services/packagingTemplateService';
 import LiveBoxPreviewStudio from '../../components/packaging/LiveBoxPreviewStudio';
 import GoogleMapAddressPicker from '../../components/common/GoogleMapAddressPicker';
+import '../../styles/order-page.css';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -540,39 +541,36 @@ export default function OrderAndDesgin({ onNavigate }) {
   ];
 
   const createTab = loadingProduct ? (
-    <div className="py-24 text-center bg-white rounded-2xl border border-stone-200">
+    <div className="order-page__loading">
       <Spin size="large" description="Đang kết nối dữ liệu sản phẩm..." />
     </div>
   ) : !product ? (
-    <div className="bg-white rounded-2xl p-12 text-center border border-stone-200/80 shadow-xs max-w-2xl mx-auto">
-      <div className="w-16 h-16 rounded-2xl bg-amber-50 text-[#8c1524] flex items-center justify-center text-3xl mx-auto mb-4 border border-amber-200/60">
-        <ShoppingCartOutlined />
+    <div className="order-page__empty">
+      <div className="order-page__empty-copy">
+        <span className="order-page__empty-label">Bắt đầu đơn hàng</span>
+        <h2>Chọn món quà trước khi tạo đơn.</h2>
+        <p>
+          Xem các mẫu bánh và hộp quà, chọn quy cách phù hợp rồi tiếp tục điền thông tin giao hàng.
+        </p>
+        <Button
+          type="primary"
+          size="large"
+          icon={<ArrowRightOutlined />}
+          iconPlacement="end"
+          onClick={() => onNavigate?.('tim-kiem')}
+        >
+          Xem sản phẩm
+        </Button>
       </div>
-      <h3 className="font-['Playfair_Display',serif] text-xl sm:text-2xl font-bold text-stone-900 mb-2">
-        Chưa Có Sản Phẩm Trong Đơn Nháp
-      </h3>
-      <p className="text-sm text-stone-600 max-w-md mx-auto mb-6 leading-relaxed">
-        Quý khách vui lòng chọn sản phẩm và quy cách bánh từ bộ sưu tập mùa vụ để bắt đầu quy trình
-        đặt hàng B2B.
-      </p>
-      <Button
-        type="primary"
-        size="large"
-        icon={<ArrowRightOutlined />}
-        onClick={() => onNavigate?.('tim-kiem')}
-        style={{
-          background: '#8c1524',
-          borderColor: '#8c1524',
-          height: 46,
-          borderRadius: 10,
-          fontWeight: 700,
-        }}
-      >
-        Khám phá bộ sưu tập bánh Trung Thu
-      </Button>
+      <img
+        src="/hero_mooncake_bg.jpg"
+        alt="Hộp quà Trung thu Nguyệt Phố"
+        className="order-page__empty-image"
+      />
     </div>
   ) : (
     <Form
+      className="order-page__form"
       form={form}
       layout="vertical"
       onFinish={handlePreSubmit}
@@ -582,18 +580,18 @@ export default function OrderAndDesgin({ onNavigate }) {
         secondaryColor: '#d48806',
       }}
     >
-      <Row gutter={[24, 24]}>
+      <Row gutter={[24, 24]} className="order-page__layout">
         {/* Left Column: Form Configuration */}
         <Col xs={24} lg={16}>
           <div className="flex flex-col gap-5">
             {/* 1. Multi-Item Product Configuration */}
-            <div className="bg-white rounded-[14px] p-5 sm:p-6 border border-stone-200">
+            <div className="order-page__card order-page__product bg-white rounded-[14px] p-5 sm:p-6 border border-stone-200">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-stone-100">
                 <div className="flex items-start gap-4 min-w-0">
                   <img
                     src={product.images?.[0]?.imageUrl || '/hero_mooncake_bg.jpg'}
                     alt={product.name}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-stone-200 shrink-0 shadow-sm"
+                    className="order-page__product-image w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-stone-200 shrink-0 shadow-sm"
                   />
                   <div className="min-w-0 pt-0.5">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500 mb-1">
@@ -654,6 +652,7 @@ export default function OrderAndDesgin({ onNavigate }) {
                   </Button>
                 </div>
 
+                <p className="order-page__table-hint">Vuốt ngang để xem đơn giá và thành tiền.</p>
                 <Table
                   dataSource={orderItems}
                   columns={columns}
@@ -661,7 +660,7 @@ export default function OrderAndDesgin({ onNavigate }) {
                   size="small"
                   rowKey="key"
                   tableLayout="fixed"
-                  className="border border-stone-200 rounded-xl overflow-hidden [&_.ant-table-thead_.ant-table-cell]:bg-stone-50 [&_.ant-table-thead_.ant-table-cell]:font-semibold"
+                  className="order-page__items-table border border-stone-200 rounded-xl overflow-hidden [&_.ant-table-thead_.ant-table-cell]:bg-stone-50 [&_.ant-table-thead_.ant-table-cell]:font-semibold"
                   scroll={{ x: 780 }}
                 />
 
@@ -682,7 +681,7 @@ export default function OrderAndDesgin({ onNavigate }) {
             </div>
 
             {/* 2. Delivery Information & Shipping Zone */}
-            <div className="bg-white rounded-[14px] p-5 sm:p-6 border border-stone-200 border-l-4 border-l-[#8c1524]">
+            <div className="order-page__card order-page__delivery bg-white rounded-[14px] p-5 sm:p-6 border border-stone-200 border-l-4 border-l-[#8c1524]">
               <div className="flex items-start gap-3 mb-5 pb-4 border-b border-stone-100">
                 <div className="w-10 h-10 rounded-xl bg-red-50 text-[#8c1524] flex items-center justify-center shrink-0">
                   <TruckOutlined className="text-lg" />
@@ -827,7 +826,7 @@ export default function OrderAndDesgin({ onNavigate }) {
 
             {/* 3. Custom Packaging & Branding */}
             {product.supportsCustomPackaging && (
-              <div className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs">
+              <div className={`order-page__card order-page__packaging bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs${packagingEnabled ? ' is-active' : ''}`}>
                 <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                   <div className="flex items-center gap-2">
                     <CrownOutlined className="text-amber-600 text-base" />
@@ -1209,8 +1208,8 @@ export default function OrderAndDesgin({ onNavigate }) {
         {/* Right Column: Sticky Quotation & Financial Schedule */}
         <Col xs={24} lg={8}>
           <div className="lg:sticky lg:top-6">
-            <div className="bg-white rounded-[14px] overflow-hidden border border-stone-200 shadow-[0_18px_45px_rgba(41,37,36,0.08)]">
-              <div className="p-5 sm:p-6 flex flex-col gap-5">
+            <div className="order-page__summary bg-white rounded-[14px] overflow-hidden border border-stone-200 shadow-[0_18px_45px_rgba(41,37,36,0.08)]">
+              <div className="order-page__summary-body p-5 sm:p-6 flex flex-col gap-5">
                 <div className="pb-4 border-b border-stone-100">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -1319,7 +1318,7 @@ export default function OrderAndDesgin({ onNavigate }) {
                 </div>
 
                 {/* Total and Deposit breakdown */}
-                <div className="bg-[#8c1524] p-4 sm:p-5 rounded-xl space-y-3 text-white">
+                <div className="order-page__total-panel bg-[#8c1524] p-4 sm:p-5 rounded-xl space-y-3 text-white">
                   <div>
                     <span className="text-xs text-white/70 font-medium block mb-1">
                       Tổng thanh toán dự kiến
@@ -1361,6 +1360,7 @@ export default function OrderAndDesgin({ onNavigate }) {
                 </div>
 
                 <Button
+                  className="order-page__submit"
                   type="primary"
                   size="large"
                   block
@@ -1530,7 +1530,7 @@ export default function OrderAndDesgin({ onNavigate }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
+    <div className="order-page min-h-screen bg-[#f5f6f8] flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
       <CustomerHeader activeKey="dat-hang-thiet-ke" onNavigate={onNavigate} />
       <CustomerBreadcrumbBar
         items={[
@@ -1540,14 +1540,14 @@ export default function OrderAndDesgin({ onNavigate }) {
         onNavigate={onNavigate}
       />
 
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
-        <div className="mb-7 pb-6 border-b border-stone-200">
+      <main className="order-page__main max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
+        <div className="order-page__intro mb-7 pb-6 border-b border-stone-200">
+          <span className="order-page__eyebrow">Mua sỉ bánh Trung thu</span>
           <h1 className="font-['Playfair_Display',serif] text-3xl sm:text-4xl font-extrabold text-stone-950 m-0 tracking-[-0.02em]">
             Đặt hàng doanh nghiệp
           </h1>
           <p className="text-sm text-stone-600 mt-2.5 max-w-2xl leading-6">
-            Chọn sản phẩm, địa điểm giao và gửi đơn trực tiếp cho xưởng. Giá được tính lại theo số
-            lượng trước khi bạn xác nhận.
+            Chọn quy cách, điền địa chỉ giao và kiểm tra giá trước khi gửi đơn cho xưởng.
           </p>
         </div>
 

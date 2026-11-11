@@ -144,7 +144,8 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
 
     await page.goto('/#dat-hang-thiet-ke');
     await expect(page.getByRole('heading', { name: /Đặt hàng doanh nghiệp/i })).toBeVisible();
-    await expect(page.getByText('Chưa Có Sản Phẩm Trong Đơn Nháp')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Chọn món quà trước khi tạo đơn.' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Xem sản phẩm' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Tài khoản' }).click();
     await page.getByRole('menuitem', { name: 'Đơn hàng của tôi' }).click();

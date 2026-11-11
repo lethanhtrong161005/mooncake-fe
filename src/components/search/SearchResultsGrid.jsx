@@ -135,16 +135,7 @@ export default function SearchResultsGrid({
 
       <div
         data-testid="search-pagination-wrapper"
-        style={{
-          marginTop: 28,
-          padding: isMobile ? '12px' : '14px 20px',
-          background: '#ffffff',
-          borderRadius: 10,
-          border: '1px solid #e7e5e4',
-          display: 'flex',
-          justifyContent: isMobile ? 'center' : 'flex-end',
-          alignItems: 'center',
-        }}
+        className="search-pagination"
       >
         <Pagination
           current={pageNumber}

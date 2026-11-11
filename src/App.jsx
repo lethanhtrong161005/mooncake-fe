@@ -87,8 +87,11 @@ export default function App() {
     }
 
     const proceed = () => {
-      setCurrentPage(target); setHashQuery('');
-      window.history.pushState(null, '', routeUrl(target));
+      const [routeKey, query] = target.split('?');
+      const querySuffix = query ? `?${query}` : '';
+      setCurrentPage(routeKey);
+      setHashQuery(querySuffix);
+      window.history.pushState(null, '', `${routeUrl(routeKey)}${querySuffix}`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
     if (window.dispatchEvent(new CustomEvent('app:before-navigate', { cancelable: true, detail: { proceed } }))) proceed();

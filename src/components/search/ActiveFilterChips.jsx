@@ -96,18 +96,7 @@ export default function ActiveFilterChips({
   return (
     <div
       data-testid="active-filter-chips"
-      style={{
-        background: '#ffffff',
-        border: '1px solid #e7e5e4',
-        borderRadius: 8,
-        padding: '10px 14px',
-        marginBottom: 16,
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 8,
-      }}
+      className="search-active-filters"
     >
       <Space size={[6, 6]} wrap>
         <Text strong style={{ fontSize: 12, color: '#8c1524', marginRight: 4 }}>
