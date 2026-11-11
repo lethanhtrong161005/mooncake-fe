@@ -55,6 +55,7 @@ const ShopTemplates = lazy(() => import('./Pages/Admin/ShopTemplates'));
 
 export default function App() {
   const { user, isLoggedIn, isRestoring } = useAuth();
+  const isSupplierUser = String(user?.role || '').toLowerCase() === 'supplier';
   const [currentPage, setCurrentPage] = useState(currentRoute);
   const [hashQuery, setHashQuery] = useState(currentHashQuery);
 
@@ -74,6 +75,7 @@ export default function App() {
     if (pageKey === 'dang-ky-mau-thu') target = 'san-pham';
     if (pageKey === 'danh-gia-va-phe-duyet-mau-thu') target = 'thanh-toan-danh-gia';
     if (pageKey === 'hop-dong-dien-tu' || pageKey === 'electric-contact') target = 'hop-dong-tien-do';
+    if (isSupplierUser && ['hop-dong-tien-do', 'hop-dong-dien-tu'].includes(target)) target = 'nha-cung-cap/quan-ly-hop-dong';
     if (pageKey === 'dang-nhap') {
       setShowLogin(true);
       return;
@@ -148,7 +150,9 @@ export default function App() {
         return <BiddingAndQuoteComparison onNavigate={navigateTo} />;
       case 'hop-dong-tien-do':
       case 'hop-dong-dien-tu':
-        return <ContractsAndMilestone onNavigate={navigateTo} />;
+        return isSupplierUser
+          ? <ContractManage onNavigate={navigateTo} />
+          : <ContractsAndMilestone onNavigate={navigateTo} />;
       case 'giao-hang-pod':
       case 'van-chuyen-pod':
         return <DeliveryPoD onNavigate={navigateTo} />;

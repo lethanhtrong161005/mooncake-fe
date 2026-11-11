@@ -17,7 +17,6 @@ import {
   Select,
   Slider,
   Space,
-  Statistic,
   Switch,
   Table,
   Tag,
@@ -108,8 +107,6 @@ export default function OrderManage({ onNavigate }) {
     reset: resetOrders } = usePagedList(orderService.listSupplierOrdersPaged);
 
   // Supplier Financial Overview
-  const [financialOverview, setFinancialOverview] = useState(null);
-  const [loadingFin, setLoadingFin] = useState(false);
 
   // Modals & Drawers
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -148,21 +145,6 @@ export default function OrderManage({ onNavigate }) {
   const [payoutRequestAmount, setPayoutRequestAmount] = useState(0);
   const [payoutRequestSubmitting, setPayoutRequestSubmitting] = useState(false);
 
-  const loadFinancialOverview = useCallback(async () => {
-    setLoadingFin(true);
-    try {
-      const fin = await orderService.getSupplierFinancialOverview();
-      setFinancialOverview(fin);
-    } catch {
-      // Ignore if unconfigured
-    } finally {
-      setLoadingFin(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFinancialOverview();
-  }, [loadFinancialOverview]);
   useEffect(() => { if (orderError) message.error(errorMessage(orderError)); }, [orderError]);
 
   const runAction = async (action, order, successText) => {
@@ -612,48 +594,9 @@ export default function OrderManage({ onNavigate }) {
       subtitle="Quy trình xác nhận đơn, duyệt mockup bao bì, quản lý chuyến giao PoD và đối soát sổ cái ký quỹ."
     >
       {/* 1. Financial Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mb-5">
-        <Card size="small" className="rounded-xl border-stone-200">
-          <Statistic
-            title={<span className="text-xs text-stone-500">Tạm giữ ký quỹ (Held)</span>}
-            value={financialOverview?.totalHeldAmount || 0}
-            formatter={money}
-            valueStyle={{ fontSize: 16, color: '#d97706', fontWeight: 800 }}
-          />
-        </Card>
-        <Card size="small" className="rounded-xl border-stone-200">
-          <Statistic
-            title={<span className="text-xs text-stone-500">Khả dụng giải ngân (Eligible)</span>}
-            value={financialOverview?.totalEligibleAmount || 0}
-            formatter={money}
-            valueStyle={{ fontSize: 16, color: '#16a34a', fontWeight: 800 }}
-          />
-        </Card>
-        <Card size="small" className="rounded-xl border-stone-200">
-          <Statistic
-            title={<span className="text-xs text-stone-500">Đã giải ngân (PaidOut)</span>}
-            value={financialOverview?.totalPaidOutAmount || 0}
-            formatter={money}
-            valueStyle={{ fontSize: 16, color: '#2563eb', fontWeight: 800 }}
-          />
-        </Card>
-        <Card size="small" className="rounded-xl border-stone-200">
-          <Statistic
-            title={<span className="text-xs text-stone-500">Đang tranh chấp (Locked)</span>}
-            value={financialOverview?.totalDisputedAmount || 0}
-            formatter={money}
-            valueStyle={{ fontSize: 16, color: '#dc2626', fontWeight: 800 }}
-          />
-        </Card>
-        <Card size="small" className="rounded-xl border-stone-200">
-          <Statistic
-            title={<span className="text-xs text-stone-500">Đã hoàn trả khách</span>}
-            value={financialOverview?.totalRefundedAmount || 0}
-            formatter={money}
-            valueStyle={{ fontSize: 16, color: '#78716c', fontWeight: 800 }}
-          />
-        </Card>
-      </div>
+      <Alert type="info" showIcon className="mb-5"
+        message="Tổng quan tài chính chưa khả dụng"
+        description="Backend hiện chưa có API tổng hợp số dư ký quỹ, giải ngân và hoàn tiền theo từng supplier. Các số liệu này sẽ được hiển thị khi có nguồn dữ liệu chính xác." />
 
       {/* Main Order Card */}
       <Card

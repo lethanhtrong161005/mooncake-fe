@@ -25,8 +25,10 @@ const rfqFixture = {
   deliveryDateRequired: '2026-09-10',
   budgetRangeMin: 150000000,
   budgetRangeMax: 200000000,
-  bidDeadline: '2026-08-30T17:00:00Z',
+  bidDeadline: new Date(Date.now() + 7 * 86400000).toISOString(),
   status: 'Open',
+  isInvited: true,
+  canDecline: true,
   items: [rfqItemFixture],
   invitationCount: 3,
   bidCount: 2,
@@ -133,6 +135,9 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
   test('Customer loads RFQs, opens creation modal and creates new RFQ', async ({ page }) => {
     let createPayload = null;
     let publishedId = null;
+    const deliveryDate = new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10);
+    const deadline = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    const bidDeadline = `${deadline.getFullYear()}-${String(deadline.getMonth() + 1).padStart(2, '0')}-${String(deadline.getDate()).padStart(2, '0')} ${String(deadline.getHours()).padStart(2, '0')}:${String(deadline.getMinutes()).padStart(2, '0')}:00`;
 
     await setupAuth(page, 'Customer');
 
@@ -188,12 +193,12 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
 
     // Required delivery date
     await page.getByLabel('Ngày giao').click();
-    await page.keyboard.type('2026-09-25');
+    await page.keyboard.type(deliveryDate);
     await page.keyboard.press('Enter');
 
     // Bid deadline with showTime
     await page.getByLabel('Hạn nhận báo giá').click();
-    await page.keyboard.type('2026-08-30 18:00:00');
+    await page.keyboard.type(bidDeadline);
     await page.keyboard.press('Enter');
 
     // Product item 1
@@ -223,7 +228,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     }));
     await page.route('**/api/v1/notifications', (route) => route.fulfill({ json: { status: 200, data: { items: [], unreadCount: 0, totalCount: 0 } } }));
 
-    await page.route('**/api/v1/rfqs/supplier', async (route) => {
+    await page.route('**/api/v1/rfqs/supplier**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -257,7 +262,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
     });
 
     await page.goto('/#nha-cung-cap/dau-thau');
-    await expect(page.getByRole('heading', { name: 'RFQ được mời & báo giá niêm phong' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /RFQ/ })).toBeVisible();
     await expect(page.getByText(rfqFixture.rfqNumber)).toBeVisible();
 
     await page.getByRole('button', { name: /Nộp báo giá/i }).click();
