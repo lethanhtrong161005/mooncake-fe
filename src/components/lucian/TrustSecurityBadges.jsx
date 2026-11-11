@@ -1,5 +1,5 @@
 // Lucian UX/UI Prompt #243 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#243
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './TrustSecurityBadges.css';
 
 const BADGES = [

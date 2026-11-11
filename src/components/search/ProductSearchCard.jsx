@@ -51,13 +51,17 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
             position: 'relative',
             height,
             overflow: 'hidden',
-            background: '#f9f1ec',
+            background: '#efeeec',
           }}
         >
           <img
             alt={item.name}
             src={item.primaryImageUrl}
             loading="lazy"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = '/hero_mooncake_bg.jpg';
+            }}
             style={{
               width: '100%',
               height: '100%',
@@ -93,8 +97,7 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
         style={{
           position: 'relative',
           height,
-          background:
-            'linear-gradient(135deg, #8c1524 0%, #5c0f19 60%, #3a0910 100%)',
+          background: 'linear-gradient(135deg, #8c1524 0%, #5c0f19 60%, #3a0910 100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -144,8 +147,8 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
         onClick={handleOpenDetail}
         data-testid="product-search-card"
         style={{
-          borderRadius: 12,
-          borderColor: '#ebdcd5',
+          borderRadius: 10,
+          borderColor: '#e7e5e4',
           overflow: 'hidden',
         }}
         styles={{ body: { padding: 16 } }}
@@ -192,10 +195,7 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
                   Đặt sỉ B2B
                 </Tag>
                 {regionLabel && (
-                  <Tag
-                    icon={<EnvironmentOutlined />}
-                    style={{ margin: 0, fontSize: 11 }}
-                  >
+                  <Tag icon={<EnvironmentOutlined />} style={{ margin: 0, fontSize: 11 }}>
                     {regionLabel}
                   </Tag>
                 )}
@@ -225,9 +225,7 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
                   {shopName}
                 </Text>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  <SafetyCertificateOutlined
-                    style={{ color: '#52c41a', marginRight: 4 }}
-                  />
+                  <SafetyCertificateOutlined style={{ color: '#52c41a', marginRight: 4 }} />
                   Gian hàng đã xác minh
                   {reputationScore > 0 ? ` (${reputationScore}đ)` : ''}
                 </Text>
@@ -270,7 +268,7 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
                 type="primary"
                 size="small"
                 icon={<ArrowRightOutlined />}
-                iconPosition="end"
+                iconPlacement="end"
                 style={{ background: '#8c1524', borderColor: '#8c1524' }}
               >
                 Xem & Đặt sỉ
@@ -292,10 +290,10 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 12,
-        borderColor: '#ebdcd5',
+        borderRadius: 10,
+        borderColor: '#e7e5e4',
         overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(140, 21, 36, 0.04)',
+        boxShadow: '0 1px 2px rgba(28, 25, 23, 0.04)',
       }}
       styles={{
         body: {
@@ -318,17 +316,21 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
             flexWrap: 'wrap',
           }}
         >
-          <Tag
-            style={{
-              margin: 0,
-              background: '#fdf5f0',
-              borderColor: '#e8cfc4',
-              color: '#8c1524',
-              fontSize: 11,
-            }}
-          >
-            Báo giá sỉ B2B
-          </Tag>
+          {item.category?.name ? (
+            <Tag
+              style={{
+                margin: 0,
+                background: '#f5f5f4',
+                borderColor: '#e7e5e4',
+                color: '#57534e',
+                fontSize: 11,
+              }}
+            >
+              {item.category.name}
+            </Tag>
+          ) : (
+            <span />
+          )}
 
           {regionLabel && (
             <Text type="secondary" style={{ fontSize: 11 }}>
@@ -414,8 +416,7 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
           <Space size={4}>
             <SafetyCertificateOutlined style={{ color: '#52c41a', fontSize: 13 }} />
             <Text type="secondary" style={{ fontSize: 11 }}>
-              Gian hàng đã xác minh
-              {reputationScore > 0 ? ` • ${reputationScore}đ` : ''}
+              {reputationScore > 0 ? `Điểm uy tín ${reputationScore}đ` : 'Thông tin nhà cung cấp'}
             </Text>
           </Space>
 
@@ -429,4 +430,3 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
     </Card>
   );
 }
-

@@ -143,7 +143,7 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
     });
 
     await page.goto('/#dat-hang-thiet-ke');
-    await expect(page.getByRole('heading', { name: /Đặt Hàng Doanh Nghiệp/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Đặt hàng doanh nghiệp/i })).toBeVisible();
     await expect(page.getByText('Chưa Có Sản Phẩm Trong Đơn Nháp')).toBeVisible();
 
     await page.getByRole('button', { name: 'Tài khoản' }).click();
@@ -156,6 +156,7 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
 
   test('Customer with draft product calculates tiered pricing quote and places bulk order', async ({ page }) => {
     await setupAuth(page, 'Customer');
+    await page.setViewportSize({ width: 960, height: 900 });
 
     await page.addInitScript((draft) => {
       sessionStorage.setItem('b2b_order_draft', JSON.stringify(draft));
@@ -195,19 +196,17 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
     await page.goto(`/#dat-hang-thiet-ke?productId=${productFixture.id}`);
     await expect(page.locator('text=Bánh Trung Thu Hoàng Kim')).toBeVisible();
     await expect(page.locator('text=Chiết khấu doanh nghiệp 10%')).toBeVisible();
-    await expect(page.locator('text=11.700.000 ₫')).toBeVisible();
+    await expect(page.getByTestId('order-quote-total')).toHaveText('11.700.000 ₫');
     expect(quoteRequested).toBeTruthy();
 
     // Fill delivery form
     await page.fill('#deliveryAddress', 'Tòa nhà Landmark 81, TP. HCM');
     await page.fill('#recipientName', 'Nguyễn Văn Doanh Nghiệp');
     await page.fill('#recipientPhone', '0901234567');
-
-    // Fill custom packaging form fields
-    await page.fill('#companyName', 'Công ty Công nghệ Việt');
-    await page.fill('#companyLogoUrl', 'https://example.com/logo.svg');
+    await page.fill('#deliveryDateExpected', '2030-09-15');
 
     await page.getByRole('button', { name: /Gửi đơn đặt hàng/i }).click();
+    await page.getByRole('button', { name: 'Gửi đơn đặt hàng', exact: true }).click();
     await expect(page.locator('.ant-message-success')).toContainText('MC-20261029-TEST01');
     await expect(page).toHaveURL(/#don-hang-cua-toi$/);
     await expect(page.getByText('#MC-20261029-TEST01', { exact: true })).toBeVisible();

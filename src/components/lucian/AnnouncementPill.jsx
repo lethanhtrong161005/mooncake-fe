@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tag } from 'antd';
 import {
   ArrowRightOutlined,
@@ -45,7 +45,7 @@ const POLICIES = [
   },
 ];
 
-export default function AnnouncementPill({ onNavigate }) {
+export default function AnnouncementPill({ onNavigate, align = 'center' }) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -90,10 +90,15 @@ export default function AnnouncementPill({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  const alignClass =
+    align === 'left'
+      ? 'mx-auto lg:mx-0 items-center lg:items-start'
+      : 'mx-auto items-center';
+
   return (
     <div
       ref={containerRef}
-      className="relative z-30 w-full max-w-[460px] mx-auto mb-6 flex flex-col items-center"
+      className={`relative z-30 w-full max-w-[480px] mb-5 flex flex-col ${alignClass}`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

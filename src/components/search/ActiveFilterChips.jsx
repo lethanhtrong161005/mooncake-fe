@@ -19,12 +19,8 @@ export default function ActiveFilterChips({
   onClearInStock,
   onResetAll,
 }) {
-  const categoryMap = new Map(
-    categoryOptions.map((item) => [String(item.value), item.label])
-  );
-  const regionMap = new Map(
-    regionOptions.map((item) => [String(item.value), item.label])
-  );
+  const categoryMap = new Map(categoryOptions.map((item) => [String(item.value), item.label]));
+  const regionMap = new Map(regionOptions.map((item) => [String(item.value), item.label]));
 
   const chips = [];
 
@@ -101,9 +97,9 @@ export default function ActiveFilterChips({
     <div
       data-testid="active-filter-chips"
       style={{
-        background: '#fffaf7',
-        border: '1px solid #f0dfd6',
-        borderRadius: 10,
+        background: '#ffffff',
+        border: '1px solid #e7e5e4',
+        borderRadius: 8,
         padding: '10px 14px',
         marginBottom: 16,
         display: 'flex',
@@ -153,4 +149,3 @@ export default function ActiveFilterChips({
     </div>
   );
 }
-

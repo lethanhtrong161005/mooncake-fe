@@ -1,0 +1,308 @@
+.home-page {
+  --home-ink: #1c1917;
+  --home-muted: #57534e;
+  --home-line: #e7e5e4;
+  --home-surface: #ffffff;
+  --home-surface-soft: #f8fafc;
+  --home-brand: #8c1524;
+  --home-gold: #b7791f;
+  background: #f5f6f8 !important;
+}
+
+.home-page main > section {
+  border-color: var(--home-line) !important;
+}
+
+.home-page main > section:not(:first-child) {
+  background: var(--home-surface) !important;
+}
+
+.home-page main > section:nth-child(2n + 1):not(:first-child) {
+  background: var(--home-surface-soft) !important;
+}
+
+.home-page .ant-tag {
+  border-radius: 6px;
+  line-height: 1.45;
+}
+
+.home-page .home-showcase-badges {
+  display: none !important;
+}
+
+.home-page .home-reveal {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  will-change: opacity, transform;
+  transition:
+    opacity 560ms ease,
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--home-reveal-delay, 0ms);
+}
+
+.home-page .home-reveal.is-visible:not(.home-hero) {
+  opacity: 1;
+  transform: none;
+}
+
+.home-page .home-reveal--lift.is-visible:not(.home-hero) {
+  animation: homeRevealLift 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-reveal--from-left.is-visible:not(.home-hero) {
+  animation: homeRevealFromLeft 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-reveal--from-right.is-visible:not(.home-hero) {
+  animation: homeRevealFromRight 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-reveal--zoom.is-visible:not(.home-hero) {
+  animation: homeRevealZoom 780ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible > div {
+  animation: homeSectionContentIn 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--home-reveal-delay, 0ms) + 110ms);
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col {
+  animation: homeCardPopIn 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col:nth-child(1) {
+  animation-delay: 120ms;
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col:nth-child(4) {
+  animation-delay: 360ms;
+}
+
+.home-page .home-hero {
+  opacity: 1;
+  transform: none;
+  animation: homeHeroIn 920ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home-page .home-hero-kicker {
+  animation: homeHeroKickerIn 620ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+}
+
+.home-page .home-hero-title {
+  animation: homeHeroTitleIn 840ms cubic-bezier(0.16, 1, 0.3, 1) 210ms both;
+}
+
+.home-page .home-hero-emphasis {
+  animation: homeHeroEmphasisIn 760ms cubic-bezier(0.16, 1, 0.3, 1) 640ms both;
+}
+
+.home-page .home-hero-copy {
+  animation: homeHeroCopyIn 680ms cubic-bezier(0.16, 1, 0.3, 1) 470ms both;
+}
+
+.home-page .home-hero-actions {
+  animation: homeHeroActionsIn 700ms cubic-bezier(0.16, 1, 0.3, 1) 630ms both;
+}
+
+.home-page .home-hero-showcase {
+  animation: homeHeroShowcaseIn 980ms cubic-bezier(0.16, 1, 0.3, 1) 260ms both;
+}
+
+@keyframes homeHeroIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 42px, 0) scale(0.975);
+  }
+  65% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeHeroKickerIn {
+  from {
+    opacity: 0;
+    transform: translate3d(-26px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeHeroTitleIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 38px, 0);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes homeHeroEmphasisIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) skewX(-7deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeHeroCopyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeHeroActionsIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeHeroShowcaseIn {
+  from {
+    opacity: 0;
+    transform: translate3d(48px, 26px, 0) scale(0.9) rotate(2.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeRevealLift {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 48px, 0) scale(0.97);
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes homeRevealFromLeft {
+  from {
+    opacity: 0;
+    transform: translate3d(-68px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes homeRevealFromRight {
+  from {
+    opacity: 0;
+    transform: translate3d(68px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes homeRevealZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes homeSectionContentIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes homeCardPopIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 32px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (max-width: 767px) {
+  .home-page .home-reveal {
+    transform: translate3d(0, 14px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .home-reveal,
+  .home-page .home-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    transition-delay: 0ms;
+    animation: none;
+  }
+
+  .home-page .home-hero {
+    animation: none;
+  }
+
+  .home-page .home-hero-kicker,
+  .home-page .home-hero-title,
+  .home-page .home-hero-emphasis,
+  .home-page .home-hero-copy,
+  .home-page .home-hero-actions,
+  .home-page .home-hero-showcase {
+    animation: none;
+  }
+
+  .home-page .home-reveal:not(.home-hero).is-visible > div {
+    animation: none;
+  }
+
+  .home-page .home-reveal:not(.home-hero).is-visible .ant-row > .ant-col {
+    animation: none;
+  }
+}

@@ -1,5 +1,5 @@
 // Lucian UX/UI Prompt #298 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#298
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './TearOffCoupon.css';
 
 export default function TearOffCoupon() {
@@ -34,7 +34,9 @@ export default function TearOffCoupon() {
       if (navigator.clipboard) {
         navigator.clipboard.writeText(COUPON_CODE).catch(() => {});
       }
-    } catch {}
+    } catch {
+      // Ignore clipboard permission errors
+    }
     setCopied(true);
     setShowToast(true);
     setTimeout(() => {

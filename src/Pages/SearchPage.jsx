@@ -1,23 +1,8 @@
 import { useState } from 'react';
-import {
-  AutoComplete,
-  Breadcrumb,
-  Button,
-  Col,
-  Grid,
-  Input,
-  Row,
-  Space,
-  Tag,
-  Typography,
-} from 'antd';
-import {
-  CompassOutlined,
-  HomeOutlined,
-  SafetyCertificateOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
+import { AutoComplete, Button, Col, Grid, Input, Row, Space, Tag, Typography } from 'antd';
+import { SafetyCertificateOutlined, SearchOutlined } from '@ant-design/icons';
 import CustomerHeader from '../components/layout/CustomerHeader';
+import CustomerBreadcrumbBar from '../components/layout/CustomerBreadcrumbBar';
 import ActiveFilterChips from '../components/search/ActiveFilterChips';
 import SearchFilterPanel from '../components/search/SearchFilterPanel';
 import SearchResultsGrid from '../components/search/SearchResultsGrid';
@@ -27,13 +12,7 @@ import { useProductSearch } from '../hooks/useProductSearch';
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
 
-const QUICK_KEYWORDS = [
-  'Hộp quà VIP',
-  'Bánh nướng',
-  'Bánh dẻo',
-  'Bánh chay',
-  'Sơn mài',
-];
+const QUICK_KEYWORDS = ['Hộp quà VIP', 'Bánh nướng', 'Bánh dẻo', 'Bánh chay', 'Sơn mài'];
 
 export default function SearchPage({ onNavigate }) {
   const screens = useBreakpoint();
@@ -89,65 +68,40 @@ export default function SearchPage({ onNavigate }) {
     <div
       style={{
         minHeight: '100vh',
-        background: '#faf8f6',
+        background: '#f5f6f8',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       <CustomerHeader onNavigate={onNavigate} />
+      <CustomerBreadcrumbBar items={[{ label: 'Khám phá catalog B2B' }]} onNavigate={onNavigate} />
 
       <section
         style={{
-          background:
-            'linear-gradient(135deg, #5c0f19 0%, #8c1524 55%, #6e111d 100%)',
-          color: '#ffffff',
-          padding: isMobile ? '20px 16px 24px' : '28px 24px 32px',
-          borderBottom: '3px solid #d48806',
+          background: '#ffffff',
+          color: '#1c1917',
+          padding: isMobile ? '18px 16px 22px' : '24px 24px 28px',
+          borderBottom: '1px solid #e7e5e4',
         }}
       >
         <div style={{ maxWidth: 1360, margin: '0 auto' }}>
-          <Breadcrumb
-            items={[
-              {
-                title: (
-                  <span
-                    onClick={() => onNavigate?.('trang-chu')}
-                    style={{ color: '#f5d3c6', cursor: 'pointer', fontSize: 12 }}
-                  >
-                    <HomeOutlined /> Trang chủ
-                  </span>
-                ),
-              },
-              {
-                title: (
-                  <span style={{ color: '#ffffff', fontSize: 12, fontWeight: 500 }}>
-                    <CompassOutlined /> Khám phá catalog B2B
-                  </span>
-                ),
-              },
-            ]}
-            style={{ marginBottom: 12 }}
-          />
-
           <Row gutter={[24, 16]} align="middle" justify="space-between">
             <Col xs={24} lg={10}>
               <Title
                 level={2}
                 style={{
-                  color: '#ffffff',
+                  color: '#1c1917',
                   margin: '0 0 6px',
-                  fontSize: isMobile ? 22 : 28,
+                  fontSize: isMobile ? 22 : 26,
                   fontWeight: 700,
                 }}
               >
                 Khám phá catalog B2B
               </Title>
-              <Text style={{ color: '#f7dfd4', fontSize: 13 }}>
-                <SafetyCertificateOutlined
-                  style={{ color: '#f3c677', marginRight: 6 }}
-                />
-                Nguồn cung bánh Trung thu doanh nghiệp từ các xưởng nghệ nhân đã xác minh,
-                hỗ trợ in logo & xuất hóa đơn VAT.
+              <Text style={{ color: '#57534e', fontSize: 13, lineHeight: 1.65 }}>
+                <SafetyCertificateOutlined style={{ color: '#8c1524', marginRight: 6 }} />
+                Nguồn cung bánh Trung thu doanh nghiệp từ các xưởng nghệ nhân đã xác minh, hỗ trợ in
+                logo & xuất hóa đơn VAT.
               </Text>
             </Col>
 
@@ -170,8 +124,8 @@ export default function SearchPage({ onNavigate }) {
                       type="primary"
                       icon={<SearchOutlined />}
                       style={{
-                        background: '#d48806',
-                        borderColor: '#d48806',
+                        background: '#8c1524',
+                        borderColor: '#8c1524',
                         fontWeight: 600,
                       }}
                     >
@@ -183,23 +137,17 @@ export default function SearchPage({ onNavigate }) {
               </AutoComplete>
 
               <Space size={[6, 6]} wrap style={{ marginTop: 10 }}>
-                <Text style={{ color: '#f5d3c6', fontSize: 12 }}>Gợi ý nhanh:</Text>
+                <Text style={{ color: '#78716c', fontSize: 12 }}>Gợi ý nhanh:</Text>
                 {QUICK_KEYWORDS.map((kw) => (
                   <Tag
                     key={kw}
                     onClick={() => submitKeyword(kw)}
                     style={{
                       cursor: 'pointer',
-                      background:
-                        searchState.q === kw
-                          ? '#d48806'
-                          : 'rgba(255, 255, 255, 0.14)',
-                      borderColor:
-                        searchState.q === kw
-                          ? '#d48806'
-                          : 'rgba(255, 255, 255, 0.28)',
-                      color: '#ffffff',
-                      borderRadius: 12,
+                      background: searchState.q === kw ? '#8c1524' : '#f5f5f4',
+                      borderColor: searchState.q === kw ? '#8c1524' : '#e7e5e4',
+                      color: searchState.q === kw ? '#ffffff' : '#44403c',
+                      borderRadius: 7,
                       fontSize: 11,
                       margin: 0,
                     }}
@@ -218,7 +166,7 @@ export default function SearchPage({ onNavigate }) {
           maxWidth: 1360,
           width: '100%',
           margin: '0 auto',
-          padding: isMobile ? '16px 12px 40px' : '24px 24px 56px',
+          padding: isMobile ? '16px 12px 40px' : '22px 24px 56px',
           flex: 1,
         }}
       >

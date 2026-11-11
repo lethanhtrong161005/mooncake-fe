@@ -10,6 +10,7 @@ import { SORT_OPTIONS } from '../../constants/productSearch';
 const { Text } = Typography;
 
 export default function SearchToolbar({
+  totalCount,
   sort,
   viewMode,
   activeFilterCount,
@@ -23,8 +24,8 @@ export default function SearchToolbar({
       data-testid="search-toolbar"
       style={{
         background: '#ffffff',
-        border: '1px solid #ebdcd5',
-        borderRadius: 12,
+        border: '1px solid #e7e5e4',
+        borderRadius: 10,
         padding: isMobile ? '10px 12px' : '12px 16px',
         marginBottom: 16,
         display: 'flex',
@@ -32,7 +33,6 @@ export default function SearchToolbar({
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: 12,
-        boxShadow: '0 2px 8px rgba(140, 21, 36, 0.03)',
       }}
     >
       <Space size={10} wrap>
@@ -52,9 +52,14 @@ export default function SearchToolbar({
             </Button>
           </Badge>
         ) : (
-          <Text strong style={{ fontSize: 14, color: '#262626' }}>
-            Danh mục sản phẩm B2B
-          </Text>
+          <div>
+            <Text strong style={{ fontSize: 14, color: '#1c1917', display: 'block' }}>
+              {Number(totalCount || 0).toLocaleString('vi-VN')} sản phẩm phù hợp
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              Chọn sản phẩm để xem biến thể và điều kiện đặt hàng
+            </Text>
+          </div>
         )}
       </Space>
 

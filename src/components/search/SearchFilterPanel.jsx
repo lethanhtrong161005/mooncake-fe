@@ -20,11 +20,7 @@ import {
   SafetyCertificateOutlined,
   TagsOutlined,
 } from '@ant-design/icons';
-import {
-  MOQ_OPTIONS,
-  PRICE_STEP,
-  REPUTATION_OPTIONS,
-} from '../../constants/productSearch';
+import { MOQ_OPTIONS, PRICE_STEP, REPUTATION_OPTIONS } from '../../constants/productSearch';
 import { formatNumber } from '../../utils/formatCurrency';
 
 const { Text } = Typography;
@@ -61,10 +57,8 @@ export default function SearchFilterPanel({
     max: searchState.maxPrice,
   });
 
-  const minDraft =
-    priceDraft.key === committedKey ? priceDraft.min : searchState.minPrice;
-  const maxDraft =
-    priceDraft.key === committedKey ? priceDraft.max : searchState.maxPrice;
+  const minDraft = priceDraft.key === committedKey ? priceDraft.min : searchState.minPrice;
+  const maxDraft = priceDraft.key === committedKey ? priceDraft.max : searchState.maxPrice;
 
   const updateMinDraft = (val) => {
     setPriceDraft({
@@ -191,8 +185,7 @@ export default function SearchFilterPanel({
         <Space size={[6, 6]} wrap style={{ marginBottom: 10 }}>
           {PRICE_PRESETS.map((preset) => {
             const isSelected =
-              searchState.minPrice === preset.min &&
-              searchState.maxPrice === preset.max;
+              searchState.minPrice === preset.min && searchState.maxPrice === preset.max;
             return (
               <Tag
                 key={preset.label}
@@ -240,9 +233,7 @@ export default function SearchFilterPanel({
             onChange={updateMinDraft}
             onPressEnter={handleApplyPriceInputs}
             placeholder="Từ (đ)"
-            formatter={(val) =>
-              val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
-            }
+            formatter={(val) => (val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
             parser={(val) => (val ? Number(val.replace(/\./g, '')) : null)}
             style={{ width: '100%' }}
             aria-label="Giá tối thiểu"
@@ -257,9 +248,7 @@ export default function SearchFilterPanel({
             onChange={updateMaxDraft}
             onPressEnter={handleApplyPriceInputs}
             placeholder="Đến (đ)"
-            formatter={(val) =>
-              val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
-            }
+            formatter={(val) => (val ? `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '')}
             parser={(val) => (val ? Number(val.replace(/\./g, '')) : null)}
             style={{ width: '100%' }}
             aria-label="Giá tối đa"
@@ -369,9 +358,7 @@ export default function SearchFilterPanel({
           >
             <span style={{ fontSize: 13 }}>
               Có bao bì tuỳ chỉnh
-              {facets?.customPackagingCount != null
-                ? ` (${facets.customPackagingCount})`
-                : ''}
+              {facets?.customPackagingCount != null ? ` (${facets.customPackagingCount})` : ''}
             </span>
           </Checkbox>
           <Checkbox
@@ -467,16 +454,16 @@ export default function SearchFilterPanel({
       }
       size="small"
       style={{
-        borderRadius: 12,
-        borderColor: '#ebdcd5',
-        boxShadow: '0 2px 10px rgba(140, 21, 36, 0.04)',
+        borderRadius: 10,
+        borderColor: '#e7e5e4',
+        borderTop: '3px solid #8c1524',
         position: 'sticky',
         top: 84,
       }}
       styles={{
         header: {
-          background: '#fdf8f5',
-          borderBottom: '1px solid #ebdcd5',
+          background: '#ffffff',
+          borderBottom: '1px solid #e7e5e4',
           padding: '12px 16px',
         },
         body: {

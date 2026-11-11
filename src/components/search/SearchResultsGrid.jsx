@@ -52,7 +52,7 @@ export default function SearchResultsGrid({
         {Array.from({ length: 6 }).map((_, idx) => (
           <Col xs={24} sm={12} xl={8} key={`skeleton-${idx}`}>
             <Card
-              style={{ borderRadius: 12, borderColor: '#ebdcd5' }}
+              style={{ borderRadius: 10, borderColor: '#e7e5e4' }}
               styles={{ body: { padding: 14 } }}
             >
               <Skeleton.Button
@@ -73,8 +73,8 @@ export default function SearchResultsGrid({
       <Card
         data-testid="search-empty-state"
         style={{
-          borderRadius: 12,
-          borderColor: '#ebdcd5',
+          borderRadius: 10,
+          borderColor: '#e7e5e4',
           textAlign: 'center',
           padding: '32px 16px',
         }}
@@ -127,11 +127,7 @@ export default function SearchResultsGrid({
         <Row gutter={[16, 16]} data-testid="search-results-grid">
           {items.map((item) => (
             <Col xs={24} sm={12} xl={8} key={item.productId || item.id}>
-              <ProductSearchCard
-                item={item}
-                viewMode="grid"
-                onNavigate={onNavigate}
-              />
+              <ProductSearchCard item={item} viewMode="grid" onNavigate={onNavigate} />
             </Col>
           ))}
         </Row>
@@ -143,8 +139,8 @@ export default function SearchResultsGrid({
           marginTop: 28,
           padding: isMobile ? '12px' : '14px 20px',
           background: '#ffffff',
-          borderRadius: 12,
-          border: '1px solid #ebdcd5',
+          borderRadius: 10,
+          border: '1px solid #e7e5e4',
           display: 'flex',
           justifyContent: isMobile ? 'center' : 'flex-end',
           alignItems: 'center',
