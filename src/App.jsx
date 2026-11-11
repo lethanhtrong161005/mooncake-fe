@@ -31,6 +31,7 @@ import OrderManage from './Pages/Supplier/OrderManage';
 import ContractManage from './Pages/Supplier/ContractManage';
 import DeliverManage from './Pages/Supplier/DeliverManage';
 import SuppilerProfile from './Pages/Supplier/SuppilerProfile';
+import PromotionManage from './Pages/Supplier/PromotionManage';
 
 // Admin Pages
 import DashBoard from './Pages/Admin/DashBoard';
@@ -55,6 +56,7 @@ const ShopTemplates = lazy(() => import('./Pages/Admin/ShopTemplates'));
 
 export default function App() {
   const { user, isLoggedIn, isRestoring } = useAuth();
+  const isSupplierUser = String(user?.role || '').toLowerCase() === 'supplier';
   const [currentPage, setCurrentPage] = useState(currentRoute);
   const [hashQuery, setHashQuery] = useState(currentHashQuery);
 
@@ -74,6 +76,7 @@ export default function App() {
     if (pageKey === 'dang-ky-mau-thu') target = 'san-pham';
     if (pageKey === 'danh-gia-va-phe-duyet-mau-thu') target = 'thanh-toan-danh-gia';
     if (pageKey === 'hop-dong-dien-tu' || pageKey === 'electric-contact') target = 'hop-dong-tien-do';
+    if (isSupplierUser && ['hop-dong-tien-do', 'hop-dong-dien-tu'].includes(target)) target = 'nha-cung-cap/quan-ly-hop-dong';
     if (pageKey === 'dang-nhap') {
       setShowLogin(true);
       return;
@@ -148,7 +151,9 @@ export default function App() {
         return <BiddingAndQuoteComparison onNavigate={navigateTo} />;
       case 'hop-dong-tien-do':
       case 'hop-dong-dien-tu':
-        return <ContractsAndMilestone onNavigate={navigateTo} />;
+        return isSupplierUser
+          ? <ContractManage onNavigate={navigateTo} />
+          : <ContractsAndMilestone onNavigate={navigateTo} />;
       case 'giao-hang-pod':
       case 'van-chuyen-pod':
         return <DeliveryPoD onNavigate={navigateTo} />;
@@ -193,6 +198,9 @@ export default function App() {
         return <ContractManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/quan-ly-giao-hang':
         return <DeliverManage onNavigate={navigateTo} />;
+      case 'nha-cung-cap/khuyen-mai':
+      case 'nha-cung-cap/quan-ly-khuyen-mai':
+        return <PromotionManage onNavigate={navigateTo} />;
       case 'nha-cung-cap/ho-so':
         return hasSupplierWorkspace(user) ? <SuppilerProfile onNavigate={navigateTo} /> :
           <SupplierRegistration onNavigate={navigateTo} />;
@@ -267,7 +275,7 @@ export default function App() {
       label: '🛒 KHÁCH HÀNG DOANH NGHIỆP (B2B)',
       children: [
         { key: 'trang-chu', label: '1. Trang chủ' },
-        { key: 'tim-kiem', label: '2. Khám phá sản phẩm B2B' },
+        { key: 'tim-kiem', label: '2. Khám phá sản phẩm' },
         { key: 'san-pham', label: '3. Chi tiết sản phẩm & Biến thể' },
         { key: 'dat-hang-thiet-ke', label: '4. Đặt hàng doanh nghiệp' },
         { key: 'in-an-bao-bi', label: '5. Tùy biến bao bì' },
@@ -295,7 +303,8 @@ export default function App() {
         { key: 'nha-cung-cap/quan-ly-don-hang', label: '4. Đơn hàng & Mockup bao bì' },
         { key: 'nha-cung-cap/quan-ly-hop-dong', label: '5. Hợp đồng & Milestone' },
         { key: 'nha-cung-cap/quan-ly-giao-hang', label: '6. Giao vận & Bằng chứng PoD' },
-        { key: 'nha-cung-cap/ho-so', label: '7. Hồ sơ & Điểm uy tín' },
+        { key: 'nha-cung-cap/khuyen-mai', label: '7. Khuyến mãi & Chiết khấu sỉ' },
+        { key: 'nha-cung-cap/ho-so', label: '8. Hồ sơ & Điểm uy tín' },
       ],
     },
     {

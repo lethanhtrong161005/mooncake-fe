@@ -32,7 +32,7 @@ function RegistrationFlow({ onClose, onNavigate, onSwitchToLogin }) {
   };
   const cooldown = () => { setNow(Date.now()); setResendAt(Date.now() + 60000); };
   return <Modal open centered width={520} footer={null} destroyOnHidden
-    onCancel={busy ? undefined : onClose} closable={!busy} maskClosable={!busy} keyboard={!busy}>
+    onCancel={busy ? undefined : onClose} closable={!busy} mask={{ closable: !busy }} keyboard={!busy}>
     <AppLogo subtitle="Đăng ký tài khoản Mooncake" style={{ marginBottom: 24 }} />
     <Steps size="small" current={step === 3 ? 1 : step} style={{ marginBottom: 24 }} items={[
       { title: 'Thông tin' }, { title: 'Xác minh email' }, { title: 'Hoàn tất' },

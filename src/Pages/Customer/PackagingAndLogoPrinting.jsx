@@ -59,7 +59,28 @@ export default function PackagingAndLogoPrinting({ onNavigate }) {
   const totalCost = unitCost * quantity;
 
   const handleSubmit = () => {
-    message.success('Đã gửi yêu cầu in ấn bao bì logo thành công! Xưởng in sẽ gửi bản mockup 3D trong 24h.');
+    const packagingDraft = {
+      boxType,
+      boxName: currentBox.name,
+      boxPrice: currentBox.price,
+      technique,
+      techniqueName:
+        technique === 'khac-laser'
+          ? 'Khắc Laser Chìm Vào Gỗ'
+          : technique === 'dap-noi'
+            ? 'Dập Nổi Hoa Văn 3D'
+            : 'Ép Kim Vàng 24K',
+      quantity,
+      unitCost,
+      totalCost,
+      savedAt: new Date().toISOString(),
+    };
+    try {
+      sessionStorage.setItem('mooncake_selected_packaging_draft', JSON.stringify(packagingDraft));
+    } catch {
+      // storage
+    }
+    message.success('Đã lưu cấu hình tùy biến bao bì! Đang chuyển tiếp sang Đặt hàng doanh nghiệp...');
     onNavigate?.('dat-hang-thiet-ke');
   };
 

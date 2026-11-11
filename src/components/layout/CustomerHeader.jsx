@@ -163,7 +163,7 @@ export default function CustomerHeader({
         {/* Brand Logo */}
         <AppLogo
           size={compact ? 'small' : 'default'}
-          subtitle={compact ? '' : 'Bánh Trung Thu B2B'}
+          subtitle={compact ? '' : 'Bánh Trung Thu Cao Cấp'}
           onClick={() => onNavigate?.('trang-chu')}
           style={{ marginRight: 16 }}
         />

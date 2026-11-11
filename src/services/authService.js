@@ -47,6 +47,18 @@ export const authService = {
     return apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { email: email.trim(), code });
   },
 
+  async forgotPassword(email) {
+    return apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email: email.trim() });
+  },
+
+  async resetPassword({ email, code, newPassword }) {
+    return apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      email: email.trim(),
+      code: code.trim(),
+      newPassword,
+    });
+  },
+
   /** Create an authorization URL bound to a one-use backend state. */
   async getGoogleAuthorizationUrl() {
     const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_AUTHORIZATION_URL, {});

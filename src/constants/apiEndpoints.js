@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     RESEND_VERIFICATION: `/${API_VERSION}/auth/resend-verification`,
     VERIFY_EMAIL: `/${API_VERSION}/auth/verify-email`,
     FORGOT_PASSWORD: `/${API_VERSION}/auth/forgot-password`,
+    RESET_PASSWORD: `/${API_VERSION}/auth/reset-password`,
     GOOGLE_AUTHORIZATION_URL: `/${API_VERSION}/auth/google/authorization-url`,
     GOOGLE_LOGIN: `/${API_VERSION}/auth/google/login`,
     REFRESH_TOKEN: `/${API_VERSION}/auth/refresh-token`,
@@ -78,6 +79,7 @@ export const API_ENDPOINTS = {
     BIDS: (id) => `/${API_VERSION}/rfqs/${id}/bids`,
     CANCEL_BID: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/cancel`,
     ACCEPT_BID: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/accept`,
+    RESPOND_TO_BID_SELECTION: (rfqId, bidId) => `/${API_VERSION}/rfqs/${rfqId}/bids/${bidId}/respond`,
   },
 
   // Enterprise Direct Bulk Orders & PoD Logistics
@@ -92,8 +94,6 @@ export const API_ENDPOINTS = {
     CUSTOMER_LIST: `/${API_VERSION}/orders/mine`,
     CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
-    SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
-    SUPPLIER_DASHBOARD_SUMMARY: `/${API_VERSION}/orders/supplier/dashboard-summary`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
     PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
@@ -194,7 +194,6 @@ export const API_ENDPOINTS = {
     MY_PROFILE: `/${API_VERSION}/suppliers/me`,
     ORDER_POLICY: `/${API_VERSION}/suppliers/me/order-policy`,
     PAYOUT_ACCOUNT: `/${API_VERSION}/suppliers/me/payout-account`,
-    FINANCIAL_OVERVIEW: `/${API_VERSION}/suppliers/me/financial-overview`,
     DOCUMENTS: `/${API_VERSION}/suppliers/me/documents`,
     DOCUMENT: (id) => `/${API_VERSION}/suppliers/me/documents/${id}`,
     DOCUMENT_CONTENT: (id) => `/${API_VERSION}/suppliers/documents/${id}/content`,

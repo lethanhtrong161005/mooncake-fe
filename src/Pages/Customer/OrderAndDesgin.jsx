@@ -125,6 +125,24 @@ export default function OrderAndDesgin({ onNavigate }) {
   const shippingZoneCode = Form.useWatch('shippingZoneCode', form) || 'HCM_INNER';
 
   useEffect(() => {
+    try {
+      const rawPkg = sessionStorage.getItem('mooncake_selected_packaging_draft');
+      if (rawPkg) {
+        const pkg = JSON.parse(rawPkg);
+        if (pkg?.quantity) {
+          form.setFieldsValue({
+            quantity: pkg.quantity,
+            specialMessage: `[Tùy biến bao bì]: ${pkg.boxName} · ${pkg.techniqueName}.`,
+          });
+          setPackagingEnabled(true);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [form]);
+
+  useEffect(() => {
     const { draft, urlProductId } = resolveInitialOrderContext();
     if (!urlProductId) {
       return undefined;
@@ -462,7 +480,7 @@ export default function OrderAndDesgin({ onNavigate }) {
 
   const createTab = loadingProduct ? (
     <div className="py-24 text-center bg-white rounded-2xl border border-stone-200">
-      <Spin size="large" tip="Đang kết nối dữ liệu sản phẩm..." />
+      <Spin size="large" description="Đang kết nối dữ liệu sản phẩm..." />
     </div>
   ) : !product ? (
     <div className="bg-white rounded-2xl p-12 text-center border border-stone-200/80 shadow-xs max-w-2xl mx-auto">

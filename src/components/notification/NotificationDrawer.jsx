@@ -124,7 +124,7 @@ export default function NotificationDrawer({
       {/* Notifications List */}
       {isLoading ? (
         <div className="flex justify-center items-center py-16">
-          <Spin tip="Đang tải thông báo..." />
+          <Spin description="Đang tải thông báo..." />
         </div>
       ) : notifications.length === 0 ? (
         <Empty

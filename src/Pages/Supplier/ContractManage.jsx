@@ -30,6 +30,7 @@ import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import { signalRManager } from '../../services/signalrService';
 
 const { Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -39,9 +40,9 @@ const errorMessage = (error) => error?.response?.data?.message || error?.message
 
 const statusMap = {
   Draft: ['default', 'Bản nháp'],
-  PendingSignature: ['warning', 'Chờ ký số'],
-  Signed: ['processing', 'Đã ký (Chờ cọc)'],
-  PendingDeposit: ['orange', 'Chờ khách cọc M1'],
+  PendingSignature: ['warning', 'Chờ supplier xác nhận'],
+  Signed: ['processing', 'Supplier đã xác nhận'],
+  PendingDeposit: ['processing', 'Đã gửi hợp đồng · Chờ customer'],
   Active: ['success', 'Đang hiệu lực (Active)'],
   CompletedOnTime: ['success', 'Hoàn thành đúng hạn (+10đ)'],
   CompletedLate: ['purple', 'Hoàn thành trễ hạn (+3đ)'],
@@ -52,7 +53,7 @@ const statusMap = {
 
 const milestoneStatusMap = {
   Pending: ['default', 'Chưa đến hạn'],
-  AwaitingPayment: ['warning', 'Chờ thanh toán'],
+  AwaitingPayment: ['warning', 'Customer đang xử lý'],
   Paid: ['success', 'Đã nhận tiền'],
   InProgress: ['processing', 'Đang sản xuất'],
   PendingReview: ['orange', 'Đang chờ khách duyệt'],
@@ -72,8 +73,6 @@ export default function ContractManage({ onNavigate }) {
 
   // Modals
   const [milestonesModalOpen, setMilestonesModalOpen] = useState(false);
-  const [otpModalOpen, setOtpModalOpen] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
 
   // Extension Modal
   const [extensionModalOpen, setExtensionModalOpen] = useState(false);
@@ -86,35 +85,18 @@ export default function ContractManage({ onNavigate }) {
 
   const loadContracts = contractPage.refresh;
   useEffect(() => { if (contractPage.error) message.error(errorMessage(contractPage.error)); }, [contractPage.error]);
+  useEffect(() => {
+    const refreshContracts = () => loadContracts();
+    signalRManager.on('ReceiveNotification', refreshContracts);
+    return () => signalRManager.off('ReceiveNotification', refreshContracts);
+  }, [loadContracts]);
 
-  const handleOpenSign = async (record) => {
+  const handleConfirmContract = async (record) => {
     setSelectedContract(record);
     setActionLoading(true);
     try {
-      await contractService.requestSignatureOtp(record.id);
-      setOtpCode('');
-      setOtpModalOpen(true);
-      message.success('Mã OTP xác thực ký số đã được gửi về email đại diện xưởng.');
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleConfirmOtpSign = async () => {
-    if (!otpCode || otpCode.trim().length < 6) {
-      message.error('Vui lòng nhập đúng 6 chữ số OTP xác thực.');
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      await contractService.sign(selectedContract.id, otpCode.trim(), true);
-      message.success(
-        `Đã ký số thành công Hợp đồng kinh tế ${selectedContract.contractNumber}! Đã chuyển yêu cầu đặt cọc M1 tới Khách hàng.`
-      );
-      setOtpModalOpen(false);
+      await contractService.sign(record.id, '', true);
+      message.success(`Đã ký và gửi hợp đồng ${record.contractNumber} cho customer xem lại.`);
       await loadContracts();
     } catch (error) {
       message.error(errorMessage(error));
@@ -239,18 +221,11 @@ export default function ContractManage({ onNavigate }) {
       render: (d) => d || '—',
     },
     {
-      title: 'Ký Điện Tử (OTP)',
+      title: 'Supplier xác nhận',
       key: 'signature',
-      render: (_, r) => (
-        <Space direction="vertical" size={2}>
-          <span style={{ fontSize: 12 }}>
-            Mua: {r.signedByCustomerAt ? <Tag color="success">✓ Đã ký</Tag> : <Tag>Chưa ký</Tag>}
-          </span>
-          <span style={{ fontSize: 12 }}>
-            Bán: {r.signedBySupplierAt ? <Tag color="success">✓ Đã ký</Tag> : <Tag color="error">Chờ xưởng ký</Tag>}
-          </span>
-        </Space>
-      ),
+      render: (_, r) => r.signedBySupplierAt
+        ? <Tag color="success">✓ Supplier đã ký và gửi hợp đồng</Tag>
+        : <Tag color="warning">Supplier cần ký hợp đồng</Tag>,
     },
     {
       title: 'Trạng Thái',
@@ -273,7 +248,7 @@ export default function ContractManage({ onNavigate }) {
             icon={<FileTextOutlined />}
             onClick={() => handleOpenMilestones(record)}
           >
-            Tiến độ Mốc
+            Xem hợp đồng
           </Button>
 
           {record.status === 'PendingSignature' && !record.signedBySupplierAt && (
@@ -282,9 +257,21 @@ export default function ContractManage({ onNavigate }) {
               size="small"
               style={{ background: '#8c1524', borderColor: '#8c1524' }}
               icon={<SafetyCertificateOutlined />}
-              onClick={() => handleOpenSign(record)}
+              onClick={() => Modal.confirm({
+                title: `Xác nhận hợp đồng ${record.contractNumber}?`,
+                content: <Descriptions bordered size="small" column={1}>
+                  <Descriptions.Item label="Hợp đồng">{record.title || 'Hợp đồng RFQ'}</Descriptions.Item>
+                  <Descriptions.Item label="Tổng giá trị">{money(record.totalValue)}</Descriptions.Item>
+                  <Descriptions.Item label="Hạn giao">{record.deliveryDeadline || '—'}</Descriptions.Item>
+                  <Descriptions.Item label="Điều khoản">{record.termsAndConditions || 'Theo nội dung báo giá và tiến độ đã thống nhất.'}</Descriptions.Item>
+                </Descriptions>,
+                width: 640,
+                okText: 'Xác nhận hợp đồng',
+                cancelText: 'Xem lại',
+                onOk: () => handleConfirmContract(record),
+              })}
             >
-              Ký Số OTP
+              Xác nhận hợp đồng
             </Button>
           )}
 
@@ -319,12 +306,12 @@ export default function ContractManage({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/quan-ly-hop-dong"
       onNavigate={onNavigate}
-      title="Quản Lý Hợp Đồng Điện Tử & Mốc Tiến Độ (Milestones)"
-      subtitle="Ký kết số qua mã OTP, theo dõi điều kiện đặt cọc M1 và cập nhật tiến độ bàn giao"
+      title="Hợp đồng & tiến độ"
+      subtitle="Supplier ký và gửi hợp đồng; tại đây supplier có thể xem lại nội dung hợp đồng và tiến độ"
     >
       <Alert
-        message="Điều kiện Kích Hoạt Hợp Đồng (Mandatory M1 Deposit)"
-        description="Sau khi hai bên ký điện tử, Hợp đồng chuyển sang trạng thái PendingDeposit. Hợp đồng CHỈ chuyển sang Active khi Bên Mua hoàn tất đặt cọc 30% mốc M1 vào tài khoản bảo chứng Escrow."
+        message="Quy trình hợp đồng dành cho supplier"
+        description="Supplier kiểm tra điều khoản, ký và gửi hợp đồng cho customer. Sau khi gửi, supplier có thể xem lại hợp đồng và cập nhật tiến độ thực hiện tại đây."
         type="info"
         showIcon
         style={{ marginBottom: 20 }}
@@ -482,31 +469,6 @@ export default function ContractManage({ onNavigate }) {
           )}
         </Modal>
       )}
-
-      {/* Modal OTP Sign */}
-      <Modal
-        title="Ký Số Hợp Đồng Điện Tử B2B (Xác Thực OTP)"
-        open={otpModalOpen}
-        onCancel={() => setOtpModalOpen(false)}
-        onOk={handleConfirmOtpSign}
-        confirmLoading={actionLoading}
-        okText="Xác Nhận Ký Số Hợp Đồng"
-        okButtonProps={{ style: { background: '#8c1524', borderColor: '#8c1524' } }}
-      >
-        <p style={{ color: '#666' }}>
-          Hệ thống đã gửi mã OTP xác thực ký điện tử về email đại diện xưởng bánh. Vui lòng nhập mã:
-        </p>
-        <Input
-          placeholder="Nhập 6 chữ số OTP"
-          maxLength={12}
-          value={otpCode}
-          onChange={(e) => setOtpCode(e.target.value)}
-          style={{ fontSize: 20, textAlign: 'center', letterSpacing: 8, height: 48 }}
-        />
-        <div style={{ fontSize: 12, color: '#888', marginTop: 12 }}>
-          Ký hợp đồng đồng nghĩa với việc cam kết thực hiện đúng quy cách mẫu bánh, tiến độ giao hàng và chịu chế tài vi phạm theo điều khoản hợp đồng.
-        </div>
-      </Modal>
 
       {/* Modal Extension */}
       <Modal
