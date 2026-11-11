@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     RESEND_VERIFICATION: `/${API_VERSION}/auth/resend-verification`,
     VERIFY_EMAIL: `/${API_VERSION}/auth/verify-email`,
     FORGOT_PASSWORD: `/${API_VERSION}/auth/forgot-password`,
+    RESET_PASSWORD: `/${API_VERSION}/auth/reset-password`,
     GOOGLE_AUTHORIZATION_URL: `/${API_VERSION}/auth/google/authorization-url`,
     GOOGLE_LOGIN: `/${API_VERSION}/auth/google/login`,
     REFRESH_TOKEN: `/${API_VERSION}/auth/refresh-token`,
