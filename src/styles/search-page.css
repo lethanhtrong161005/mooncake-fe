@@ -1,10 +1,15 @@
-.search-page {
+/* Product cards are reused on product detail (related products) and wishlist pages,
+   so their color tokens must exist there too — otherwise prices fall back to black. */
+:is(.search-page, .product-detail-page, .wishlist-page) {
   --search-ink: #2c211e;
   --search-muted: #756962;
   --search-wine: #481b24;
   --search-ruby: #8c1524;
   --search-paper: #faf8f4;
   --search-line: #e8ded3;
+}
+
+.search-page {
   min-height: 100vh;
   background: var(--search-paper);
   color: var(--search-ink);
