@@ -1,43 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert, App, Avatar, Badge, Button, Card, Col, Descriptions,
-  Empty, Form, Image, Input, InputNumber, Modal, Row, Select,
-  Space, Statistic, Table, Tag, Tooltip, Typography,
+  Alert, App, Avatar, Button, Card, Descriptions,
+  Empty, Form, Image, Input, InputNumber, Modal, Select,
+  Space, Table, Tag, Tooltip, Typography,
 } from 'antd';
 import {
   CheckCircleOutlined, ClockCircleOutlined, DollarOutlined,
   EyeOutlined, FileTextOutlined, PictureOutlined, ReloadOutlined,
   ShoppingOutlined, SyncOutlined, WarningOutlined,
 } from '@ant-design/icons';
+import WorkspaceStats from '../../components/workspace/WorkspaceStats';
+import { orderStatusColor, orderStatusLabel } from '../../constants/orderStatus';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import customPackagingService from '../../services/customPackagingService';
 import orderService from '../../services/orderService';
 import { useAuth } from '../../hooks/useAuth';
 import usePagedList from '../../hooks/usePagedList';
 
-const { Text, Title, Paragraph } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
-
-const statusColor = {
-  Pending: 'gold',
-  Confirmed: 'blue',
-  Processing: 'purple',
-  Shipped: 'cyan',
-  Delivered: 'green',
-  Cancelled: 'red',
-};
-
-const statusLabel = {
-  Pending: 'Chờ xác nhận',
-  Confirmed: 'Đã xác nhận',
-  Processing: 'Đang sản xuất',
-  Shipped: 'Đang giao hàng',
-  Delivered: 'Đã giao thành công',
-  Cancelled: 'Đã hủy',
-};
 
 export default function SupplierDashboard({ onNavigate }) {
   const { user } = useAuth();
@@ -259,8 +243,8 @@ export default function SupplierDashboard({ onNavigate }) {
       key: 'status',
       width: 140,
       render: (val) => (
-        <Tag color={statusColor[val] || 'default'} style={{ fontWeight: 500 }}>
-          {statusLabel[val] || val}
+        <Tag color={orderStatusColor(val)} style={{ fontWeight: 500 }}>
+          {orderStatusLabel(val)}
         </Tag>
       ),
     },
@@ -315,8 +299,8 @@ export default function SupplierDashboard({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/dashboard"
       onNavigate={onNavigate}
-      title="Dashboard Nhà Cung Cấp"
-      subtitle="Tổng quan hoạt động kinh doanh B2B, tiếp nhận đơn hàng doanh nghiệp và quy trình mockup bao bì."
+      title="Tổng quan nhà cung cấp"
+      subtitle="Doanh thu, đơn hàng cần xử lý và yêu cầu bao bì riêng của xưởng."
       extra={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading}>
@@ -324,10 +308,9 @@ export default function SupplierDashboard({ onNavigate }) {
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
             onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}
           >
-            Quản lý tất cả đơn hàng
+            Quản lý đơn hàng
           </Button>
         </Space>
       }
@@ -348,7 +331,6 @@ export default function SupplierDashboard({ onNavigate }) {
             <Button
               size="small"
               type="primary"
-              style={{ backgroundColor: '#d48806', borderColor: '#d48806' }}
               onClick={() => setStatusFilter('Pending')}
             >
               Xem ngay
@@ -357,97 +339,14 @@ export default function SupplierDashboard({ onNavigate }) {
         />
       )}
 
-      {/* KPI Cards Grid */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #faf8f5 100%)',
-              borderLeft: '4px solid #8c1524',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Tổng doanh thu nhận đơn</Text>}
-              value={money(metrics.totalRevenue)}
-              prefix={<DollarOutlined style={{ color: '#8c1524' }} />}
-              valueStyle={{ color: '#8c1524', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Từ {metrics.totalOrders} đơn hàng toàn sàn
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #fffbf0 100%)',
-              borderLeft: '4px solid #d48806',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Đơn chờ duyệt mới</Text>}
-              value={metrics.pendingOrders}
-              prefix={<ClockCircleOutlined style={{ color: '#d48806' }} />}
-              valueStyle={{ color: '#d48806', fontWeight: 700, fontSize: 22 }}
-              suffix={metrics.pendingOrders > 0 ? <Badge status="processing" style={{ marginLeft: 8 }} /> : null}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Cần xưởng phản hồi xác nhận
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f6f8ff 100%)',
-              borderLeft: '4px solid #1890ff',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Đang gia công & Sản xuất</Text>}
-              value={metrics.processingOrders}
-              prefix={<SyncOutlined style={{ color: '#1890ff' }} />}
-              valueStyle={{ color: '#1890ff', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Tiến độ sản xuất theo kế hoạch
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #fcf6ff 100%)',
-              borderLeft: '4px solid #722ed1',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Yêu cầu in logo & Hộp riêng</Text>}
-              value={metrics.packagingOrders}
-              prefix={<PictureOutlined style={{ color: '#722ed1' }} />}
-              valueStyle={{ color: '#722ed1', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Đơn hàng cần thiết kế mockup
-            </div>
-          </Card>
-        </Col>
-      </Row>
+      <WorkspaceStats
+        items={[
+          { key: 'revenue', label: 'Doanh thu nhận đơn', value: money(metrics.totalRevenue), hint: `Từ ${metrics.totalOrders} đơn hàng`, icon: <DollarOutlined />, tone: 'accent' },
+          { key: 'pending', label: 'Đơn chờ xác nhận', value: metrics.pendingOrders, hint: 'Cần xưởng phản hồi', icon: <ClockCircleOutlined />, tone: 'gold', pulse: metrics.pendingOrders > 0 },
+          { key: 'processing', label: 'Đang sản xuất', value: metrics.processingOrders, hint: 'Theo kế hoạch sản xuất', icon: <SyncOutlined />, tone: 'neutral' },
+          { key: 'packaging', label: 'Bao bì & in logo riêng', value: metrics.packagingOrders, hint: 'Cần thiết kế mockup', icon: <PictureOutlined />, tone: 'success' },
+        ]}
+      />
 
       {/* Main Table Card */}
       <Card
@@ -465,11 +364,11 @@ export default function SupplierDashboard({ onNavigate }) {
               style={{ width: 180 }}
               options={[
                 { value: 'All', label: 'Tất cả trạng thái' },
-                { value: 'Pending', label: 'Chờ xác nhận (Pending)' },
-                { value: 'Confirmed', label: 'Đã xác nhận (Confirmed)' },
-                { value: 'Processing', label: 'Đang sản xuất (Processing)' },
-                { value: 'Shipped', label: 'Đang giao hàng (Shipped)' },
-                { value: 'Delivered', label: 'Đã giao (Delivered)' },
+                { value: 'Pending', label: 'Chờ xác nhận' },
+                { value: 'Confirmed', label: 'Đã xác nhận' },
+                { value: 'Processing', label: 'Đang sản xuất' },
+                { value: 'Shipped', label: 'Đang giao hàng' },
+                { value: 'Delivered', label: 'Đã giao' },
               ]}
             />
             <Button
@@ -594,7 +493,6 @@ export default function SupplierDashboard({ onNavigate }) {
                     type="primary"
                     htmlType="submit"
                     loading={packagingLoading}
-                    style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
                   >
                     Gửi mockup duyệt
                   </Button>

@@ -1,0 +1,102 @@
+/* Shared building blocks for supplier/admin workspace pages */
+
+.workspace-stats {
+  display: grid;
+  grid-template-columns: repeat(var(--workspace-stats-cols, 4), minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.workspace-stat {
+  --stat-tone: #6b625c;
+  --stat-soft: #f3efea;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid #ebe4dc;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.workspace-stat--accent { --stat-tone: #8c1524; --stat-soft: #f8e9ea; }
+.workspace-stat--gold { --stat-tone: #a86b12; --stat-soft: #faf0dd; }
+.workspace-stat--success { --stat-tone: #2f6b3f; --stat-soft: #e7f2ea; }
+.workspace-stat--neutral { --stat-tone: #4f4843; --stat-soft: #f1ede8; }
+
+.workspace-stat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workspace-stat__label {
+  color: #756e67;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.workspace-stat__icon {
+  display: grid;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--stat-soft);
+  color: var(--stat-tone);
+  font-size: 16px;
+}
+
+.workspace-stat__value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--stat-tone);
+  font-size: 26px;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.workspace-stat__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--stat-tone);
+  box-shadow: 0 0 0 0 var(--stat-tone);
+  animation: workspace-stat-pulse 1.8s ease-out infinite;
+}
+
+.workspace-stat__hint {
+  color: #948b84;
+  font-size: 12px;
+}
+
+@keyframes workspace-stat-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stat-tone) 45%, transparent); }
+  100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-stat__pulse { animation: none; }
+}
+
+@media (max-width: 1100px) {
+  .workspace-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .workspace-stats { grid-template-columns: 1fr; }
+}
+
+/* Error fallback shown inside the workspace content area */
+.workspace-error {
+  padding: 48px 24px;
+  border: 1px solid #ebe4dc;
+  border-radius: 12px;
+  background: #fff;
+}

@@ -104,12 +104,12 @@ export default function DeliverManage({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Mã Chuyến Giao',
+      title: 'Mã chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
       render: (text, r) => (
         <div>
-          <span className="font-bold text-amber-700">{text || r.deliveryCode || 'DEL-N/A'}</span>
+          <span className="font-bold text-[#8c1524]">{text || r.deliveryCode || 'DEL-N/A'}</span>
           <div className="text-[11px] text-slate-400">
             {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị VC liên kết'}
           </div>
@@ -117,7 +117,7 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Hợp Đồng Tham Chiếu',
+      title: 'Hợp đồng tham chiếu',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
       render: (text, r) => (
@@ -128,7 +128,7 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Nơi Nhận & Đại Diện',
+      title: 'Nơi nhận & đại diện',
       key: 'destination',
       render: (_, r) => (
         <div className="text-xs">
@@ -140,7 +140,7 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Mã Tracking / Xe',
+      title: 'Mã tracking / xe',
       dataIndex: 'trackingCode',
       key: 'trackingCode',
       render: (t) => (
@@ -150,7 +150,7 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Ngày Dự Kiến',
+      title: 'Ngày dự kiến',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
       render: (d, r) => (
@@ -161,7 +161,7 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
@@ -174,7 +174,7 @@ export default function DeliverManage({ onNavigate }) {
       },
     },
     {
-      title: 'Điều Phối & Bằng Chứng',
+      title: 'Điều phối & bằng chứng',
       key: 'actions',
       align: 'right',
       render: (_, record) => {
@@ -205,11 +205,11 @@ export default function DeliverManage({ onNavigate }) {
             {status === 'PickedUp' && (
               <Button
                 size="small"
-                className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold"
+                type="primary"
                 icon={<SendOutlined />}
                 onClick={() => handleUpdateStatus(record, 'InTransit', 'Xe xuất bến bắt đầu vận chuyển.')}
               >
-                Xuất bến (In-Transit)
+                Xuất bến
               </Button>
             )}
 
@@ -241,40 +241,22 @@ export default function DeliverManage({ onNavigate }) {
   ];
 
   return (
-    <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/quan-ly-giao-hang" onNavigate={onNavigate}>
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <CarOutlined className="text-amber-600" />
-              Quản Lý Vận Chuyển & Giao Hàng B2B (Logistics)
-            </h1>
-            <Text type="secondary" className="text-sm">
-              Xưởng bánh điều phối đội xe nội bộ hoặc hãng chuyển phát, quản lý chia nhiều đợt giao và giám sát PoD
-            </Text>
-          </div>
-
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchData}
-              loading={loading}
-              className="border-slate-300 font-medium"
-            >
-              Làm mới
-            </Button>
-
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalOpen(true)}
-              className="bg-amber-600 hover:bg-amber-500 font-semibold"
-            >
-              Tạo Chuyến Giao (Chia Đợt)
-            </Button>
-          </Space>
-        </div>
-
+    <ColonyAdminLayout
+      role="Supplier"
+      activeKey="nha-cung-cap/quan-ly-giao-hang"
+      onNavigate={onNavigate}
+      title="Giao hàng & PoD"
+      subtitle="Điều phối xe nội bộ hoặc hãng vận chuyển, chia nhiều đợt giao và theo dõi bằng chứng giao hàng."
+      extra={
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>Làm mới</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
+            Tạo chuyến giao
+          </Button>
+        </Space>
+      }
+    >
+      <div className="space-y-6">
         <Alert
           type="info"
           showIcon

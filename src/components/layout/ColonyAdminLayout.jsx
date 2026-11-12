@@ -40,6 +40,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useChat } from '../../hooks/useChat';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useVerificationNotifications } from '../../hooks/useVerificationNotifications';
+import WorkspaceErrorBoundary from '../workspace/WorkspaceErrorBoundary';
 import './colony-admin-layout.css';
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -101,73 +102,73 @@ export default function ColonyAdminLayout({
     },
   ];
 
-  const supplierMenuItems = [
+  // Supplier navigation, grouped by job so the 11 entries scan quickly.
+  const supplierSections = [
     {
-      key: 'nha-cung-cap/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Tổng quan',
-    },
-    { key: 'nha-cung-cap/giao-dien-gian-hang', icon: <SettingOutlined />, label: 'Giao diện gian hàng' },
-    {
-      key: 'nha-cung-cap/thiet-lap-gian-hang',
-      icon: <ShopOutlined />,
-      label: 'Thiết lập Gian hàng',
-    },
-    {
-      key: 'nha-cung-cap/quan-ly-san-pham',
-      icon: <AppstoreOutlined />,
-      label: 'Sản phẩm & Biến thể',
-    },
-    {
-      key: 'nha-cung-cap/tin-nhan',
-      icon: <MessageOutlined />,
-      label: <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span>Tin nhắn khách hàng</span>
-        {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
-      </span>,
+      key: 'overview',
+      label: null,
+      items: [
+        { key: 'nha-cung-cap/dashboard', icon: <DashboardOutlined />, label: 'Tổng quan' },
+        {
+          key: 'nha-cung-cap/tin-nhan',
+          icon: <MessageOutlined />,
+          label: <span className="workspace-menu__label">
+            <span>Tin nhắn khách hàng</span>
+            {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
+          </span>,
+        },
+      ],
     },
     {
-      key: 'nha-cung-cap/dau-thau',
-      icon: <SolutionOutlined />,
-      label: 'Đấu thầu & báo giá',
+      key: 'sales',
+      label: 'Bán hàng',
+      items: [
+        { key: 'nha-cung-cap/dau-thau', icon: <SolutionOutlined />, label: 'Đấu thầu & báo giá' },
+        { key: 'nha-cung-cap/quan-ly-don-hang', icon: <ShoppingOutlined />, label: 'Đơn hàng' },
+        { key: 'nha-cung-cap/quan-ly-hop-dong', icon: <FileTextOutlined />, label: 'Hợp đồng & tiến độ' },
+        { key: 'nha-cung-cap/quan-ly-giao-hang', icon: <CarOutlined />, label: 'Giao hàng & PoD' },
+      ],
     },
     {
-      key: 'nha-cung-cap/quan-ly-don-hang',
-      icon: <ShoppingOutlined />,
-      label: 'Đơn hàng',
+      key: 'shop',
+      label: 'Gian hàng',
+      items: [
+        { key: 'nha-cung-cap/quan-ly-san-pham', icon: <AppstoreOutlined />, label: 'Sản phẩm & biến thể' },
+        { key: 'nha-cung-cap/khuyen-mai', icon: <GiftOutlined />, label: 'Khuyến mãi & voucher' },
+        { key: 'nha-cung-cap/thiet-lap-gian-hang', icon: <ShopOutlined />, label: 'Thiết lập gian hàng' },
+        { key: 'nha-cung-cap/giao-dien-gian-hang', icon: <SettingOutlined />, label: 'Giao diện gian hàng' },
+      ],
     },
     {
-      key: 'nha-cung-cap/quan-ly-hop-dong',
-      icon: <FileTextOutlined />,
-      label: 'Hợp đồng & Milestone',
-    },
-    {
-      key: 'nha-cung-cap/quan-ly-giao-hang',
-      icon: <CarOutlined />,
-      label: 'Giao vận & Bằng chứng PoD',
-    },
-    {
-      key: 'nha-cung-cap/khuyen-mai',
-      icon: <GiftOutlined />,
-      label: 'Khuyến mãi & Voucher',
-    },
-    {
-      key: 'nha-cung-cap/xac-minh',
-      icon: <TrophyOutlined />,
-      label: (
-        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Hồ sơ xác minh doanh nghiệp</span>
-          <Tag style={{ margin: 0, fontSize: 10 }}>{VERIFICATION_LABELS[user?.supplierVerification?.onboardingState] || 'Chưa xác minh'}</Tag>
-        </span>
-      ),
+      key: 'account',
+      label: 'Tài khoản',
+      items: [
+        {
+          key: 'nha-cung-cap/xac-minh',
+          icon: <TrophyOutlined />,
+          label: (
+            <span className="workspace-menu__label">
+              <span>Xác minh</span>
+              <Tag>{VERIFICATION_LABELS[user?.supplierVerification?.onboardingState] || 'Chưa xác minh'}</Tag>
+            </span>
+          ),
+        },
+      ],
     },
   ];
 
   const fulfillmentRoutes = new Set(['nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang',
     'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang', 'nha-cung-cap/tin-nhan']);
-  const currentMenuItems = isAdmin ? adminMenuItems : supplierMenuItems.filter((item) =>
+  const canSeeSupplierItem = (item) =>
     (item.key === 'nha-cung-cap/xac-minh' && user?.capabilities?.canReadSupplierVerification) ||
-    canCreateShop || (canFulfill && fulfillmentRoutes.has(item.key)));
+    canCreateShop || (canFulfill && fulfillmentRoutes.has(item.key));
+  const supplierMenuItems = supplierSections
+    .map((section) => ({ ...section, items: section.items.filter(canSeeSupplierItem) }))
+    .filter((section) => section.items.length > 0)
+    .flatMap((section) => section.label
+      ? [{ type: 'group', key: section.key, label: section.label, children: section.items }]
+      : section.items);
+  const currentMenuItems = isAdmin ? adminMenuItems : supplierMenuItems;
 
   const handleMenuClick = ({ key }) => {
     setMobileMenuOpen(false);
@@ -317,7 +318,9 @@ export default function ColonyAdminLayout({
           )}
 
           {/* Child Page Views */}
-          <div style={{ minHeight: 480 }}>{children}</div>
+          <div className="workspace-content__body">
+            <WorkspaceErrorBoundary resetKey={activeKey}>{children}</WorkspaceErrorBoundary>
+          </div>
         </Content>
 
         {/* Colony Footer */}

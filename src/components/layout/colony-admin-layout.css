@@ -12,7 +12,7 @@
 .workspace-brand--collapsed { justify-content: center; padding: 0; }
 .workspace-brand__logo { width: 38px; height: 38px; flex: none; border-radius: 8px; }
 .workspace-brand__copy { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
-.workspace-brand__copy strong { font-family: Georgia, serif; font-size: 19px; line-height: 1.2; }
+.workspace-brand__copy strong { font-family: var(--font-display); font-size: 19px; line-height: 1.2; }
 .workspace-brand__copy small { color: #ebd5d2; font-size: 11px; }
 .workspace-menu.ant-menu { margin: 12px 0; padding: 0 9px; border: 0; background: transparent; color: #eedfdb; }
 .workspace-menu .ant-menu-item { min-height: 42px; margin: 3px 0; border-radius: 7px; color: #eedfdb; font-size: 13px; }
@@ -21,6 +21,14 @@
 .workspace-menu .ant-menu-item-selected.ant-menu-item { background: #ffffffeb; color: var(--workspace-accent); font-weight: 700; }
 .workspace-menu .ant-menu-item-selected.ant-menu-item:hover { background: #fff; color: var(--workspace-accent); }
 .workspace-menu .ant-tag { background: #ffffff1f; border-color: #ffffff44; color: inherit; }
+
+/* Section titles and labels that carry a badge/tag: text truncates, the badge never gets pushed out */
+.workspace-menu .ant-menu-item-group-title { padding: 14px 12px 6px; color: #ffffff80; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.workspace-menu .ant-menu-item .ant-menu-title-content { min-width: 0; }
+.workspace-menu__label { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.workspace-menu__label > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-menu__label .ant-tag { flex: none; margin: 0; padding: 0 6px; font-size: 10px; line-height: 18px; }
+.ant-layout-sider-collapsed .workspace-menu .ant-menu-item-group-title { display: none; }
 .workspace-mobile-drawer { --workspace-accent: #8c1524; --workspace-sidebar: #321923; }
 .workspace-mobile-drawer--admin { --workspace-accent: #31465a; --workspace-sidebar: #202d3a; }
 .workspace-mobile-drawer .ant-drawer-header, .workspace-mobile-drawer .ant-drawer-body { border-color: #ffffff25; background: var(--workspace-sidebar); color: #fff; }
@@ -34,9 +42,10 @@
 .workspace-account__copy { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .workspace-account__copy strong { overflow: hidden; color: #2c2928; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .workspace-account__copy small { color: #827b75; font-size: 11px; }
-.workspace-content.ant-layout-content { min-width: 0; margin: 26px clamp(16px, 2.8vw, 40px) 0; }
+.workspace-content.ant-layout-content { width: 100%; max-width: 1440px; min-width: 0; margin: 26px auto 0; padding: 0 clamp(16px, 2.8vw, 40px); }
+.workspace-content__body { min-height: 480px; }
 .workspace-page-heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding: 0 0 18px; border-bottom: 1px solid #dcd3c9; }
-.workspace-page-heading h1 { margin: 0; color: #2e2626; font-family: Georgia, serif; font-size: clamp(26px, 2.5vw, 34px); font-weight: 600; line-height: 1.2; }
+.workspace-page-heading h1 { margin: 0; color: #2e2626; font-family: var(--font-display); font-size: clamp(26px, 2.5vw, 34px); font-weight: 600; line-height: 1.2; }
 .workspace-page-heading p { max-width: 72ch; margin: 6px 0 0; color: #756e67; font-size: 13px; line-height: 1.55; }
 .workspace-page-heading .ant-btn-primary { background: var(--workspace-accent); }
 .workspace-footer.ant-layout-footer { padding: 26px 20px; background: transparent; color: #928982; font-size: 12px; text-align: center; }

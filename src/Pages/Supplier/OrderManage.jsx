@@ -40,6 +40,7 @@ import {
   TruckOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
+import { orderStatusColor, orderStatusLabel, orderStatusOptions } from '../../constants/orderStatus';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import customPackagingService from '../../services/customPackagingService';
 import orderService from '../../services/orderService';
@@ -51,18 +52,6 @@ const { Text, Title } = Typography;
 const { TextArea } = Input;
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
-
-const statusColor = {
-  Pending: 'gold',
-  AwaitingCustomerDeliveryApproval: 'orange',
-  Confirmed: 'blue',
-  Processing: 'purple',
-  Shipped: 'cyan',
-  Delivered: 'green',
-  CancellationRequested: 'volcano',
-  Cancelled: 'red',
-  Expired: 'default',
-};
 
 function formatCountdown(targetDateStr) {
   if (!targetDateStr) return null;
@@ -485,7 +474,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (value) => <Tag color={statusColor[value]}>{value}</Tag>,
+      render: (value) => <Tag color={orderStatusColor(value)}>{orderStatusLabel(value)}</Tag>,
     },
     {
       title: 'Thao tác xưởng',
@@ -590,35 +579,26 @@ export default function OrderManage({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/quan-ly-don-hang"
       onNavigate={onNavigate}
-      title="Quản Lý Đơn Hàng Doanh Nghiệp (B2B)"
-      subtitle="Quy trình xác nhận đơn, duyệt mockup bao bì, quản lý chuyến giao PoD và đối soát sổ cái ký quỹ."
+      title="Đơn hàng doanh nghiệp"
+      subtitle="Xác nhận đơn, duyệt mockup bao bì, theo dõi giao hàng và đối soát ký quỹ."
+      extra={
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={loadOrders}>Tải lại</Button>
+          <Button icon={<SettingOutlined />} onClick={openPolicyDrawer}>Chính sách & biểu phí</Button>
+          <Button icon={<BankOutlined />} onClick={openPayoutAccountDrawer}>Tài khoản nhận giải ngân</Button>
+        </Space>
+      }
     >
       {/* 1. Financial Overview Cards */}
       <Alert type="info" showIcon className="mb-5"
         message="Tổng quan tài chính chưa khả dụng"
-        description="Backend hiện chưa có API tổng hợp số dư ký quỹ, giải ngân và hoàn tiền theo từng supplier. Các số liệu này sẽ được hiển thị khi có nguồn dữ liệu chính xác." />
+        description="Số dư ký quỹ, giải ngân và hoàn tiền sẽ hiển thị tại đây khi có dữ liệu đối soát." />
 
       {/* Main Order Card */}
-      <Card
-        extra={
-          <Space wrap>
-            <Button icon={<SettingOutlined />} onClick={openPolicyDrawer}>
-              Chính sách &amp; Biểu phí
-            </Button>
-            <Button icon={<BankOutlined />} onClick={openPayoutAccountDrawer}>
-              Tài khoản nhận giải ngân
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={loadOrders}>
-              Tải lại
-            </Button>
-          </Space>
-        }
-      >
+      <Card>
         <FilterBar search={search} onSearchChange={setSearch} status={orderQuery.status}
           onStatusChange={setStatus} onReset={resetOrders} placeholder="Tìm mã đơn hoặc người nhận"
-          statusOptions={['Pending', 'AwaitingCustomerDeliveryApproval', 'Confirmed', 'Processing',
-            'Shipped', 'Delivered', 'CancellationRequested', 'Cancelled', 'Expired']
-            .map((value) => ({ value, label: value }))} />
+          statusOptions={orderStatusOptions()} />
         <Table
           rowKey="id"
           loading={loading}
@@ -636,15 +616,14 @@ export default function OrderManage({ onNavigate }) {
         title={
           <div className="flex items-center gap-2">
             <CalendarOutlined className="text-amber-700" />
-            <span>Đề Xuất Ngày Giao Hàng Mới · #{proposingOrder?.orderNumber}</span>
+            <span>Đề xuất ngày giao hàng mới · #{proposingOrder?.orderNumber}</span>
           </div>
         }
         open={proposeModalOpen}
         onCancel={() => setProposeModalOpen(false)}
         confirmLoading={proposeSubmitting}
         onOk={submitProposeDeliveryDate}
-        okText="Gửi Đề Xuất (SLA 12h)"
-        okButtonProps={{ style: { background: '#d48806', borderColor: '#d48806', fontWeight: 700 } }}
+        okText="Gửi đề xuất"
       >
         <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
           <p>
@@ -680,14 +659,14 @@ export default function OrderManage({ onNavigate }) {
         title={
           <div className="flex items-center gap-2">
             <TruckOutlined className="text-emerald-700" />
-            <span>Tải Ảnh Biên Bản Giao Hàng (Proof-of-Delivery) · #{podOrder?.orderNumber}</span>
+            <span>Tải ảnh biên bản giao hàng (PoD) · #{podOrder?.orderNumber}</span>
           </div>
         }
         open={podUploadModalOpen}
         onCancel={() => setPodUploadModalOpen(false)}
         confirmLoading={podSubmitting}
         onOk={submitPodProof}
-        okText="Nộp Bằng Chứng PoD"
+        okText="Nộp bằng chứng PoD"
         okButtonProps={{ style: { background: '#059669', borderColor: '#059669', fontWeight: 700 } }}
         width={600}
       >
@@ -734,7 +713,7 @@ export default function OrderManage({ onNavigate }) {
 
       {/* Drawer 1: Shop Bulk Order Policy & Rates */}
       <Drawer
-        title={<span className="font-bold">Chính Sách Đơn Hàng &amp; Biểu Phí Vận Chuyển Xưởng</span>}
+        title={<span className="font-bold">Chính sách đơn hàng &amp; biểu phí vận chuyển xưởng</span>}
         open={policyDrawerOpen}
         onClose={() => setPolicyDrawerOpen(false)}
         width={560}
@@ -791,7 +770,7 @@ export default function OrderManage({ onNavigate }) {
 
           <Form.Item
             name="rateHcmInner"
-            label={<span className="text-xs font-semibold">TP.HCM Nội Thành (Q1, 3, 5, 10, Phú Nhuận...)</span>}
+            label={<span className="text-xs font-semibold">TP.HCM nội thành (Q1, 3, 5, 10, Phú Nhuận...)</span>}
             rules={[{ required: true }]}
           >
             <InputNumber min={0} step={10000} style={{ width: '100%' }} />
@@ -799,7 +778,7 @@ export default function OrderManage({ onNavigate }) {
 
           <Form.Item
             name="rateHcmOuter"
-            label={<span className="text-xs font-semibold">TP.HCM Ngoại Thành (Q7, 2, 9, Thủ Đức, Bình Tân, Q12...)</span>}
+            label={<span className="text-xs font-semibold">TP.HCM ngoại thành (Q7, 2, 9, Thủ Đức, Bình Tân, Q12...)</span>}
             rules={[{ required: true }]}
           >
             <InputNumber min={0} step={10000} style={{ width: '100%' }} />
@@ -814,14 +793,14 @@ export default function OrderManage({ onNavigate }) {
           </Form.Item>
 
           <Button type="primary" htmlType="submit" loading={policySaving} block style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-            Lưu Thay Đổi Chính Sách
+            Lưu thay đổi chính sách
           </Button>
         </Form>
       </Drawer>
 
       {/* Drawer 2: Payout Bank Account */}
       <Drawer
-        title={<span className="font-bold">Tài Khoản Ngân Hàng Nhận Giải Ngân (Simulated Sandbox)</span>}
+        title={<span className="font-bold">Tài khoản ngân hàng nhận giải ngân</span>}
         open={payoutDrawerOpen}
         onClose={() => setPayoutDrawerOpen(false)}
         width={480}
@@ -851,7 +830,7 @@ export default function OrderManage({ onNavigate }) {
           </Form.Item>
 
           <Button type="primary" htmlType="submit" loading={payoutAccountSaving} block style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-            Lưu Tài Khoản Thụ Hưởng
+            Lưu tài khoản thụ hưởng
           </Button>
         </Form>
       </Drawer>
@@ -915,7 +894,7 @@ export default function OrderManage({ onNavigate }) {
                     <TextArea rows={3} maxLength={2000} showCount placeholder="Mô tả kỹ thuật ép kim, phối cảnh..." />
                   </Form.Item>
                   <Button type="primary" htmlType="submit" loading={packagingLoading} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-                    Gửi Mockup Cho Khách Duyệt
+                    Gửi mockup cho khách duyệt
                   </Button>
                 </Form>
               </Card>
@@ -931,7 +910,7 @@ export default function OrderManage({ onNavigate }) {
         onCancel={() => setPayoutRequestModalOpen(false)}
         confirmLoading={payoutRequestSubmitting}
         onOk={submitPayoutRequest}
-        okText="Gửi Yêu Cầu Giải Ngân"
+        okText="Gửi yêu cầu giải ngân"
         okButtonProps={{ style: { background: '#16a34a', borderColor: '#16a34a', fontWeight: 700 } }}
       >
         <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">

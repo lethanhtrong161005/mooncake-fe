@@ -40,9 +40,9 @@ const errorMessage = (error) => error?.response?.data?.message || error?.message
 
 const statusMap = {
   Draft: ['default', 'Bản nháp'],
-  PendingSignature: ['warning', 'Chờ supplier xác nhận'],
-  Signed: ['processing', 'Supplier đã xác nhận'],
-  PendingDeposit: ['processing', 'Đã gửi hợp đồng · Chờ customer'],
+  PendingSignature: ['warning', 'Chờ xưởng xác nhận'],
+  Signed: ['processing', 'Xưởng đã xác nhận'],
+  PendingDeposit: ['processing', 'Đã gửi · chờ khách hàng'],
   Active: ['success', 'Đang hiệu lực (Active)'],
   CompletedOnTime: ['success', 'Hoàn thành đúng hạn (+10đ)'],
   CompletedLate: ['purple', 'Hoàn thành trễ hạn (+3đ)'],
@@ -53,7 +53,7 @@ const statusMap = {
 
 const milestoneStatusMap = {
   Pending: ['default', 'Chưa đến hạn'],
-  AwaitingPayment: ['warning', 'Customer đang xử lý'],
+  AwaitingPayment: ['warning', 'Khách hàng đang xử lý'],
   Paid: ['success', 'Đã nhận tiền'],
   InProgress: ['processing', 'Đang sản xuất'],
   PendingReview: ['orange', 'Đang chờ khách duyệt'],
@@ -195,40 +195,40 @@ export default function ContractManage({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Số Hợp Đồng',
+      title: 'Số hợp đồng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
       width: 170,
       render: (no) => <span style={{ fontWeight: 600, color: '#8c1524' }}>{no}</span>,
     },
     {
-      title: 'Tiêu Đề / Ghi Chú',
+      title: 'Tiêu đề / ghi chú',
       dataIndex: 'title',
       key: 'title',
       render: (t) => t || 'Hợp đồng đơn hàng RFQ',
     },
     {
-      title: 'Tổng Giá Trị',
+      title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       key: 'totalValue',
       align: 'right',
       render: (amt) => <span style={{ fontWeight: 700, color: '#8c1524' }}>{money(amt)}</span>,
     },
     {
-      title: 'Hạn Giao Hàng',
+      title: 'Hạn giao hàng',
       dataIndex: 'deliveryDeadline',
       key: 'deliveryDeadline',
       render: (d) => d || '—',
     },
     {
-      title: 'Supplier xác nhận',
+      title: 'Xưởng xác nhận',
       key: 'signature',
       render: (_, r) => r.signedBySupplierAt
-        ? <Tag color="success">✓ Supplier đã ký và gửi hợp đồng</Tag>
-        : <Tag color="warning">Supplier cần ký hợp đồng</Tag>,
+        ? <Tag color="success">Đã ký và gửi</Tag>
+        : <Tag color="warning">Cần ký hợp đồng</Tag>,
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (st) => (
@@ -238,7 +238,7 @@ export default function ContractManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Thao Tác',
+      title: 'Thao tác',
       key: 'action',
       render: (_, record) => (
         <Space size="small" wrap>
@@ -307,11 +307,11 @@ export default function ContractManage({ onNavigate }) {
       activeKey="nha-cung-cap/quan-ly-hop-dong"
       onNavigate={onNavigate}
       title="Hợp đồng & tiến độ"
-      subtitle="Supplier ký và gửi hợp đồng; tại đây supplier có thể xem lại nội dung hợp đồng và tiến độ"
+      subtitle="Ký, gửi hợp đồng cho khách hàng và cập nhật tiến độ thực hiện." extra={<Button icon={<ReloadOutlined />} onClick={loadContracts}>Tải lại</Button>}
     >
       <Alert
-        message="Quy trình hợp đồng dành cho supplier"
-        description="Supplier kiểm tra điều khoản, ký và gửi hợp đồng cho customer. Sau khi gửi, supplier có thể xem lại hợp đồng và cập nhật tiến độ thực hiện tại đây."
+        message="Quy trình hợp đồng"
+        description="Kiểm tra điều khoản, ký và gửi hợp đồng cho khách hàng. Sau khi gửi, bạn có thể xem lại hợp đồng và cập nhật tiến độ tại đây."
         type="info"
         showIcon
         style={{ marginBottom: 20 }}
@@ -320,7 +320,6 @@ export default function ContractManage({ onNavigate }) {
       <Card
         bordered={false}
         style={{ borderRadius: 10 }}
-        extra={<Button icon={<ReloadOutlined />} onClick={loadContracts}>Tải lại</Button>}
       >
         <FilterBar search={contractPage.search} onSearchChange={contractPage.setSearch}
           status={contractPage.query.status} onStatusChange={contractPage.setStatus}
@@ -351,10 +350,10 @@ export default function ContractManage({ onNavigate }) {
             <div>
               <Descriptions bordered size="small" column={2} style={{ margin: '16px 0 24px' }}>
                 <Descriptions.Item label="Tiêu đề">{contractDetails.title || 'Hợp đồng RFQ'}</Descriptions.Item>
-                <Descriptions.Item label="Tổng Giá Trị">
+                <Descriptions.Item label="Tổng giá trị">
                   <span style={{ fontWeight: 700, color: '#8c1524' }}>{money(contractDetails.totalValue)}</span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Trạng Thái HĐ">
+                <Descriptions.Item label="Trạng thái HĐ">
                   <Tag color={statusMap[contractDetails.status]?.[0] || 'default'}>
                     {statusMap[contractDetails.status]?.[1] || contractDetails.status}
                   </Tag>
@@ -366,8 +365,8 @@ export default function ContractManage({ onNavigate }) {
                     <Tag color="orange">Chờ khách cọc</Tag>
                   )}
                 </Descriptions.Item>
-                <Descriptions.Item label="Hạn Chót Giao Hàng">{contractDetails.deliveryDeadline || '—'}</Descriptions.Item>
-                <Descriptions.Item label="Mã Băm SHA-256">
+                <Descriptions.Item label="Hạn chót giao hàng">{contractDetails.deliveryDeadline || '—'}</Descriptions.Item>
+                <Descriptions.Item label="Mã băm SHA-256">
                   <span style={{ fontSize: 11, fontFamily: 'monospace' }}>
                     {contractDetails.signedDocumentSha256?.substring(0, 16)}...
                   </span>
@@ -472,12 +471,12 @@ export default function ContractManage({ onNavigate }) {
 
       {/* Modal Extension */}
       <Modal
-        title="Đơn Xin Gia Hạn Tiến Độ Giao Hàng (Feature #17)"
+        title="Đơn xin gia hạn tiến độ giao hàng"
         open={extensionModalOpen}
         onCancel={() => setExtensionModalOpen(false)}
         onOk={handleSubmitExtension}
         confirmLoading={actionLoading}
-        okText="Gửi Đơn Xin Gia Hạn"
+        okText="Gửi đơn xin gia hạn"
       >
         <Alert
           message="Khuyến nghị khai báo sự cố sớm"
@@ -489,7 +488,7 @@ export default function ContractManage({ onNavigate }) {
         <Form form={extensionForm} layout="vertical">
           <Form.Item
             name="proposedDueDate"
-            label="Ngày Đề Xuất Hoàn Thành Mới"
+            label="Ngày đề xuất hoàn thành mới"
             rules={[{ required: true, message: 'Vui lòng chọn ngày đề xuất mới.' }]}
           >
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
@@ -514,7 +513,7 @@ export default function ContractManage({ onNavigate }) {
         onCancel={() => setProgressModalOpen(false)}
         onOk={handleSubmitProgress}
         confirmLoading={actionLoading}
-        okText="Nộp Báo Cáo Tiến Độ"
+        okText="Nộp báo cáo tiến độ"
         okButtonProps={{ style: { background: '#8c1524', borderColor: '#8c1524' } }}
       >
         <Form form={progressForm} layout="vertical">

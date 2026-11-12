@@ -31,6 +31,7 @@ import {
   TagOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import WorkspaceStats from '../../components/workspace/WorkspaceStats';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import supplierService from '../../services/supplierService';
 import productService from '../../services/productService';
@@ -187,7 +188,7 @@ export default function PromotionManage({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Tên Chương Trình / Voucher',
+      title: 'Tên chương trình / voucher',
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => {
@@ -215,7 +216,7 @@ export default function PromotionManage({ onNavigate }) {
       },
     },
     {
-      title: 'Mức Giảm Giá',
+      title: 'Mức giảm giá',
       key: 'discount',
       render: (_, record) => {
         const isPercent = record.discountType === 0 || record.discountType === 'Percentage';
@@ -235,7 +236,7 @@ export default function PromotionManage({ onNavigate }) {
       },
     },
     {
-      title: 'Thời Gian Áp Dụng',
+      title: 'Thời gian áp dụng',
       key: 'duration',
       render: (_, record) => {
         if (!record.startAtUtc && !record.endAtUtc) {
@@ -250,7 +251,7 @@ export default function PromotionManage({ onNavigate }) {
       },
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       key: 'status',
       render: (_, record) => {
         const st = getPromoStatus(record);
@@ -258,7 +259,7 @@ export default function PromotionManage({ onNavigate }) {
       },
     },
     {
-      title: 'Thao Tác',
+      title: 'Thao tác',
       key: 'actions',
       width: 140,
       render: (_, record) => (
@@ -293,8 +294,8 @@ export default function PromotionManage({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/khuyen-mai"
       onNavigate={onNavigate}
-      title="Khuyến Mãi & Voucher Chiết Khấu B2B"
-      subtitle="Thiết lập các mức chiết khấu theo số lượng hộp (Volume Tier Discounts) và khuyến mãi mùa vụ cho khách hàng doanh nghiệp"
+      title="Khuyến mãi & voucher"
+      subtitle="Thiết lập chiết khấu theo số lượng hộp và khuyến mãi mùa vụ cho khách hàng doanh nghiệp."
       extra={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
@@ -304,47 +305,20 @@ export default function PromotionManage({ onNavigate }) {
             type="primary"
             icon={<PlusOutlined />}
             onClick={handleOpenCreate}
-            style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
           >
-            Tạo Khuyến Mãi Mới
+            Tạo khuyến mãi
           </Button>
         </Space>
       }
     >
       <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-        {/* KPI Metrics */}
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} style={{ borderRadius: 10, background: '#fff' }}>
-              <Statistic
-                title="Đang Hoạt Động"
-                value={activeCount}
-                prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                valueStyle={{ color: '#237804', fontWeight: 700 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} style={{ borderRadius: 10, background: '#fff' }}>
-              <Statistic
-                title="Sắp Diễn Ra"
-                value={scheduledCount}
-                prefix={<ClockCircleOutlined style={{ color: '#1890ff' }} />}
-                valueStyle={{ color: '#096dd9', fontWeight: 700 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card bordered={false} style={{ borderRadius: 10, background: '#fff' }}>
-              <Statistic
-                title="Hết Hạn / Ngừng"
-                value={expiredCount}
-                prefix={<GiftOutlined style={{ color: '#8c8c8c' }} />}
-                valueStyle={{ color: '#595959', fontWeight: 700 }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <WorkspaceStats
+          items={[
+            { key: 'active', label: 'Đang áp dụng', value: activeCount, icon: <CheckCircleOutlined />, tone: 'success' },
+            { key: 'scheduled', label: 'Sắp diễn ra', value: scheduledCount, icon: <ClockCircleOutlined />, tone: 'gold' },
+            { key: 'expired', label: 'Hết hạn / đã dừng', value: expiredCount, icon: <GiftOutlined />, tone: 'neutral' },
+          ]}
+        />
 
         {/* Filter bar & table */}
         <Card bordered={false} style={{ borderRadius: 10 }}>
@@ -395,14 +369,13 @@ export default function PromotionManage({ onNavigate }) {
         onOk={() => form.submit()}
         okText={editingPromotion ? 'Lưu Thay Đổi' : 'Tạo Khuyến Mãi'}
         cancelText="Đóng"
-        okButtonProps={{ style: { backgroundColor: '#8c1524', borderColor: '#8c1524' } }}
         width={620}
         destroyOnClose
       >
         <Alert
           type="info"
           showIcon
-          message="Khuyến Mãi Theo Bậc Số Lượng (B2B Volume Tier)"
+          message="Khuyến mãi theo bậc số lượng"
           description="Ưu đãi sẽ được tự động áp dụng khi doanh nghiệp đặt mua số lượng bánh lớn đạt ngưỡng MinQty quy định."
           style={{ marginBottom: 18 }}
         />
@@ -410,7 +383,7 @@ export default function PromotionManage({ onNavigate }) {
         <Form form={form} layout="vertical" onFinish={handleSave} disabled={saving}>
           <Form.Item
             name="name"
-            label="Tên Chương Trình Khuyến Mãi"
+            label="Tên chương trình khuyến mãi"
             rules={[
               { required: true, message: 'Vui lòng nhập tên chương trình khuyến mãi.' },
               { max: 255, message: 'Tối đa 255 ký tự.' },
@@ -419,7 +392,7 @@ export default function PromotionManage({ onNavigate }) {
             <Input placeholder="Ví dụ: Ưu Đãi Đặt Sớm Trung Thu 2026 - Chiết Khấu 15%" />
           </Form.Item>
 
-          <Form.Item name="description" label="Mô Tả Chi Tiết & Điều Kiện Áp Dụng">
+          <Form.Item name="description" label="Mô tả chi tiết & điều kiện áp dụng">
             <Input.TextArea
               rows={3}
               placeholder="Ví dụ: Áp dụng cho các đơn hàng quà tặng doanh nghiệp đặt cọc trước ngày 15/08/2026..."
@@ -428,7 +401,7 @@ export default function PromotionManage({ onNavigate }) {
             />
           </Form.Item>
 
-          <Form.Item name="productId" label="Sản Phẩm Áp Dụng">
+          <Form.Item name="productId" label="Sản phẩm áp dụng">
             <Select
               allowClear
               placeholder="Áp dụng cho toàn bộ sản phẩm của gian hàng (Khuyên dùng)"
@@ -446,15 +419,15 @@ export default function PromotionManage({ onNavigate }) {
             <Col span={12}>
               <Form.Item
                 name="discountType"
-                label="Loại Hình Chiết Khấu"
+                label="Loại hình chiết khấu"
                 rules={[{ required: true }]}
               >
                 <Radio.Group buttonStyle="solid" style={{ width: '100%' }}>
                   <Radio.Button value="Percentage" style={{ width: '50%', textAlign: 'center' }}>
-                    Phần Trăm (%)
+                    Phần trăm (%)
                   </Radio.Button>
                   <Radio.Button value="FixedAmount" style={{ width: '50%', textAlign: 'center' }}>
-                    Số Tiền (₫)
+                    Số tiền (₫)
                   </Radio.Button>
                 </Radio.Group>
               </Form.Item>
@@ -480,7 +453,7 @@ export default function PromotionManage({ onNavigate }) {
             <Col span={12}>
               <Form.Item
                 name="minQty"
-                label="Số Lượng Tối Thiểu (MinQty)"
+                label="Số lượng tối thiểu"
                 rules={[{ required: true, message: 'Nhập số lượng tối thiểu để được giảm giá.' }]}
               >
                 <InputNumber min={1} max={100000} addonAfter="hộp" style={{ width: '100%' }} />
@@ -493,7 +466,7 @@ export default function PromotionManage({ onNavigate }) {
             </Col>
           </Row>
 
-          <Form.Item name="dateRange" label="Thời Gian Hiệu Lực (Từ Ngày - Đến Ngày)">
+          <Form.Item name="dateRange" label="Thời gian hiệu lực (từ ngày - đến ngày)">
             <RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
           </Form.Item>
         </Form>

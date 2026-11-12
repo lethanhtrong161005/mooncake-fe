@@ -125,8 +125,8 @@ export default function BiddingPage({ onNavigate }) {
     Modal.confirm({
       title: accept ? 'Xác nhận nhận đơn hàng?' : 'Từ chối yêu cầu chọn?',
       content: accept
-        ? 'Sau khi xác nhận, hệ thống sẽ tạo hợp đồng để customer xem và tiếp tục các bước thanh toán.'
-        : 'RFQ sẽ được mở lại để customer có thể chọn supplier khác.',
+        ? 'Sau khi xác nhận, hệ thống sẽ tạo hợp đồng để khách hàng xem và tiếp tục các bước thanh toán.'
+        : 'Yêu cầu báo giá sẽ được mở lại để khách hàng chọn xưởng khác.',
       okText: accept ? 'Xác nhận' : 'Từ chối lựa chọn',
       okButtonProps: accept ? {} : { danger: true },
       cancelText: 'Quay lại',
@@ -162,9 +162,10 @@ export default function BiddingPage({ onNavigate }) {
   ];
 
   return <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/dau-thau" onNavigate={onNavigate}
-    title="RFQ đang mở & báo giá niêm phong" subtitle="Supplier đủ điều kiện có thể tham gia RFQ đang mở, dù được mời hay tự tìm thấy.">
+    title="Đấu thầu & báo giá" subtitle="Tham gia các yêu cầu báo giá (RFQ) đang mở. Báo giá được niêm phong cho đến khi khách hàng mở so sánh."
+    extra={<Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button>}>
     <Alert type="info" showIcon style={{ marginBottom: 20 }} message="Quy tắc báo giá" description="Chỉ nộp hoặc sửa khi RFQ còn mở và trước hạn chót; cần báo giá cho toàn bộ hạng mục. Báo giá của bạn được niêm phong với các xưởng khác." />
-    <Card extra={<Button icon={<ReloadOutlined />} onClick={loadRfqs}>Tải lại</Button>}>
+    <Card>
       <FilterBar search={rfqPage.search} onSearchChange={rfqPage.setSearch}
         status={rfqPage.query.status} onStatusChange={rfqPage.setStatus} onReset={rfqPage.reset}
         placeholder="Tìm mã RFQ hoặc tiêu đề"

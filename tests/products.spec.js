@@ -314,7 +314,7 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
       'tr:has-text("Hộp Quà Thượng Uyển") button.ant-btn-dangerous'
     );
     await deleteButton.click();
-    await page.locator('.ant-popover button:has-text("OK")').click();
+    await page.locator('.ant-popover button:has-text("Đồng ý")').click();
 
     await expect(page.locator('text=Đã xoá sản phẩm.')).toBeVisible();
     expect(state.removedProductId).toBe('88888888-7777-4777-8777-888888888888');

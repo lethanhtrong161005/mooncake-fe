@@ -121,7 +121,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
     });
 
     await page.goto('/nha-cung-cap/quan-ly-giao-hang');
-    await expect(page.getByRole('heading', { name: /Quản Lý Vận Chuyển/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Giao hàng & PoD/i })).toBeVisible();
     await expect(page.getByText('DEL-202610-001')).toBeVisible();
 
     // Click "Tạo Chuyến Giao (Chia Đợt)"
@@ -181,8 +181,8 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
     await page.goto('/nha-cung-cap/quan-ly-giao-hang');
     await expect(page.getByText('DEL-202610-001')).toBeVisible();
 
-    // When PickedUp, button "Xuất bến (In-Transit)" appears
-    const transitBtn = page.getByRole('button', { name: 'Xuất bến (In-Transit)' });
+    // When PickedUp, button "Xuất bến" appears
+    const transitBtn = page.getByRole('button', { name: 'Xuất bến' });
     await expect(transitBtn).toBeVisible();
     await transitBtn.click();
 
@@ -288,6 +288,6 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
     await expect(page.getByRole('dialog').getByText('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')).toBeVisible();
 
     // Close modal
-    await page.getByRole('button', { name: 'Đóng' }).click();
+    await page.locator('.ant-modal-footer').getByRole('button', { name: 'Đóng' }).click();
   });
 });

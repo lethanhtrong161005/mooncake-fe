@@ -23,7 +23,7 @@ test('supplier sees supplier workspace and cannot open admin routes', async ({ p
   await signedIn(page, 'Supplier');
   await page.goto('/nha-cung-cap');
   await expect(page.locator('.workspace-layout--supplier')).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: /Sản phẩm & Biến thể/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /Sản phẩm & biến thể/i })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: /Duyệt nhà cung cấp/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Thông báo', exact: true })).toHaveCount(1);
   await page.getByRole('button', { name: 'Thông báo', exact: true }).click();
@@ -39,7 +39,7 @@ test('admin sees admin workspace and cannot open supplier routes', async ({ page
   await page.goto('/admin/ho-so');
   await expect(page.locator('.workspace-layout--admin')).toBeVisible();
   await expect(page.getByRole('menuitem', { name: /Duyệt nhà cung cấp/ })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: /Sản phẩm & Biến thể/ })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: /Sản phẩm & biến thể/i })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/workspace-admin.png', fullPage: true });
   await page.goto('/nha-cung-cap');
   await expect(page.getByRole('heading', { name: 'Bạn chưa thể vào trang này.' })).toBeVisible();
@@ -59,8 +59,8 @@ test('supplier with fulfillment access sees only allowed actions', async ({ page
     canFulfillExistingOrders: true });
   await page.goto('/nha-cung-cap');
   await expect(page.getByRole('menuitem', { name: /Đơn hàng/ })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: /Thiết lập Gian hàng/ })).toHaveCount(0);
-  await expect(page.getByRole('menuitem', { name: /Hồ sơ xác minh/ })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: /Thiết lập gian hàng/i })).toHaveCount(0);
+  await expect(page.getByRole('menuitem', { name: /^Xác minh/ })).toHaveCount(0);
   await page.goto('/nha-cung-cap/quan-ly-san-pham');
   await expect(page.getByRole('heading', { name: 'Bạn chưa thể vào trang này.' })).toBeVisible();
 });

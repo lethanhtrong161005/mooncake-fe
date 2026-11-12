@@ -5,7 +5,7 @@ const token = `test.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 
 
 for (const { role, destination, title } of [
   { role: 'Customer', destination: 'trang-chu', title: 'Trang chủ' },
-  { role: 'Supplier', destination: 'nha-cung-cap/dashboard', title: 'Dashboard Nhà Cung Cấp' },
+  { role: 'Supplier', destination: 'nha-cung-cap/dashboard', title: 'Tổng quan nhà cung cấp' },
   { role: 'Admin', destination: 'admin/dashboard', title: 'Dashboard Điều Hành Toàn Nền Tảng' },
 ]) {
   test(`Đăng nhập ${role} mở đúng layout và giữ route sau khi tải lại`, async ({ page }) => {
@@ -74,5 +74,5 @@ test('Google đăng nhập Supplier về workspace dù trước đó ở trang k
 
   await page.goto('/auth/google/callback?code=test-code&state=role-test-state');
   await expect(page).toHaveURL(/\/nha-cung-cap\/dashboard$/);
-  await expect(page.getByText('Dashboard Nhà Cung Cấp', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Tổng quan nhà cung cấp', { exact: true }).first()).toBeVisible();
 });
