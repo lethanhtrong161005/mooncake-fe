@@ -1,0 +1,100 @@
+.wishlist-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(67, 18, 28, 0.16);
+  background: rgba(255, 253, 250, 0.92);
+  color: #4a2a2f;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.wishlist-btn:focus-visible {
+  outline: 2px solid #8c1524;
+  outline-offset: 2px;
+}
+
+.wishlist-btn--overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  padding: 0;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(34, 15, 19, 0.12);
+  font-size: 16px;
+}
+
+.wishlist-btn--overlay:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: rgba(140, 21, 36, 0.42);
+  background: #fff7f5;
+  color: #8c1524;
+}
+
+.wishlist-btn--overlay.is-saved {
+  border-color: rgba(140, 21, 36, 0.34);
+  background: #fff4f1;
+  color: #8c1524;
+}
+
+.wishlist-btn--overlay.is-saved:hover:not(:disabled) {
+  background: #fce8e3;
+}
+
+.wishlist-btn--detail {
+  min-height: 48px;
+  border-radius: 6px;
+  border-color: #d6c8bc;
+  padding: 0 18px;
+  background: #fffdfa;
+  color: #43121c;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wishlist-btn--detail:hover:not(:disabled) {
+  border-color: #8c1524;
+  background: #fff6f3;
+  color: #8c1524;
+}
+
+.wishlist-btn--detail.is-saved {
+  border-color: #8c1524;
+  background: #fdf1ee;
+  color: #8c1524;
+}
+
+.wishlist-btn.is-pending {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.wishlist-btn--detail .anticon,
+.wishlist-btn--overlay .anticon {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wishlist-btn.is-saved .anticon {
+  transform: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wishlist-btn,
+  .wishlist-btn .anticon {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+

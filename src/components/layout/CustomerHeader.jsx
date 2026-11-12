@@ -9,6 +9,7 @@ import {
   Button,
   Divider,
   Grid,
+  Badge,
 } from 'antd';
 import {
   ShopOutlined,
@@ -18,6 +19,7 @@ import {
   CarOutlined,
   StarOutlined,
   UserOutlined,
+  HeartOutlined,
   LogoutOutlined,
   HomeOutlined,
   LoginOutlined,
@@ -25,8 +27,11 @@ import {
   SearchOutlined,
   ArrowRightOutlined,
   MenuOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useWishlist } from '../../hooks/useWishlist';
+import { useChat } from '../../hooks/useChat';
 import AppLogo from './AppLogo';
 import './customer-header.css';
 
@@ -35,9 +40,14 @@ export default function CustomerHeader({
   onNavigate,
 }) {
   const { isLoggedIn, user, logout } = useAuth();
+  const { totalCount: wishlistCount } = useWishlist();
+  const { unreadCount } = useChat();
   const screens = Grid.useBreakpoint();
   const compact = !screens.lg;
   const [searchValue, setSearchValue] = useState('');
+  const accountName = user?.fullName?.trim() || 'Khách hàng';
+  const accountInitial = accountName[0].toLocaleUpperCase('vi-VN');
+  const accountAvatarUrl = user?.avatar_url || user?.avatarUrl || undefined;
 
   const publicMenuItems = [
     {
@@ -114,8 +124,26 @@ export default function CustomerHeader({
     ...(user?.role === 'Customer' ? [{
       key: 'profile',
       icon: <UserOutlined />,
-      label: 'Hồ sơ Doanh nghiệp',
+      label: 'Hồ sơ của tôi',
       onClick: () => onNavigate?.('ho-so-khach-hang'),
+    }] : []),
+    ...(isLoggedIn ? [{
+      key: 'wishlist',
+      icon: <HeartOutlined />,
+      label: (
+        <span className="customer-header__wishlist-item">
+          <span>Sản phẩm yêu thích</span>
+          {wishlistCount > 0 && (
+            <span
+              className="customer-header__wishlist-count"
+              data-testid="header-wishlist-count"
+            >
+              {wishlistCount > 99 ? '99+' : wishlistCount}
+            </span>
+          )}
+        </span>
+      ),
+      onClick: () => onNavigate?.('san-pham-yeu-thich'),
     }] : []),
     ...(user?.role === 'Customer' ? [{
       key: 'rfq',
@@ -128,6 +156,24 @@ export default function CustomerHeader({
       icon: <FileTextOutlined />,
       label: 'Hợp đồng & Đặt cọc M1',
       onClick: () => onNavigate?.('hop-dong-tien-do'),
+    }] : []),
+    ...(isLoggedIn ? [{
+      key: 'messages',
+      icon: <MessageOutlined />,
+      label: (
+        <span className="customer-header__wishlist-item">
+          <span>Tin nhắn</span>
+          {unreadCount > 0 && (
+            <span
+              className="customer-header__wishlist-count"
+              data-testid="header-chat-unread-count"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </span>
+      ),
+      onClick: () => onNavigate?.('tin-nhan'),
     }] : []),
     {
       type: 'divider',
@@ -238,6 +284,20 @@ export default function CustomerHeader({
             }}
           />}
 
+          {/* Chat Messages */}
+          {isLoggedIn && (
+            <Badge count={unreadCount} overflowCount={99} size="small">
+              <Button
+                type="text"
+                shape="circle"
+                icon={<MessageOutlined style={{ fontSize: 18, color: '#444' }} />}
+                onClick={() => onNavigate?.('tin-nhan')}
+                aria-label="Tin nhắn"
+                title="Tin nhắn"
+              />
+            </Badge>
+          )}
+
           {/* Notifications */}
           {isLoggedIn && <NotificationBell onNavigate={onNavigate} />}
 
@@ -247,15 +307,12 @@ export default function CustomerHeader({
           {isLoggedIn ? (
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Button type="text" aria-label="Tài khoản" style={{ height: 44, padding: compact ? 4 : 8 }}><Space>
-                <Avatar style={{ backgroundColor: '#8c1524' }}>
-                  {user?.fullName ? user.fullName[0].toUpperCase() : 'KH'}
+                <Avatar src={accountAvatarUrl} style={{ backgroundColor: '#8c1524' }}>
+                  {accountInitial}
                 </Avatar>
-                <div style={{ lineHeight: 1.2, textAlign: 'left', display: compact ? 'none' : 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
-                    {user?.fullName || 'Khách Doanh Nghiệp'}
-                  </span>
-                  <span style={{ fontSize: 11, color: '#888' }}>Tài khoản doanh nghiệp</span>
-                </div>
+                {!compact && <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
+                  {accountName}
+                </span>}
               </Space></Button>
             </Dropdown>
           ) : (

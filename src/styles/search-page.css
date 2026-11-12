@@ -286,7 +286,7 @@
   background: #fff9f5;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card.ant-card {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card.ant-card {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -299,8 +299,8 @@
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card.ant-card:hover,
-:is(.search-page, .product-detail-page) .search-product-card.ant-card:focus-visible {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card.ant-card:hover,
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card.ant-card:focus-visible {
   border-color: #c8ad95;
   box-shadow: 0 10px 26px rgba(69, 34, 29, 0.1);
 }
@@ -369,7 +369,7 @@
   margin-bottom: 9px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__meta .ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__meta .ant-typography {
   overflow: hidden;
   color: var(--search-muted);
   font-size: 11px;
@@ -377,11 +377,11 @@
   white-space: nowrap;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__meta .ant-typography:first-child {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__meta .ant-typography:first-child {
   color: var(--search-ruby);
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__name.ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__name.ant-typography {
   display: -webkit-box;
   overflow: hidden;
   min-height: 47px;
@@ -394,7 +394,7 @@
   -webkit-line-clamp: 2;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__shop.ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__shop.ant-typography {
   display: block;
   overflow: hidden;
   margin-bottom: 17px;
@@ -404,7 +404,7 @@
   white-space: nowrap;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__shop .anticon {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__shop .anticon {
   margin-right: 3px;
   color: var(--search-ruby);
 }
@@ -419,7 +419,7 @@
   padding-top: 12px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__price.ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__price.ant-typography {
   display: block;
   color: var(--search-ruby);
   font-size: 18px;
@@ -427,14 +427,14 @@
   line-height: 1.35;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__minimum.ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__minimum.ant-typography {
   display: block;
   margin-top: 3px;
   color: var(--search-muted);
   font-size: 11px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__open.ant-btn {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__open.ant-btn {
   display: grid;
   flex-shrink: 0;
   width: 34px;
@@ -445,7 +445,7 @@
   color: var(--search-ruby);
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__open.ant-btn:hover {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__open.ant-btn:hover {
   border-color: var(--search-ruby);
   background: #fbf0eb;
   color: var(--search-ruby);
@@ -461,16 +461,16 @@
   padding-top: 11px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__trust .ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__trust .ant-typography {
   color: var(--search-muted);
   font-size: 10px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__trust .ant-typography:first-child .anticon {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__trust .ant-typography:first-child .anticon {
   color: #6c8a69;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__trust .ant-typography:last-child .anticon {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__trust .ant-typography:last-child .anticon {
   color: #b98426;
 }
 
@@ -487,7 +487,7 @@
   padding: 20px 24px;
 }
 
-:is(.search-page, .product-detail-page) .search-product-card__description.ant-typography {
+:is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__description.ant-typography {
   display: block;
   overflow: hidden;
   margin-bottom: 10px;

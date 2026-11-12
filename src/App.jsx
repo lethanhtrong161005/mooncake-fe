@@ -1,10 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { App as AntApp, ConfigProvider, FloatButton, Dropdown, Spin } from 'antd';
+import { App as AntApp, ConfigProvider, Spin } from 'antd';
 import { useAuth } from './hooks/useAuth';
+import { WishlistProvider } from './context/WishlistContext';
+import { ChatProvider } from './context/ChatContext';
+import ChatDock from './components/chat/ChatDock';
 import { hasSupplierWorkspace } from './utils/supplierAccess';
 import { roleHomeRoute } from './utils/roleNavigation';
 import SupplierRegistration from './Pages/Customer/SupplierRegistration';
-import { CompassOutlined } from '@ant-design/icons';
 import antdTheme from './theme/antdTheme';
 import storage from './utils/storage';
 import { ADMIN_ROUTES, AUTHENTICATED_ROUTES, CUSTOMER_ROUTES, DRIVER_ROUTES, ONBOARDING_ROUTES, SUPPLIER_ROUTES, isKnownRoute, isPublicRoute } from './utils/accessRoutes';
@@ -25,6 +27,8 @@ import DeliveryPoD from './Pages/Customer/DeliveryPoD';
 import DriverMobileView from './Pages/Delivery/DriverMobileView';
 import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
+import WishlistPage from './Pages/Customer/WishlistPage';
+import ChatPage from './Pages/Chat/ChatPage';
 
 // Supplier Pages
 import { currentRouteQuery, currentRoute, normalizeLegacyRoute, routeUrl } from './utils/shopRoutes';
@@ -128,9 +132,13 @@ export default function App() {
     }, [currentPage, routeQuery]);
 
   useEffect(() => {
-    const handleExpiredSession = () => setShowLogin(true);
-    window.addEventListener('auth:unauthorized', handleExpiredSession);
-    return () => window.removeEventListener('auth:unauthorized', handleExpiredSession);
+    const openLoginModal = () => setShowLogin(true);
+    window.addEventListener('auth:unauthorized', openLoginModal);
+    window.addEventListener('app:require-login', openLoginModal);
+    return () => {
+      window.removeEventListener('auth:unauthorized', openLoginModal);
+      window.removeEventListener('app:require-login', openLoginModal);
+    };
   }, []);
 
   useEffect(() => {
@@ -190,10 +198,16 @@ export default function App() {
         return <PaymentResultView onNavigate={navigateTo} />;
       case 'ho-so-khach-hang':
         return <CustomerProfile onNavigate={navigateTo} />;
+      case 'san-pham-yeu-thich':
+        return <WishlistPage onNavigate={navigateTo} />;
+      case 'tin-nhan':
+      case 'nha-cung-cap/tin-nhan':
+        return <ChatPage onNavigate={navigateTo} />;
       case 'thong-bao':
         return <Notification onNavigate={navigateTo} />;
 
       // Role 2: Supplier (Nhà cung cấp / Xưởng bánh B2B)
+      case 'nha-cung-cap':
       case 'nha-cung-cap/dashboard':
         return <SupplierDashboard onNavigate={navigateTo} />;
       case 'dang-ky-nha-cung-cap':
@@ -272,7 +286,8 @@ export default function App() {
       const onboarding = ONBOARDING_ROUTES.has(currentPage);
       const eligible = user?.capabilities?.canReadSupplierVerification;
       const fulfillment = user?.capabilities?.canFulfillExistingOrders &&
-        ['nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang'].includes(currentPage);
+        ['nha-cung-cap', 'nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong',
+          'nha-cung-cap/quan-ly-giao-hang', 'nha-cung-cap/tin-nhan'].includes(currentPage);
       const canStartOnboarding = onboarding && user?.role === 'Customer';
       if (SUPPLIER_ROUTES.has(currentPage) && user?.role !== 'Supplier') return <AccessDeniedPage onNavigate={navigateTo} />;
       if ((!eligible && !canStartOnboarding && !fulfillment && !user?.capabilities?.canCreateShop) ||
@@ -282,119 +297,16 @@ export default function App() {
     }
     return renderPage();
   };
-  const quickNavMenuItems = [
-    {
-      key: 'grp-customer',
-      type: 'group',
-      label: '🛒 KHÁCH HÀNG DOANH NGHIỆP (B2B)',
-      children: [
-        { key: 'trang-chu', label: '1. Trang chủ' },
-        { key: 'tim-kiem', label: '2. Khám phá sản phẩm' },
-        { key: 'san-pham', label: '3. Chi tiết sản phẩm & Biến thể' },
-        { key: 'dat-hang-thiet-ke', label: '4. Đặt hàng doanh nghiệp' },
-        { key: 'in-an-bao-bi', label: '5. Tùy biến bao bì' },
-        { key: 'so-sanh-bao-gia', label: '6. Yêu cầu báo giá (RFQ)' },
-        { key: 'hop-dong-tien-do', label: '7. Hợp đồng & Cọc M1' },
-        { key: 'giao-hang-pod', label: '8. Giao nhận PoD' },
-        { key: 'driver-delivery-view', label: '8b. Tài xế Mobile PoD (Web View)' },
-        { key: 'thanh-toan-danh-gia', label: '9. Thanh toán & Đánh giá' },
-        { key: 'thanh-toan/ket-qua', label: '9b. Biên lai VNPay (E-Receipt)' },
-        { key: 'ho-so-khach-hang', label: '10. Hồ sơ doanh nghiệp' },
-      ],
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'grp-supplier',
-      type: 'group',
-      label: '🏭 NHÀ CUNG CẤP / XƯỞNG BÁNH (COLONY)',
-      children: [
-        { key: 'nha-cung-cap/dashboard', label: '0. Dashboard Tổng quan' },
-        { key: 'nha-cung-cap/thiet-lap-gian-hang', label: '1. Thiết lập gian hàng' },
-        { key: 'nha-cung-cap/quan-ly-san-pham', label: '2. Sản phẩm & Biến thể' },
-        { key: 'nha-cung-cap/dau-thau', label: '3. Đấu thầu RFQ & Báo giá' },
-        { key: 'nha-cung-cap/quan-ly-don-hang', label: '4. Đơn hàng & Mockup bao bì' },
-        { key: 'nha-cung-cap/quan-ly-hop-dong', label: '5. Hợp đồng & Milestone' },
-        { key: 'nha-cung-cap/quan-ly-giao-hang', label: '6. Giao vận & Bằng chứng PoD' },
-        { key: 'nha-cung-cap/khuyen-mai', label: '7. Khuyến mãi & Chiết khấu sỉ' },
-        { key: 'nha-cung-cap/ho-so', label: '8. Hồ sơ & Điểm uy tín' },
-      ],
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'grp-admin',
-      type: 'group',
-      label: '🛡️ QUẢN TRỊ VIÊN HQ (COLONY)',
-      children: [
-        { key: 'admin/dashboard', label: '1. Dashboard điều hành' },
-        { key: 'admin/phe-duyet', label: '2. Phê duyệt xưởng bánh' },
-        { key: 'admin/van-hanh-giao-dich', label: '3. Giao dịch & Tranh chấp' },
-        { key: 'admin/kiem-soat-he-thong', label: '4. Kiểm soát hệ thống & Catalog' },
-        { key: 'admin/dieu-khien', label: '5. Người dùng & Gian hàng' },
-        { key: 'admin/ho-so', label: '6. Hồ sơ Admin' },
-      ],
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'auth-triggers',
-      type: 'group',
-      label: '🔐 THỬ NGHIỆM ĐĂNG NHẬP / ĐĂNG KÝ',
-      children: [
-        {
-          key: 'trigger-login',
-          label: 'Mở Popup Đăng Nhập',
-          onClick: () => setShowLogin(true),
-        },
-        {
-          key: 'trigger-register',
-          label: 'Mở Popup Đăng Ký',
-          onClick: () => setShowRegister(true),
-        },
-      ],
-    },
-  ];
-
   return (
     <ConfigProvider theme={antdTheme}>
       <AntApp>
+      <WishlistProvider>
+      <ChatProvider>
       <div style={{ minHeight: '100vh', background: '#f5f5f7', display: 'flex', flexDirection: 'column' }}>
         {/* Dynamic Render of Active Page */}
         <div style={{ flex: 1, width: '100%' }}>
           <Suspense fallback={<Spin fullscreen description="Đang tải trang…" />}>{renderAuthorizedPage()}</Suspense>
         </div>
-
-        {/* Floating Quick Navigation Hub */}
-        {import.meta.env.DEV && isLoggedIn && ['Admin', 'Supplier'].includes(user?.role) && <Dropdown
-          menu={{
-            items: quickNavMenuItems,
-            onClick: ({ key }) => {
-              if (key !== 'trigger-login' && key !== 'trigger-register') {
-                navigateTo(key);
-              }
-            },
-            style: { maxHeight: '75vh', overflowY: 'auto', width: 280 },
-          }}
-          placement="topLeft"
-          arrow
-        >
-          <FloatButton
-            icon={<CompassOutlined />}
-            type="primary"
-            style={{
-              right: 24,
-              bottom: 24,
-              width: 52,
-              height: 52,
-              boxShadow: '0 4px 16px rgba(140, 21, 36, 0.4)',
-            }}
-            tooltip="Điều Hướng Nhanh 3 Roles (Customer - Supplier - Admin)"
-          />
-        </Dropdown>}
 
         {/* Popups (Preserved Auth Flow) */}
         <LoginPopup
@@ -421,11 +333,15 @@ export default function App() {
         />
 
         {/* Global AI Chatbot Concierge Widget */}
-        {(!isLoggedIn || user?.role === 'Customer') &&
+        {!currentPage.startsWith('shop/') && (!isLoggedIn || user?.role === 'Customer') &&
           (isPublicRoute(currentPage) || (isLoggedIn &&
             (CUSTOMER_ROUTES.has(currentPage) || DRIVER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
           <AiChatWidget onNavigate={navigateTo} />}
+        {/* Real-time B2B Customer <-> Supplier Floating Messenger Dock */}
+        {isLoggedIn && <ChatDock onNavigate={navigateTo} />}
       </div>
+      </ChatProvider>
+      </WishlistProvider>
       </AntApp>
     </ConfigProvider>
   );
