@@ -30,22 +30,22 @@ for (const { role, destination, title } of [
       return route.fulfill({ json: { status: 200, data: [] } });
     });
 
-    await page.goto('/#trang-chu');
+    await page.goto('/trang-chu');
     await page.getByRole('banner').getByRole('button', { name: 'Đăng nhập' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('Ví dụ: 0912 345 678').fill('0901234567');
     await dialog.getByPlaceholder('Nhập mật khẩu của bạn').fill('TestPassword123!');
     await dialog.getByRole('button', { name: /Đăng nhập$/ }).click();
 
-    await expect(page).toHaveURL(new RegExp(`#${destination}$`));
+    await expect(page).toHaveURL(new RegExp(`/${destination}$`));
     await page.reload();
-    await expect(page).toHaveURL(new RegExp(`#${destination}$`));
+    await expect(page).toHaveURL(new RegExp(`/${destination}$`));
     if (role === 'Customer') {
       await expect(page.getByRole('banner').getByRole('button', { name: 'Tài khoản' })).toBeVisible();
     } else {
       await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
-      await page.goto('/#trang-chu');
-      await expect(page).toHaveURL(new RegExp(`#${destination}$`));
+      await page.goto('/trang-chu');
+      await expect(page).toHaveURL(new RegExp(`/${destination}$`));
     }
   });
 }
@@ -73,6 +73,6 @@ test('Google đăng nhập Supplier về workspace dù trước đó ở trang k
   });
 
   await page.goto('/auth/google/callback?code=test-code&state=role-test-state');
-  await expect(page).toHaveURL(/#nha-cung-cap\/dashboard$/);
+  await expect(page).toHaveURL(/\/nha-cung-cap\/dashboard$/);
   await expect(page.getByText('Dashboard Nhà Cung Cấp', { exact: true }).first()).toBeVisible();
 });

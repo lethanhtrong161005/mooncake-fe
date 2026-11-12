@@ -147,7 +147,7 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
       });
     });
 
-    await page.goto('/#thanh-toan-danh-gia');
+    await page.goto('/thanh-toan-danh-gia');
 
     // Verify page header
     await expect(page.getByRole('heading', { name: /Đánh giá trải nghiệm, ghi nhận chất lượng/i })).toBeVisible();
@@ -176,7 +176,7 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
     await setupAuth(page, 'Customer');
     await setupProductMock(page);
 
-    await page.goto(`/#san-pham/${productId}`);
+    await page.goto(`/san-pham/${productId}`);
 
     // Verify Product title and Luxury Reputation Badge
     await expect(page.getByRole('heading', { name: 'Bánh Trung Thu Thập Cẩm Bát Bửu Thượng Hạng' })).toBeVisible();
@@ -220,7 +220,7 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
       });
     });
 
-    await page.goto(`/#san-pham/${productId}`);
+    await page.goto(`/san-pham/${productId}`);
 
     // Scroll to review stream
     const reviewsHeader = page.getByRole('heading', { name: /Đánh Giá & Nhận Xét Mạng Xã Hội/i });
@@ -291,7 +291,7 @@ test.describe('Module 8: Reviews & Reputation Management (Features #21 & #22)', 
       });
     });
 
-    await page.goto(`/#san-pham/${productId}`);
+    await page.goto(`/san-pham/${productId}`);
 
     // Click Write Review button
     const writeBtn = page.getByRole('button', { name: /Viết Đánh Giá Sản Phẩm/i });

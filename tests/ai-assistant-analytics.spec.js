@@ -281,7 +281,7 @@ test.describe('Module 9: AI Chatbot & Sales Analytics Intelligence (Features #23
   test('3. Admin navigates to Admin Dashboard, accesses AI Analytics Panel (Feature #24)', async ({ page }) => {
     await setupAuth(page, 'Admin');
     await setupAiMocks(page);
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Switch to AI Analytics tab
     const aiTab = page.getByRole('tab', { name: /Báo Cáo AI Analytics/i });
@@ -314,7 +314,7 @@ test.describe('Module 9: AI Chatbot & Sales Analytics Intelligence (Features #23
   test('4. Admin triggers fresh AI market analysis report generation (Feature #24)', async ({ page }) => {
     await setupAuth(page, 'Admin');
     await setupAiMocks(page);
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Switch to AI Analytics tab
     const aiTab = page.getByRole('tab', { name: /Báo Cáo AI Analytics/i });

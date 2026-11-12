@@ -128,8 +128,8 @@ async function mockSession(page, role = 'Customer', profile = emptyProfile(), re
 test('ordinary Customer can start Supplier onboarding from the homepage without gaining selling rights', async ({ page }) => {
   const state = await mockSession(page, 'Customer', emptyProfile(), 'Customer');
   await page.goto('/');
-  await page.getByRole('button', { name: /Đăng ký mở gian hàng/ }).click();
-  await expect(page).toHaveURL(/#dang-ky-nha-cung-cap$/);
+  await page.getByRole('button', { name: /Đăng ký nhà cung cấp/ }).click();
+  await expect(page).toHaveURL(/\/dang-ky-nha-cung-cap$/);
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
   await expect(page.getByText('Đăng ký trở thành nhà cung cấp', { exact: true })).toBeVisible();
@@ -150,7 +150,7 @@ test('ordinary Customer can start Supplier onboarding from the homepage without 
 
 test('Customer awaiting Supplier approval can upload and submit an immutable application', async ({ page }) => {
   const state = await mockSession(page);
-  await page.goto('/#nha-cung-cap/xac-minh');
+  await page.goto('/nha-cung-cap/xac-minh');
   await expect(page.getByRole('heading', { name: 'Đăng ký mở gian hàng', exact: true })).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
   await page.getByLabel('Tên doanh nghiệp').fill('An Nhiên Test');
@@ -180,15 +180,15 @@ test('Customer awaiting Supplier approval can upload and submit an immutable app
 
 test('plain Customer cannot open the Admin queue', async ({ page }) => {
   const state = await mockSession(page, 'Customer', emptyProfile(), 'Customer');
-  await page.goto('/#admin/phe-duyet');
-  await expect(page.getByText('Trang này dành cho quản trị viên', { exact: true })).toBeVisible();
+  await page.goto('/admin/phe-duyet');
+  await expect(page.getByRole('heading', { name: 'Bạn chưa thể vào trang này.' })).toBeVisible();
   expect(state.commands).toHaveLength(0);
 });
 
 test('storage outage reports the service error and refreshes the failed document row', async ({ page }) => {
   const state = await mockSession(page);
   state.failUpload = true;
-  await page.goto('/#dang-ky-nha-cung-cap');
+  await page.goto('/dang-ky-nha-cung-cap');
   await page.locator('input[type=file]').setInputFiles({ name: 'certificate.pdf',
     mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7 test document') });
   await expect(page.getByText('Dịch vụ kiểm tra/tải tài liệu đang chưa sẵn sàng. Vui lòng thử lại.')).toBeVisible();
@@ -201,7 +201,7 @@ test('storage outage reports the service error and refreshes the failed document
 for (const name of ['report.docx', 'archive.zip', 'program.exe', 'README', 'custom.data', 'contract.pdf']) {
   test(`document upload accepts ${name} without a file-type restriction`, async ({ page }) => {
     const state = await mockSession(page);
-    await page.goto('/#dang-ky-nha-cung-cap');
+    await page.goto('/dang-ky-nha-cung-cap');
     const input = page.locator('input[type=file]');
     await expect(input).not.toHaveAttribute('accept', /.+/);
     await input.setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.from('arbitrary document bytes') });
@@ -214,7 +214,7 @@ for (const name of ['report.docx', 'archive.zip', 'program.exe', 'README', 'cust
 for (const [size, message] of [[0, 'File không được rỗng.'], [10 * 1024 * 1024 + 1, 'File vượt quá 10 MiB.']]) {
   test(`invalid file size ${size} is rejected before upload`, async ({ page }) => {
     const state = await mockSession(page);
-    await page.goto('/#dang-ky-nha-cung-cap');
+    await page.goto('/dang-ky-nha-cung-cap');
     await page.locator('input[type=file]').setInputFiles({ name: 'data.anything', mimeType: 'application/octet-stream', buffer: Buffer.alloc(size) });
     await expect(page.getByText(message, { exact: true })).toBeVisible();
     expect(state.uploads).toBe(0);
@@ -223,7 +223,7 @@ for (const [size, message] of [[0, 'File không được rỗng.'], [10 * 1024 *
 
 test('Admin version conflict does not approve locally or retry the decision automatically', async ({ page }) => {
   const state = await mockSession(page, 'Admin', submitted(), 'Admin');
-  await page.goto('/#admin/phe-duyet');
+  await page.goto('/admin/phe-duyet');
   await page.getByRole('button', { name: 'Xem hồ sơ' }).click();
   await page.getByRole('button', { name: 'Phê duyệt', exact: true }).click();
   await page.getByRole('button', { name: 'Xác nhận quyết định' }).click();
@@ -235,7 +235,7 @@ test('Admin version conflict does not approve locally or retry the decision auto
 
 test('real SignalR client invalidates profile and account after an approval event', async ({ page }) => {
   const state = await mockSession(page, 'Customer', submitted());
-  await page.goto('/#nha-cung-cap/xac-minh');
+  await page.goto('/nha-cung-cap/xac-minh');
   await expect(page.getByText('Hồ sơ đang chờ Admin xét duyệt', { exact: true })).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
   await expect.poll(() => state.handshake).toBe(true);
@@ -254,15 +254,15 @@ test('real SignalR client invalidates profile and account after an approval even
 test('rejected and revoked applicants keep Customer layout for resubmission and notifications', async ({ page }) => {
   const profile = { ...submitted(), onboardingState: 'Rejected', verificationStatus: 'Rejected', allowedActions: ['UploadDocument', 'Submit'] };
   const state = await mockSession(page, 'Customer', profile);
-  await page.goto('/#dang-ky-nha-cung-cap');
+  await page.goto('/dang-ky-nha-cung-cap');
   await expect(page.getByRole('button', { name: /Tải giấy tờ lên/ })).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
   state.profile = { ...profile, onboardingState: 'Revoked', verificationStatus: 'Revoked' };
   await page.reload();
   await expect(page.getByText('Quyền bán hàng mới đã bị thu hồi', { exact: true })).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
-  await page.goto('/#thong-bao');
-  await expect(page.getByText('Thông báo xác minh nhà cung cấp', { exact: true })).toBeVisible();
+  await page.goto('/thong-bao');
+  await expect(page.getByRole('heading', { name: 'Trung Tâm Thông Báo' })).toBeVisible();
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(page.locator('.ant-layout-sider')).toHaveCount(0);
 });
@@ -287,7 +287,7 @@ for (const [role, mime, filename] of [
     });
     const downloads = [];
     page.on('download', (download) => downloads.push(download));
-    await page.goto(role === 'Admin' ? '/#admin/phe-duyet' : '/#dang-ky-nha-cung-cap');
+    await page.goto(role === 'Admin' ? '/admin/phe-duyet' : '/dang-ky-nha-cung-cap');
     if (role === 'Admin') await page.getByRole('button', { name: 'Xem hồ sơ' }).click();
     await page.getByRole('button', { name: `Xem ${filename}`, exact: true }).click();
     const modal = page.getByRole('dialog', { name: `Xem tài liệu: ${filename}` });
@@ -310,7 +310,7 @@ test('document preview displays authorization errors without exposing file conte
     originalFileName: 'private.pdf', contentType: 'application/pdf', uploadStatus: 'Ready' }];
   const state = await mockSession(page, 'Customer', profile);
   state.contentError = true;
-  await page.goto('/#dang-ky-nha-cung-cap');
+  await page.goto('/dang-ky-nha-cung-cap');
   await page.getByRole('button', { name: 'Xem private.pdf', exact: true }).click();
   const modal = page.getByRole('dialog', { name: 'Xem tài liệu: private.pdf' });
   await expect(modal.getByRole('alert')).toContainText('Tài khoản hiện tại không có quyền thực hiện thao tác này.');

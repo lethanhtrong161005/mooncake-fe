@@ -27,13 +27,7 @@ const { Text, Paragraph } = Typography;
 export default function DriverMobileView({ deliveryId: propDeliveryId, onBack, onComplete }) {
   const [deliveryId] = useState(() => {
     if (propDeliveryId) return propDeliveryId;
-    const hash = window.location.hash;
-    const queryIdx = hash.indexOf('?');
-    if (queryIdx !== -1) {
-      const params = new URLSearchParams(hash.substring(queryIdx));
-      return params.get('id');
-    }
-    return null;
+    return new URLSearchParams(window.location.search).get('id');
   });
 
   const [delivery, setDelivery] = useState(null);

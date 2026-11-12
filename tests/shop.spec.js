@@ -85,7 +85,7 @@ async function session(page, { role = 'Supplier', exists = true } = {}) {
 
 test('approved supplier creates an inactive shop through the API', async ({ page }) => {
   const state = await session(page, { exists: false });
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await page.getByLabel('Tên gian hàng', { exact: true }).fill('An Nhiên Bakery');
   await page.getByLabel('Đường dẫn gian hàng', { exact: true }).fill('an-nhien-bakery');
   await page.getByRole('button', { name: 'Tạo gian hàng', exact: true }).click();
@@ -97,7 +97,7 @@ test('approved supplier creates an inactive shop through the API', async ({ page
 
 test('supplier uploads logo and banner before creating a shop', async ({ page }) => {
   const state = await session(page, { exists: false });
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await page.getByLabel('Tên gian hàng', { exact: true }).fill('An Nhiên Bakery');
   await page.getByLabel('Đường dẫn gian hàng', { exact: true }).fill('an-nhien-bakery');
   const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1cAAAAASUVORK5CYII=', 'base64');
@@ -114,7 +114,7 @@ test('supplier uploads logo and banner before creating a shop', async ({ page })
 
 test('failed optional image upload still allows creating a shop without branding', async ({ page }) => {
   const state = await session(page, { exists: false }); state.mediaFailure = true;
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await page.getByLabel('Tên gian hàng', { exact: true }).fill('An Nhiên Bakery');
   await page.getByLabel('Đường dẫn gian hàng', { exact: true }).fill('an-nhien-bakery');
   await page.locator('input[type=file]').nth(0).setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('image fixture') });
@@ -127,7 +127,7 @@ test('failed optional image upload still allows creating a shop without branding
 
 test('all five renderers preview locally and save a pinned revision', async ({ page }) => {
   const state = await session(page);
-  await page.goto('/#nha-cung-cap/giao-dien-gian-hang');
+  await page.goto('/nha-cung-cap/giao-dien-gian-hang');
   await expect(page.locator('.shop-heritage')).toBeVisible();
   for (const renderer of renderers.slice(1)) {
     await page.getByRole('combobox', { name: 'Chọn mẫu giao diện' }).click();
@@ -146,7 +146,7 @@ test('all five renderers preview locally and save a pinned revision', async ({ p
 
 test('conflict preserves information draft and does not show success', async ({ page }) => {
   const state = await session(page); state.conflict = true;
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await page.getByLabel('Tên gian hàng', { exact: true }).fill('Bản nháp cần giữ');
   await page.getByRole('button', { name: 'Lưu thông tin gian hàng', exact: true }).click();
   await expect(page.getByText(/Gian hàng đã thay đổi/)).toBeVisible();
@@ -156,7 +156,7 @@ test('conflict preserves information draft and does not show success', async ({ 
 
 test('customer cannot open supplier shop workspace', async ({ page }) => {
   const state = await session(page, { role: 'Customer' });
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await expect(page.getByText('Hoàn tất xác minh doanh nghiệp để sử dụng chức năng này')).toBeVisible();
   expect(state.queries.some((url) => url.pathname.endsWith('/shops/me'))).toBe(false);
 });
@@ -175,7 +175,7 @@ test('public path survives reload and filters use public API', async ({ page }) 
 
 test('admin moderation requires reason and sends displayed version', async ({ page }) => {
   const state = await session(page, { role: 'Admin' });
-  await page.goto('/#admin/gian-hang');
+  await page.goto('/admin/gian-hang');
   await page.getByRole('button', { name: 'Đình chỉ', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();
   expect(state.commands).toHaveLength(0);
@@ -187,7 +187,7 @@ test('admin moderation requires reason and sends displayed version', async ({ pa
 
 test('admin template minimum failure is displayed without fake success', async ({ page }) => {
   const state = await session(page, { role: 'Admin' });
-  await page.goto('/#admin/mau-gian-hang');
+  await page.goto('/admin/mau-gian-hang');
   await page.getByRole('button', { name: 'Ẩn mẫu', exact: true }).nth(1).click();
   await page.getByRole('dialog').getByRole('button', { name: 'OK', exact: true }).click();
   await expect(page.getByText('Cần giữ ít nhất 5 mẫu đang hiển thị.', { exact: true })).toBeVisible();
@@ -197,7 +197,7 @@ test('admin template minimum failure is displayed without fake success', async (
 
 test('dirty draft blocks menu navigation until explicitly discarded', async ({ page }) => {
   await session(page);
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await page.getByLabel('Tên gian hàng', { exact: true }).fill('Bản nháp chưa lưu');
   await page.getByRole('menuitem', { name: /Giao diện gian hàng$/ }).click();
   const dialog = page.getByRole('dialog');
@@ -226,7 +226,7 @@ test('public storefront remains usable on a mobile viewport', async ({ page }) =
 test('supplier shop form and navigation fit a mobile viewport', async ({ page }) => {
   await session(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#nha-cung-cap/thiet-lap-gian-hang');
+  await page.goto('/nha-cung-cap/thiet-lap-gian-hang');
   await expect(page.getByLabel('Tên gian hàng', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Mở điều hướng', exact: true }).click();

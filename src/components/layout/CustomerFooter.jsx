@@ -14,16 +14,16 @@ export default function CustomerFooter({ onNavigate }) {
   return (
     <footer
       style={{
-        background: '#ffffff',
-        borderTop: '1px solid #ebdcd5',
+        background: '#faf9f6',
+        borderTop: '1px solid #e7dcd0',
         marginTop: 'auto',
       }}
     >
       {/* 1. Trust Bar - Cam kết dịch vụ ngắn gọn */}
       <div
         style={{
-          background: '#fdf8f5',
-          borderBottom: '1px solid #ebdcd5',
+          background: '#f3eee7',
+          borderBottom: '1px solid #e7dcd0',
           padding: '16px 20px',
         }}
       >
@@ -36,7 +36,7 @@ export default function CustomerFooter({ onNavigate }) {
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    background: '#faeae1',
+                    background: '#eee1d1',
                     color: '#8c1524',
                     display: 'flex',
                     alignItems: 'center',
@@ -60,7 +60,7 @@ export default function CustomerFooter({ onNavigate }) {
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    background: '#faeae1',
+                    background: '#eee1d1',
                     color: '#8c1524',
                     display: 'flex',
                     alignItems: 'center',
@@ -84,7 +84,7 @@ export default function CustomerFooter({ onNavigate }) {
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    background: '#faeae1',
+                    background: '#eee1d1',
                     color: '#8c1524',
                     display: 'flex',
                     alignItems: 'center',
@@ -108,7 +108,7 @@ export default function CustomerFooter({ onNavigate }) {
                     width: 36,
                     height: 36,
                     borderRadius: 8,
-                    background: '#faeae1',
+                    background: '#eee1d1',
                     color: '#8c1524',
                     display: 'flex',
                     alignItems: 'center',
@@ -276,7 +276,7 @@ export default function CustomerFooter({ onNavigate }) {
           </Col>
         </Row>
 
-        <Divider style={{ margin: '20px 0 16px', borderColor: '#f0e6e0' }} />
+        <Divider style={{ margin: '20px 0 16px', borderColor: '#e7dcd0' }} />
 
         {/* 3. Bottom Bar */}
         <div

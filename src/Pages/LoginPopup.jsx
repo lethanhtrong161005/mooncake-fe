@@ -6,6 +6,7 @@ import AppLogo from '../components/layout/AppLogo';
 import LoginForm from './Auth/LoginForm';
 import ForgotPasswordForm from './Auth/ForgotPasswordForm';
 import { postLoginRoute } from '../utils/roleNavigation';
+import { currentRoute, currentRouteQuery } from '../utils/shopRoutes';
 
 export default function LoginPopup(props) {
   if (!props.isOpen) return null;
@@ -96,7 +97,7 @@ function LoginPopupContent({
       sessionStorage.setItem('mooncake_google_state', state);
       sessionStorage.setItem(
         'mooncake_google_return_page',
-        window.location.hash.replace(/^#/, '') || 'trang-chu'
+        returnPage || `${currentRoute()}${currentRouteQuery()}`
       );
       window.location.assign(authorizationUrl);
     } catch (error) {

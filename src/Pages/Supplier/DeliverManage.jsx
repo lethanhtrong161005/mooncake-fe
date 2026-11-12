@@ -227,7 +227,7 @@ export default function DeliverManage({ onNavigate }) {
                 size="small"
                 icon={<MobileOutlined />}
                 onClick={() => {
-                  window.location.hash = `driver-delivery-view?id=${record.id || record.key}`;
+                  onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`);
                 }}
                 className="text-xs border-slate-300"
               >

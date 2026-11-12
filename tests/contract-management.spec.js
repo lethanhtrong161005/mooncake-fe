@@ -134,7 +134,7 @@ test.describe('Module 6: Contract Management & Milestones E2E Tests', () => {
       });
     });
 
-    await page.goto('/#hop-dong-tien-do');
+    await page.goto('/hop-dong-tien-do');
     await expect(page.getByRole('heading', { name: /Hợp Đồng & Tiến Độ/i })).toBeVisible();
     await expect(page.getByText('HD-2026-TEST01')).toBeVisible();
 
@@ -203,7 +203,7 @@ test.describe('Module 6: Contract Management & Milestones E2E Tests', () => {
       });
     });
 
-    await page.goto('/#nha-cung-cap/quan-ly-hop-dong');
+    await page.goto('/nha-cung-cap/quan-ly-hop-dong');
     await expect(page.getByText('HD-2026-TEST01')).toBeVisible();
 
     // Open milestones modal
@@ -267,7 +267,7 @@ test.describe('Module 6: Contract Management & Milestones E2E Tests', () => {
       });
     });
 
-    await page.goto('/#hop-dong-tien-do');
+    await page.goto('/hop-dong-tien-do');
     await page.getByRole('button', { name: 'Tiến độ & Mốc' }).click();
 
     // Verify milestone drawer is visible
@@ -304,7 +304,7 @@ test.describe('Module 6: Contract Management & Milestones E2E Tests', () => {
       });
     });
 
-    await page.goto('/#hop-dong-tien-do');
+    await page.goto('/hop-dong-tien-do');
     await page.getByRole('button', { name: 'Nghiệm thu dứt điểm' }).click();
 
     await expect(page.getByText('Biên Bản Nghiệm Thu Tổng Thể & Hoàn Tất Hợp Đồng')).toBeVisible();

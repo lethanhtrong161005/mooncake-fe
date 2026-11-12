@@ -45,7 +45,7 @@ export default function PaymentCheckoutModal({
 
       if (selectedMethod === 'vnpay') {
         let res;
-        const returnUrl = `${window.location.origin}/#thanh-toan/ket-qua`;
+        const returnUrl = `${window.location.origin}/thanh-toan/ket-qua`;
         if (isOrder) {
           res = await paymentService.createOrderVnPayUrl(order.id, returnUrl);
         } else if (isContract) {

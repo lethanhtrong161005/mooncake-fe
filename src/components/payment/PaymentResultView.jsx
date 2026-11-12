@@ -13,12 +13,10 @@ import {
 import paymentService from '../../services/paymentService';
 
 function getReturnQueryString() {
-  const fullUrl = window.location.href;
-  const queryIndex = fullUrl.indexOf('?');
-  return queryIndex !== -1 ? fullUrl.substring(queryIndex + 1) : '';
+  return window.location.search.replace(/^\?/, '');
 }
 
-export default function PaymentResultView() {
+export default function PaymentResultView({ onNavigate }) {
   const initialQuery = getReturnQueryString();
   const [loading, setLoading] = useState(() => Boolean(initialQuery));
   const [verificationResult, setVerificationResult] = useState(() =>
@@ -163,7 +161,7 @@ export default function PaymentResultView() {
               type="primary"
               icon={<ShoppingOutlined />}
               onClick={() => {
-                window.location.hash = '#/don-hang-cua-toi';
+                onNavigate?.('don-hang-cua-toi');
               }}
               className="rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 font-semibold px-5 print:hidden"
             >
@@ -174,7 +172,7 @@ export default function PaymentResultView() {
                 key="contracts"
                 icon={<FileProtectOutlined />}
                 onClick={() => {
-                  window.location.hash = '#/hop-dong-tien-do';
+                  onNavigate?.('hop-dong-tien-do');
                 }}
                 className="rounded-xl border-amber-300 text-amber-800 hover:text-amber-900 print:hidden"
               >

@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import AppLogo from '../../components/layout/AppLogo';
 import { postLoginRoute } from '../../utils/roleNavigation';
+import { routeUrl } from '../../utils/shopRoutes';
 
 const { Title, Paragraph } = Typography;
 
@@ -56,7 +57,7 @@ export default function GoogleCallbackPage() {
       .then((response) => {
         const account = response?.data?.user;
         const destination = postLoginRoute(account, returnPage);
-        window.location.replace(`/#${encodeURI(destination)}`);
+        window.location.replace(routeUrl(destination));
       })
       .catch((requestError) => {
         setError(requestError.message || 'Không thể xác thực tài khoản Google. Vui lòng thử lại.');
@@ -99,7 +100,7 @@ export default function GoogleCallbackPage() {
           <AppLogo
             size="large"
             subtitle="Xác Thực Đăng Nhập Google"
-            onClick={() => window.location.replace('/#trang-chu')}
+            onClick={() => window.location.replace(routeUrl('trang-chu'))}
             style={{ cursor: 'pointer' }}
           />
         </div>
@@ -123,7 +124,7 @@ export default function GoogleCallbackPage() {
                   borderRadius: 8,
                   padding: '0 28px',
                 }}
-                onClick={() => window.location.replace('/#trang-chu')}
+                onClick={() => window.location.replace(routeUrl('trang-chu'))}
               >
                 Về Trang Chủ Thử Lại
               </Button>,

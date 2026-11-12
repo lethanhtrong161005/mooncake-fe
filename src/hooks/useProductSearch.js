@@ -6,7 +6,7 @@ import {
 } from '../constants/productSearch';
 import productService from '../services/productService';
 import {
-  buildSearchHash,
+  buildSearchUrl,
   countActiveFilters,
   createDefaultSearchState,
   parseSearchQuery,
@@ -21,7 +21,7 @@ const DEFAULT_REGIONS = [
 
 export function useProductSearch() {
   const [searchState, setSearchState] = useState(() =>
-    parseSearchQuery(typeof window !== 'undefined' ? window.location.hash : '')
+    parseSearchQuery(typeof window !== 'undefined' ? window.location.href : '')
   );
   const [keywordDraft, setKeywordDraft] = useState(() => searchState.q);
   const [data, setData] = useState(null);
@@ -38,7 +38,7 @@ export function useProductSearch() {
   const applySearchUpdate = useCallback((updater) => {
     setSearchState((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
-      if (buildSearchHash(prev) === buildSearchHash(next)) return prev;
+      if (buildSearchUrl(prev) === buildSearchUrl(next)) return prev;
       setIsLoading(true);
       setError(null);
       return next;
@@ -65,34 +65,31 @@ export function useProductSearch() {
   }, []);
 
   useEffect(() => {
-    const nextHash = buildSearchHash(searchState);
-    if (typeof window !== 'undefined' && window.location.hash !== nextHash) {
-      window.history.replaceState(null, '', nextHash);
+    const nextUrl = buildSearchUrl(searchState);
+    if (typeof window !== 'undefined' && `${window.location.pathname}${window.location.search}` !== nextUrl) {
+      window.history.replaceState(null, '', nextUrl);
     }
   }, [searchState]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handleLocationChange = () => {
-      const hash = window.location.hash || '';
-      if (!hash.startsWith('#tim-kiem')) return;
-      const parsed = parseSearchQuery(hash);
-      const canonicalHash = buildSearchHash(parsed);
-      if (window.location.hash !== canonicalHash) {
-        window.history.replaceState(null, '', canonicalHash);
+      if (window.location.pathname !== '/tim-kiem') return;
+      const parsed = parseSearchQuery(window.location.href);
+      const canonicalUrl = buildSearchUrl(parsed);
+      if (`${window.location.pathname}${window.location.search}` !== canonicalUrl) {
+        window.history.replaceState(null, '', canonicalUrl);
       }
       setSearchState((prev) => {
-        if (buildSearchHash(prev) === canonicalHash) return prev;
+        if (buildSearchUrl(prev) === canonicalUrl) return prev;
         setKeywordDraft(parsed.q);
         setIsLoading(true);
         setError(null);
         return parsed;
       });
     };
-    window.addEventListener('hashchange', handleLocationChange);
     window.addEventListener('popstate', handleLocationChange);
     return () => {
-      window.removeEventListener('hashchange', handleLocationChange);
       window.removeEventListener('popstate', handleLocationChange);
     };
   }, []);

@@ -385,11 +385,20 @@
 }
 
 .home-page .home-product.ant-card {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--home-line);
   border-radius: 10px;
   background: white;
   transition: box-shadow 240ms ease, transform 240ms ease;
+}
+
+.home-page .home-product .ant-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0;
 }
 
 .home-page .home-product.ant-card:hover,
@@ -432,6 +441,7 @@
 
 .home-product__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 190px;
   padding: 19px;
@@ -443,6 +453,7 @@
 }
 
 .home-page .home-product h3.ant-typography {
+  flex: 1;
   margin: 8px 0 18px;
   color: var(--home-ink);
   font-size: 16px;

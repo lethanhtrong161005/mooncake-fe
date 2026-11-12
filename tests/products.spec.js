@@ -237,13 +237,13 @@ async function setupSession(page, { role = 'Customer' } = {}) {
 test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () => {
   test('Khách hàng tìm kiếm sản phẩm và lọc theo từ khóa trên SearchPage', async ({ page }) => {
     await setupSession(page, { role: 'Customer' });
-    await page.goto('/#tim-kiem');
+    await page.goto('/tim-kiem');
 
-    await expect(page.locator('h2')).toContainText('Khám phá catalog B2B');
+    await expect(page.getByRole('heading', { name: 'Chọn món quà đúng ý.' })).toBeVisible();
     await expect(page.locator('text=Bánh nướng truyền thống')).toBeVisible();
 
     // Type query
-    const searchInput = page.locator('input[placeholder="Tìm theo tên sản phẩm hoặc gian hàng"]');
+    const searchInput = page.locator('input[placeholder="Tên bánh, hộp quà hoặc gian hàng"]');
     await searchInput.fill('Hoàng Kim');
     await page.keyboard.press('Enter');
 
@@ -256,7 +256,7 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     page,
   }) => {
     await setupSession(page, { role: 'Customer' });
-    await page.goto(`/#san-pham/${productDetailFixture.id}`);
+    await page.goto(`/san-pham/${productDetailFixture.id}`);
 
     // Verify Title and Shop Information
     await expect(page.locator('h1')).toContainText('Bánh Trung Thu Hoàng Kim B2B');
@@ -279,7 +279,7 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     await orderButton.click();
 
     // Verify Draft saved in sessionStorage and navigation triggered
-    await expect(page).toHaveURL(/.*#dat-hang-thiet-ke/);
+    await expect(page).toHaveURL(/.*\/dat-hang-thiet-ke/);
     const draft = await page.evaluate(() => JSON.parse(sessionStorage.getItem('b2b_order_draft')));
     expect(draft.productId).toBe(productDetailFixture.id);
     expect(draft.variantId).toBe('aaaa2222-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
@@ -290,7 +290,7 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     page,
   }) => {
     const state = await setupSession(page, { role: 'Supplier' });
-    await page.goto('/#nha-cung-cap/quan-ly-san-pham');
+    await page.goto('/nha-cung-cap/quan-ly-san-pham');
 
     await expect(page.getByRole('heading', { name: 'Sản phẩm và biến thể' })).toBeVisible();
     await expect(page.locator('text=Bánh Trung Thu Hoàng Kim B2B')).toBeVisible();
@@ -314,7 +314,7 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
 
   test('Hiển thị thông báo khi sản phẩm không tồn tại hoặc bị ẩn', async ({ page }) => {
     await setupSession(page, { role: 'Customer' });
-    await page.goto('/#san-pham/00000000-0000-0000-0000-000000000000');
+    await page.goto('/san-pham/00000000-0000-0000-0000-000000000000');
 
     await expect(page.locator('text=Sản phẩm không tồn tại hoặc chưa được xuất bản')).toBeVisible();
   });

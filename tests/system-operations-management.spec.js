@@ -200,7 +200,7 @@ test.describe('Module 11: System Operations & Real-Time Notifications (Features 
       });
     });
 
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Verify Notification Bell with badge
     const bellBtn = page.getByRole('button', { name: 'Thông báo hệ thống' });
@@ -270,7 +270,7 @@ test.describe('Module 11: System Operations & Real-Time Notifications (Features 
       });
     });
 
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Switch to SafeTrade tab
     const disputeTab = page.getByRole('tab', { name: /Trọng Tài Tranh Chấp SafeTrade/i });
@@ -339,7 +339,7 @@ test.describe('Module 11: System Operations & Real-Time Notifications (Features 
       });
     });
 
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Switch to Funnel tab
     const funnelTab = page.getByRole('tab', { name: /Phễu Chuyển Đổi RFQ & Báo Cáo/i });
@@ -388,7 +388,7 @@ test.describe('Module 11: System Operations & Real-Time Notifications (Features 
       });
     });
 
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Locate and click notification bell
     const bellBtn = page.getByRole('button', { name: 'Thông báo hệ thống' });

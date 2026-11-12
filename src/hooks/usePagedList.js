@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const readQuery = () => {
-  const [, query = ''] = window.location.hash.split('?');
-  const params = new URLSearchParams(query);
+  const params = new URLSearchParams(window.location.search);
   return {
     page: Math.max(1, Number(params.get('page')) || 1),
     pageSize: [10, 20, 50, 100].includes(Number(params.get('pageSize')))
@@ -31,10 +30,8 @@ export default function usePagedList(fetcher, { syncUrl = true } = {}) {
         ? previous : next);
       setSearch(next.q);
     };
-    window.addEventListener('hashchange', updateFromLocation);
     window.addEventListener('popstate', updateFromLocation);
     return () => {
-      window.removeEventListener('hashchange', updateFromLocation);
       window.removeEventListener('popstate', updateFromLocation);
     };
   }, [syncUrl]);
@@ -48,9 +45,8 @@ export default function usePagedList(fetcher, { syncUrl = true } = {}) {
 
   useEffect(() => {
     if (!syncUrl) return;
-    const [path] = window.location.hash.split('?');
     if (query.page === 1 && query.pageSize === 10 && !query.q && !query.status) {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${path}`);
+      window.history.replaceState(null, '', window.location.pathname);
       return;
     }
     const params = new URLSearchParams();
@@ -58,7 +54,7 @@ export default function usePagedList(fetcher, { syncUrl = true } = {}) {
     params.set('pageSize', String(query.pageSize));
     if (query.q) params.set('q', query.q);
     if (query.status) params.set('status', query.status);
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${path}?${params}`);
+    window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
   }, [query, syncUrl]);
 
   useEffect(() => {

@@ -92,7 +92,7 @@ export const orderService = {
   },
   async createPartVnPayUrl(orderId, partId, returnUrl) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.PART_VNPAY_URL(orderId, partId), {
-      returnUrl: returnUrl || `${window.location.origin}/#/thanh-toan/ket-qua`,
+      returnUrl: returnUrl || `${window.location.origin}/thanh-toan/ket-qua`,
     }));
   },
   async getPaymentSummary(orderId) {

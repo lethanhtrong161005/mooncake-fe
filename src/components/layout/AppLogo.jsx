@@ -61,7 +61,7 @@ export default function AppLogo({
             <div
               style={{
                 fontSize: 10,
-                color: '#777',
+                color: '#6d6059',
                 marginTop: 2,
                 fontWeight: 500,
                 letterSpacing: '0.2px',

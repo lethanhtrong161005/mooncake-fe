@@ -37,10 +37,7 @@ async function run() {
   await page.waitForTimeout(2000);
 
   console.log('5. Navigating to Supplier Dashboard (nha-cung-cap/dashboard)...');
-  await page.evaluate(() => {
-    window.location.hash = '#nha-cung-cap/dashboard';
-    window.dispatchEvent(new CustomEvent('app:navigate', { detail: 'nha-cung-cap/dashboard' }));
-  });
+  await page.goto('http://localhost:5173/nha-cung-cap/dashboard');
   await page.waitForTimeout(3000);
 
   // Take screenshot of Supplier Dashboard

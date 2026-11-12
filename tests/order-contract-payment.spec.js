@@ -65,7 +65,7 @@ test.describe('Module 10: Order & Contract Payment (Feature #25)', () => {
       });
     });
 
-    await page.goto('/#don-hang-cua-toi');
+    await page.goto('/don-hang-cua-toi');
     await expect(page.getByRole('heading', { name: 'Đơn hàng của tôi' })).toBeVisible();
 
     // Verify order is listed with "Thanh toán ngay" button
@@ -175,7 +175,7 @@ test.describe('Module 10: Order & Contract Payment (Feature #25)', () => {
       });
     });
 
-    await page.goto('/#hop-dong-tien-do');
+    await page.goto('/hop-dong-tien-do');
 
     // Click "Thanh toán M1"
     const payDepositBtn = page.getByRole('button', { name: /Thanh toán M1/i }).first();
@@ -242,7 +242,7 @@ test.describe('Module 10: Order & Contract Payment (Feature #25)', () => {
     });
 
     // Navigate to payment result URL with successful return query parameters
-    await page.goto('/#thanh-toan/ket-qua?vnp_TxnRef=PAY-20261029-A78F21B3&vnp_Amount=4500000000&vnp_ResponseCode=00&vnp_BankCode=NCB&vnp_TransactionNo=14567890');
+    await page.goto('/thanh-toan/ket-qua?vnp_TxnRef=PAY-20261029-A78F21B3&vnp_Amount=4500000000&vnp_ResponseCode=00&vnp_BankCode=NCB&vnp_TransactionNo=14567890');
 
     // Verify Success Receipt details
     await expect(page.getByText('Thanh Toán Thành Công!')).toBeVisible({ timeout: 10000 });
@@ -311,7 +311,7 @@ test.describe('Module 10: Order & Contract Payment (Feature #25)', () => {
     await page.route('**/api/v1/reports/**', (route) => route.fulfill({ json: { status: 200, data: {} } }));
     await page.route('**/api/v1/admin/disputes**', (route) => route.fulfill({ json: { status: 200, data: [] } }));
 
-    await page.goto('/#admin/dashboard');
+    await page.goto('/admin/dashboard');
 
     // Switch to Escrow Tab
     const escrowTab = page.getByRole('tab', { name: /Sổ Giám Sát Ký Quỹ Escrow/i });

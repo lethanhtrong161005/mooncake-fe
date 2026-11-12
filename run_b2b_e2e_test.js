@@ -30,7 +30,7 @@ async function run() {
     // FLOW 1: Open Home Page
     // -------------------------------------------------------------
     console.log('📍 Flow 1: Navigating to Home Page...');
-    await page.goto(`${BASE_URL}/#trang-chu`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/trang-chu`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '01_homepage.png'), fullPage: false });
     console.log('📸 Captured: 01_homepage.png');
@@ -45,8 +45,8 @@ async function run() {
       await loginButton.click();
       await page.waitForTimeout(800);
     } else {
-      await page.goto(`${BASE_URL}/#dang-nhap`);
-      await page.waitForTimeout(800);
+      await page.goto(`${BASE_URL}/trang-chu`);
+      await page.getByRole('button', { name: 'Đăng nhập' }).first().click();
     }
 
     // Fill phone and password
@@ -70,8 +70,8 @@ async function run() {
     // -------------------------------------------------------------
     // FLOW 3: Product Exploration & Selection
     // -------------------------------------------------------------
-    console.log('📍 Flow 3: Navigating to Product Catalog (#tim-kiem)...');
-    await page.goto(`${BASE_URL}/#tim-kiem`, { waitUntil: 'networkidle' });
+    console.log('📍 Flow 3: Navigating to Product Catalog (/tim-kiem)...');
+    await page.goto(`${BASE_URL}/tim-kiem`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '04_product_catalog.png') });
     console.log('📸 Captured: 04_product_catalog.png');

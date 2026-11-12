@@ -13,7 +13,7 @@ export const paymentService = {
   async createOrderVnPayUrl(orderId, returnUrl) {
     const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.ORDER_VNPAY_URL, {
       orderId,
-      returnUrl: returnUrl || `${window.location.origin}/#/thanh-toan/ket-qua`,
+      returnUrl: returnUrl || `${window.location.origin}/thanh-toan/ket-qua`,
     });
     return unwrap(res);
   },
@@ -23,7 +23,7 @@ export const paymentService = {
     const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.VNPAY_CREATE_URL, {
       contractId,
       milestoneId,
-      returnUrl: returnUrl || `${window.location.origin}/#thanh-toan/ket-qua`,
+      returnUrl: returnUrl || `${window.location.origin}/thanh-toan/ket-qua`,
     });
     return unwrap(res);
   },

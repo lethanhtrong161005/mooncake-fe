@@ -1,0 +1,46 @@
+.customer-header .customer-header__menu,
+.customer-header .customer-header__menu.ant-menu-horizontal {
+  background: transparent;
+  color: #241a18;
+}
+
+.customer-header .customer-header__menu .ant-menu-item {
+  background: transparent;
+  color: #241a18;
+}
+
+.customer-header .customer-header__menu .ant-menu-item:hover {
+  background: transparent;
+  color: #8c1524;
+}
+
+.customer-header .customer-header__menu .ant-menu-item-selected {
+  background: transparent;
+  color: #8c1524;
+}
+
+.customer-header .customer-header__menu .ant-menu-item-selected::after {
+  border-bottom-color: #8c1524;
+}
+
+.customer-header .customer-header__menu .ant-menu-item:not(.ant-menu-item-selected):hover::after {
+  border-bottom-color: transparent;
+}
+
+.customer-header .ant-input-affix-wrapper input {
+  background: transparent;
+  color: #241a18;
+}
+
+.customer-header .ant-input-affix-wrapper input::placeholder {
+  color: #7b6b62;
+}
+
+.customer-header .ant-input-affix-wrapper:hover,
+.customer-header .ant-input-affix-wrapper:focus-within {
+  border-color: #c29451;
+}
+
+.customer-header .ant-btn-text:hover {
+  background: #f3eee7;
+}

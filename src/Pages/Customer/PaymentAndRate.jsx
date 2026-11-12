@@ -20,8 +20,7 @@ export default function PaymentAndRate({ onNavigate }) {
   const [form] = Form.useForm();
   const [orders, setOrders] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState(() => {
-    const query = window.location.hash.split('?')[1];
-    return query ? new URLSearchParams(query).get('orderId') : null;
+    return new URLSearchParams(window.location.search).get('orderId');
   });
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [eligibleError, setEligibleError] = useState('');

@@ -12,6 +12,7 @@ import CustomerHeader from '../components/layout/CustomerHeader';
 import productService from '../services/productService';
 import { formatCurrency } from '../utils/formatters';
 import '../styles/home-page.css';
+import '../styles/home-cinematic.css';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -161,7 +162,7 @@ export default function HomePage({ onNavigate }) {
 
       <main ref={mainRef}>
         {/* Hero leads with the gift itself; procurement actions remain immediately available. */}
-        <section className="home-hero" aria-labelledby="home-hero-title">
+        <section className="home-hero home-hero--cinematic" aria-labelledby="home-hero-title">
           <div className="home-hero__copy">
             <Text className="home-hero__intro">Nguyệt Phố · Quà Trung thu doanh nghiệp</Text>
             <Title id="home-hero-title" level={1}>
@@ -183,8 +184,8 @@ export default function HomePage({ onNavigate }) {
           </div>
           <div className="home-hero__visual">
             <img
-              src="/hero_mooncake_bg.jpg"
-              alt="Hộp quà Trung thu trên bàn dưới ánh trăng"
+              src="/home-hero-cinematic.jpg"
+              alt="Hộp quà bánh Trung thu sơn mài dưới ánh trăng"
               fetchPriority="high"
             />
             <div className="home-hero__caption">
@@ -192,6 +193,29 @@ export default function HomePage({ onNavigate }) {
               <span>Chọn theo cách của bạn</span>
             </div>
           </div>
+        </section>
+
+        <section className="home-moon-scene" aria-labelledby="home-moon-scene-title">
+          <div className="home-moon-scene__art" aria-hidden="true">
+            <img src="/home-moonlit-river.jpg" alt="" loading="lazy" />
+            <span className="home-moon-scene__stars" />
+            <span className="home-moon-scene__mist" />
+            <span className="home-moon-scene__reflection" />
+          </div>
+          <div className="home-container home-moon-scene__content">
+            <Text className="home-moon-scene__lead">Một mùa trăng, nhiều lời tri ân</Text>
+            <Title id="home-moon-scene-title" level={2}>
+              Để món quà kể thay lời cảm ơn.
+            </Title>
+            <Paragraph>
+              Từ chiếc bánh quen thuộc đến hộp quà mang dấu ấn riêng,
+              hãy chọn cách trao gửi phù hợp với người nhận.
+            </Paragraph>
+            <Button type="link" onClick={() => onNavigate?.('tim-kiem')}>
+              Khám phá bộ sưu tập <ArrowRightOutlined aria-hidden="true" />
+            </Button>
+          </div>
+          <div className="home-moon-scene__edge" aria-hidden="true" />
         </section>
 
         <section className="home-journey" aria-label="Cách chọn quà doanh nghiệp">
@@ -281,8 +305,7 @@ export default function HomePage({ onNavigate }) {
                 {featuredProducts.map((product) => {
                   const price = product.minPrice ?? product.basePrice;
                   return (
-                    <Card className="home-product" key={product.productId}
-                      styles={{ body: { padding: 0, height: '100%' } }}>
+                    <Card className="home-product" key={product.productId}>
                       <div className="home-product__image">
                         <span>Hình ảnh đang cập nhật</span>
                         {product.primaryImageUrl && (
