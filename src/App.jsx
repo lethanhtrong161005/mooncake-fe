@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { App as AntApp, ConfigProvider, Spin } from 'antd';
+import { App as AntApp, ConfigProvider, Empty, Spin } from 'antd';
+import viVN from 'antd/locale/vi_VN';
 import { useAuth } from './hooks/useAuth';
 import { WishlistProvider } from './context/WishlistContext';
 import { ChatProvider } from './context/ChatContext';
@@ -298,7 +299,8 @@ export default function App() {
     return renderPage();
   };
   return (
-    <ConfigProvider theme={antdTheme}>
+    <ConfigProvider theme={antdTheme} locale={viVN}
+      renderEmpty={() => <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có dữ liệu" />}>
       <AntApp>
       <WishlistProvider>
       <ChatProvider>

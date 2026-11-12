@@ -11,7 +11,12 @@ export const antdTheme = {
     colorSuccess: '#2e7d32',
     colorWarning: '#d48806', // Imperial Gold
     colorError: '#cf1322',
-    colorInfo: '#1677ff',
+    // Info alerts and links follow the brand instead of antd's default blue.
+    colorInfo: '#5b6b7a',
+    colorInfoBg: '#f6f3ef',
+    colorInfoBorder: '#e4dbd0',
+    colorLink: '#8c1524',
+    colorLinkHover: '#a81c2d',
     borderRadius: 8,
     fontFamily: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
     fontSize: 14,
