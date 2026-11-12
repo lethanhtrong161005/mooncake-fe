@@ -1,11 +1,8 @@
-import VerificationBell from '../supplier-verification/VerificationBell';
-import NotificationBell from '../notification/NotificationBell';
 import { VERIFICATION_LABELS } from '../../constants/supplierVerification';
 import { useState } from 'react';
 import {
   Layout,
   Menu,
-  Input,
   Badge,
   Dropdown,
   Avatar,
@@ -36,14 +33,18 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   HomeOutlined,
-  SearchOutlined,
+  MessageOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useChat } from '../../hooks/useChat';
+import { useNotifications } from '../../hooks/useNotifications';
+import { useVerificationNotifications } from '../../hooks/useVerificationNotifications';
+import './colony-admin-layout.css';
 
 const { Header, Sider, Content, Footer } = Layout;
 
 export default function ColonyAdminLayout({
-  role = 'Admin', // 'Admin' | 'Supplier'
   activeKey = 'admin/dashboard',
   onNavigate,
   title,
@@ -56,51 +57,47 @@ export default function ColonyAdminLayout({
   const screens = Grid.useBreakpoint();
   const compact = !screens.lg;
   const { user, logout } = useAuth();
+  const { unreadCount } = useChat();
+  const { unreadCount: activityUnread } = useNotifications();
+  const verification = useVerificationNotifications();
+  const notificationUnread = activityUnread + (verification?.unreadCount || 0);
 
-  const isAdmin = role === 'Admin';
+  const isAdmin = user?.role === 'Admin';
+  const canCreateShop = user?.capabilities?.canCreateShop === true;
+  const canFulfill = user?.capabilities?.canFulfillExistingOrders === true;
 
   const adminMenuItems = [
-    { key: 'admin/gian-hang', icon: <ShopOutlined />, label: 'Quản lý gian hàng' },
-    { key: 'admin/mau-gian-hang', icon: <AppstoreOutlined />, label: 'Mẫu giao diện gian hàng' },
     {
       key: 'admin/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard Tổng quan',
+      label: 'Tổng quan',
     },
     {
       key: 'admin/phe-duyet',
       icon: <SafetyCertificateOutlined />,
-      label: (
-        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Duyệt Nhà cung cấp</span>
-
-        </span>
-      ),
+      label: 'Duyệt nhà cung cấp',
     },
+    { key: 'admin/gian-hang', icon: <ShopOutlined />, label: 'Quản lý gian hàng' },
+    { key: 'admin/mau-gian-hang', icon: <AppstoreOutlined />, label: 'Mẫu giao diện' },
     {
       key: 'admin/van-hanh-giao-dich',
       icon: <AuditOutlined />,
-      label: (
-        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Giao dịch & Tranh chấp</span>
-          <Badge count={2} style={{ backgroundColor: '#d48806' }} />
-        </span>
-      ),
+      label: 'Giao dịch & tranh chấp',
     },
     {
       key: 'admin/kiem-soat-he-thong',
       icon: <SettingOutlined />,
-      label: 'Kiểm soát Hệ thống & Catalog',
+      label: 'Hệ thống & danh mục',
     },
     {
       key: 'admin/dieu-khien',
       icon: <TeamOutlined />,
-      label: 'Người dùng & Gian hàng',
+      label: 'Người dùng',
     },
     {
       key: 'admin/ho-so',
       icon: <UserOutlined />,
-      label: 'Hồ sơ Quản trị viên',
+      label: 'Hồ sơ của tôi',
     },
   ];
 
@@ -108,7 +105,7 @@ export default function ColonyAdminLayout({
     {
       key: 'nha-cung-cap/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard Tổng quan',
+      label: 'Tổng quan',
     },
     { key: 'nha-cung-cap/giao-dien-gian-hang', icon: <SettingOutlined />, label: 'Giao diện gian hàng' },
     {
@@ -122,24 +119,22 @@ export default function ColonyAdminLayout({
       label: 'Sản phẩm & Biến thể',
     },
     {
+      key: 'nha-cung-cap/tin-nhan',
+      icon: <MessageOutlined />,
+      label: <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>Tin nhắn khách hàng</span>
+        {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
+      </span>,
+    },
+    {
       key: 'nha-cung-cap/dau-thau',
       icon: <SolutionOutlined />,
-      label: (
-        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Đấu thầu RFQ & Báo giá</span>
-          <Badge count={3} style={{ backgroundColor: '#8c1524' }} />
-        </span>
-      ),
+      label: 'Đấu thầu & báo giá',
     },
     {
       key: 'nha-cung-cap/quan-ly-don-hang',
       icon: <ShoppingOutlined />,
-      label: (
-        <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Đơn hàng & In ấn logo</span>
-          <Badge count={1} style={{ backgroundColor: '#2e7d32' }} />
-        </span>
-      ),
+      label: 'Đơn hàng',
     },
     {
       key: 'nha-cung-cap/quan-ly-hop-dong',
@@ -168,14 +163,11 @@ export default function ColonyAdminLayout({
     },
   ];
 
-  const currentMenuItems = isAdmin ? adminMenuItems : supplierMenuItems.map((item) => ({
-    ...item,
-    disabled: item.key !== 'nha-cung-cap/xac-minh' && item.key !== 'nha-cung-cap/dashboard' && !user?.capabilities?.canCreateShop &&
-      !(user?.capabilities?.canFulfillExistingOrders && [
-        'nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong',
-        'nha-cung-cap/quan-ly-giao-hang',
-      ].includes(item.key)),
-  }));
+  const fulfillmentRoutes = new Set(['nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang',
+    'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang', 'nha-cung-cap/tin-nhan']);
+  const currentMenuItems = isAdmin ? adminMenuItems : supplierMenuItems.filter((item) =>
+    (item.key === 'nha-cung-cap/xac-minh' && user?.capabilities?.canReadSupplierVerification) ||
+    canCreateShop || (canFulfill && fulfillmentRoutes.has(item.key)));
 
   const handleMenuClick = ({ key }) => {
     setMobileMenuOpen(false);
@@ -185,7 +177,7 @@ export default function ColonyAdminLayout({
 
 
   const userMenuItems = [
-    {
+    (isAdmin || user?.capabilities?.canReadSupplierVerification) && {
       key: 'profile',
       icon: <UserOutlined />,
       label: isAdmin ? 'Hồ sơ Quản trị' : 'Hồ sơ Xưởng bánh',
@@ -210,11 +202,11 @@ export default function ColonyAdminLayout({
         onNavigate?.('trang-chu');
       },
     },
-  ];
+  ].filter(Boolean);
 
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f7' }}>
+    <Layout className={`workspace-layout ${isAdmin ? 'workspace-layout--admin' : 'workspace-layout--supplier'}`}>
       {/* Sider Colony Style */}
       {!compact && <Sider
         collapsible
@@ -222,54 +214,22 @@ export default function ColonyAdminLayout({
         onCollapse={(val) => setCollapsed(val)}
         width={260}
         theme="light"
-        style={{
-          boxShadow: '1px 0 10px rgba(0, 0, 0, 0.05)',
-          zIndex: 100,
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          left: 0,
-        }}
+        className="workspace-sidebar"
       >
         {/* Brand Logo Header */}
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? 0 : '0 20px',
-            borderBottom: '1px solid #f0f0f0',
-            cursor: 'pointer',
-          }}
+        <button type="button" className={`workspace-brand${collapsed ? ' workspace-brand--collapsed' : ''}`}
           onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')}
         >
           <img
             src="/logo.svg"
             alt="Nguyệt Phố Logo"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              boxShadow: '0 2px 6px rgba(140, 21, 36, 0.2)',
-              marginRight: collapsed ? 0 : 12,
-              flexShrink: 0,
-            }}
+            className="workspace-brand__logo"
           />
           {!collapsed && (
-            <div style={{ lineHeight: 1.2 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#8c1524', letterSpacing: '-0.3px' }}>
-                Nguyệt Phố B2B
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                <Tag color={isAdmin ? 'volcano' : 'gold'} style={{ margin: 0, fontSize: 10, padding: '0 4px', lineHeight: '16px' }}>
-                  {isAdmin ? 'HQ Admin' : 'Xưởng Cung Cấp'}
-                </Tag>
-                <span style={{ fontSize: 10, color: '#999' }}>Colony v4.5</span>
-              </div>
-            </div>
+            <span className="workspace-brand__copy"><strong>Nguyệt Phố</strong>
+              <small>{isAdmin ? 'Không gian quản trị' : 'Kênh nhà cung cấp'}</small></span>
           )}
-        </div>
+        </button>
 
         {/* Sidebar Menu */}
         <Menu
@@ -277,31 +237,19 @@ export default function ColonyAdminLayout({
           selectedKeys={[activeKey]}
           items={currentMenuItems}
           onClick={handleMenuClick}
-          style={{ borderRight: 0, marginTop: 8 }}
+          className="workspace-menu"
         />
       </Sider>}
-      {compact && <Drawer open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} placement="left"
+      {compact && <Drawer className={`workspace-mobile-drawer${isAdmin ? ' workspace-mobile-drawer--admin' : ''}`}
+        open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} placement="left"
         title={isAdmin ? 'Quản trị sàn' : 'Kênh nhà cung cấp'} size={280} styles={{ body: { padding: 0 } }}>
-        <Menu selectedKeys={[activeKey]} items={currentMenuItems} onClick={handleMenuClick} />
+        <Menu className="workspace-menu" selectedKeys={[activeKey]} items={currentMenuItems} onClick={handleMenuClick} />
       </Drawer>}
 
       {/* Main Layout Area */}
       <Layout style={{ minWidth: 0 }}>
         {/* Colony Header */}
-        <Header
-          style={{
-            background: '#ffffff',
-            padding: compact ? '0 12px' : '0 24px',
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            borderBottom: '1px solid #f0f0f0',
-            position: 'sticky',
-            top: 0,
-            zIndex: 90,
-          }}
-        >
+        <Header className="workspace-header">
           {/* Left: Collapse Button + Breadcrumbs */}
           <Space orientation="horizontal" size="middle">
             <Button
@@ -314,72 +262,55 @@ export default function ColonyAdminLayout({
             {!compact && <Breadcrumb
               items={[
                 { title: <HomeOutlined onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')} style={{ cursor: 'pointer' }} /> },
-                { title: isAdmin ? 'Ban Quản Trị HQ' : 'Kênh Nhà Cung Cấp' },
+                { title: isAdmin ? 'Quản trị' : 'Nhà cung cấp' },
                 { title: title || 'Tổng quan' },
               ]}
             />}
           </Space>
 
-          {/* Right: Search, Role Switcher, Notifications, User */}
-          <Space size="middle" align="center">
-            {/* Global Search */}
-            {!compact && <Input
-              placeholder={isAdmin ? 'Tìm mã RFQ, HĐ, MST, SKU...' : 'Tra cứu đơn B2B, SKU, phiên RFQ...'}
-              prefix={<SearchOutlined style={{ color: '#aaa' }} />}
-              style={{ width: 220, borderRadius: 20 }}
-            />}
+          <Space size="middle" align="center" className="workspace-header__actions">
 
-            {/* Notifications */}
-            <NotificationBell onNavigate={onNavigate} />
-            <VerificationBell onNavigate={onNavigate} />
+            {!isAdmin && <Badge count={unreadCount} overflowCount={99} size="small">
+              <Button type="text" shape="circle" icon={<MessageOutlined />}
+                aria-label="Tin nhắn khách hàng" title="Tin nhắn khách hàng"
+                onClick={() => onNavigate?.('nha-cung-cap/tin-nhan')} />
+            </Badge>}
+
+            <Badge count={notificationUnread} overflowCount={99} size="small">
+              <Button type="text" shape="circle" icon={<BellOutlined />}
+                aria-label="Thông báo" title="Thông báo hoạt động và xác minh"
+                onClick={() => onNavigate?.('thong-bao')} />
+            </Badge>
 
             <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />
 
             {/* User Profile */}
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-              <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+              <button type="button" className="workspace-account" aria-label="Tài khoản">
                 <Avatar
-                  style={{
-                    backgroundColor: isAdmin ? '#8c1524' : '#d48806',
-                    verticalAlign: 'middle',
-                  }}
+                  src={user?.avatarUrl || undefined}
+                  className="workspace-account__avatar"
                 >
-                  {isAdmin ? 'AD' : 'NCC'}
+                  {user?.fullName?.trim()?.charAt(0)?.toUpperCase() || (isAdmin ? 'A' : 'N')}
                 </Avatar>
-                <div style={{ lineHeight: 1.2, textAlign: 'left', display: compact ? 'none' : 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>
+                {!compact && <span className="workspace-account__copy">
+                  <strong>
                     {user?.fullName || (isAdmin ? 'Quản trị viên' : 'Tài khoản nhà cung cấp')}
-                  </span>
-                  <span style={{ fontSize: 11, color: '#888' }}>
-                    {isAdmin ? 'Quản trị viên' : VERIFICATION_LABELS[user?.supplierVerification?.onboardingState] || 'Chưa xác minh'}
-                  </span>
-                </div>
-              </Space>
+                  </strong><small>{isAdmin ? 'Quản trị viên' : 'Nhà cung cấp'}</small>
+                </span>}
+              </button>
             </Dropdown>
           </Space>
         </Header>
 
         {/* Colony Content Area */}
-        <Content style={{ margin: compact ? '16px 12px 0' : '20px 24px 0', overflow: 'initial', minWidth: 0 }}>
+        <Content className="workspace-content">
           {/* Page Banner / Header */}
           {(title || extra) && (
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 16,
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: 20,
-                background: '#ffffff',
-                padding: '16px 20px',
-                borderRadius: 10,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              }}
-            >
+            <div className="workspace-page-heading">
               <div>
-                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{title}</h1>
-                {subtitle && <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>{subtitle}</p>}
+                <h1>{title}</h1>
+                {subtitle && <p>{subtitle}</p>}
               </div>
               {extra && <div>{extra}</div>}
             </div>
@@ -390,8 +321,8 @@ export default function ColonyAdminLayout({
         </Content>
 
         {/* Colony Footer */}
-        <Footer style={{ textAlign: 'center', color: '#999', fontSize: 12, padding: '24px 50px' }}>
-          Nguyệt Phố B2B Marketplace © 2025 · Hệ thống Sàn Giao Dịch Bánh Trung Thu Doanh Nghiệp Chuẩn Enterprise
+        <Footer className="workspace-footer">
+          Nguyệt Phố · {isAdmin ? 'Không gian quản trị' : 'Kênh nhà cung cấp'}
         </Footer>
       </Layout>
     </Layout>

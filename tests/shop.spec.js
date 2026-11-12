@@ -22,7 +22,7 @@ const shop = () => ({ shopId: '11111111-1111-4111-8111-111111111111', supplierId
   status: 'Inactive', version: 1, appearance: appearance(), allowedActions: ['Update', 'SetVisibility', 'UpdateAppearance'] });
 
 async function session(page, { role = 'Supplier', exists = true } = {}) {
-  const state = { shop: exists ? shop() : null, commands: [], queries: [], mediaUploads: [], conflict: false, unavailable: false };
+  const state = { shop: exists ? shop() : null, commands: [], queries: [], mediaUploads: [], conflict: false, unavailable: false, products: [], moreProducts: [] };
   const user = { id: '33333333-3333-4333-8333-333333333333', fullName: 'Shop Test', role,
     capabilities: { canCreateShop: role === 'Supplier', canReadSupplierVerification: role === 'Supplier' },
     supplierVerification: { verificationStatus: role === 'Supplier' ? 'Verified' : null } };
@@ -75,7 +75,10 @@ async function session(page, { role = 'Supplier', exists = true } = {}) {
     if (path.startsWith('/admin/shop-templates/')) return ok(templates.find((item) => path.endsWith(item.id)));
     if (path.startsWith('/shops/an-nhien-bakery')) {
       if (state.unavailable) return error('SHOP_UNAVAILABLE', 404);
-      if (/\/(products|categories|reviews)$/.test(path)) return ok({ items: [], hasMore: false, nextCursor: null });
+      if (/\/products$/.test(path)) return ok(url.searchParams.has('cursor')
+        ? { items: state.moreProducts, hasMore: false, nextCursor: null }
+        : { items: state.products, hasMore: state.moreProducts.length > 0, nextCursor: state.moreProducts.length ? 'next-page' : null });
+      if (/\/(categories|reviews)$/.test(path)) return ok({ items: [], hasMore: false, nextCursor: null });
       return ok({ ...state.shop, isVerified: true, reputationScore: 90, reviewCount: 0, averageRating: null });
     }
     return error('UNMOCKED_QUERY', 500);
@@ -166,7 +169,7 @@ test('public path survives reload and filters use public API', async ({ page }) 
   await page.goto('/shop/an-nhien-bakery');
   await expect(page.getByRole('heading', { name: 'An Nhiên Bakery', exact: true })).toBeVisible();
   await page.getByLabel('Tìm sản phẩm', { exact: true }).fill('Sen');
-  await page.getByRole('button', { name: 'Áp dụng bộ lọc' }).click();
+  await page.getByRole('button', { name: 'Tìm sản phẩm', exact: true }).click();
   await expect.poll(() => state.queries.some((url) => url.pathname.endsWith('/products') && url.searchParams.get('q') === 'Sen')).toBe(true);
   await page.reload(); await expect(page.locator('.shop-heritage')).toBeVisible();
   state.unavailable = true; await page.reload();
@@ -215,12 +218,54 @@ test('public storefront remains usable on a mobile viewport', async ({ page }) =
   await page.goto('/shop/an-nhien-bakery');
   await expect(page.getByRole('heading', { name: 'An Nhiên Bakery', exact: true })).toBeVisible();
   await page.getByLabel('Tìm sản phẩm', { exact: true }).fill('Bánh sen');
-  await page.getByRole('button', { name: 'Áp dụng bộ lọc' }).click();
+  await page.getByRole('button', { name: 'Tìm sản phẩm', exact: true }).click();
   await expect(page.getByText('Chưa có sản phẩm phù hợp', { exact: true })).toBeVisible();
   await expect(page.locator('.shop-root')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: 'test-results/shop-public-mobile.png', fullPage: true });
+});
+
+test('public storefront product card opens product detail', async ({ page }) => {
+  const state = await session(page);
+  const productId = '3227c92c-4e64-42af-b05c-ba827f200d95';
+  state.products = [{ id: productId, name: 'Bánh Trung thu Hoàng Kim', minPrice: 680000,
+    maxPrice: 680000, minOrderQty: 20, isInStock: true, imageUrl: null }];
+  await page.goto('/shop/an-nhien-bakery');
+  const card = page.getByRole('link', { name: 'Xem chi tiết Bánh Trung thu Hoàng Kim' });
+  await expect(card).toHaveAttribute('href', `/san-pham/${productId}`);
+  await card.click();
+  await expect(page).toHaveURL(new RegExp(`/san-pham/${productId}$`));
+});
+
+test('public storefront uses its own layout and loads more products below the grid', async ({ page }) => {
+  const state = await session(page);
+  state.products = [{ id: '3227c92c-4e64-42af-b05c-ba827f200d95', name: 'Bánh sen',
+    minPrice: 120000, maxPrice: 120000, minOrderQty: 10, isInStock: true }];
+  state.moreProducts = [{ id: '3227c92c-4e64-42af-b05c-ba827f200d96', name: 'Bánh nướng',
+    minPrice: 150000, maxPrice: 150000, minOrderQty: 10, isInStock: true }];
+  await page.goto('/shop/an-nhien-bakery');
+
+  await expect(page.getByRole('button', { name: 'Quay lại' })).toBeVisible();
+  await expect(page.locator('.shop-cover')).toBeVisible();
+  await expect(page.locator('.customer-header')).toHaveCount(0);
+  await expect(page.getByRole('contentinfo')).toHaveCount(0);
+  const more = page.getByRole('button', { name: 'Xem thêm' });
+  await expect(more).toBeVisible();
+  expect(await more.evaluate((button) => button.getBoundingClientRect().top > document.querySelector('.shop-products__grid').getBoundingClientRect().bottom)).toBe(true);
+  await more.click();
+  await expect(page.getByRole('link', { name: 'Xem chi tiết Bánh nướng' })).toBeVisible();
+});
+
+test('uploaded shop logo and banner render in the storefront', async ({ page }) => {
+  const state = await session(page);
+  const image = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#8c1524"/></svg>');
+  state.shop = { ...state.shop, logoUrl: image, bannerUrl: image };
+  await page.goto('/shop/an-nhien-bakery');
+
+  await expect(page.getByRole('img', { name: 'Ảnh bìa gian hàng An Nhiên Bakery' })).toBeVisible();
+  await expect(page.locator('.shop-identity__logo img')).toBeVisible();
+  expect(await page.locator('.shop-cover__banner').evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
 });
 
 test('supplier shop form and navigation fit a mobile viewport', async ({ page }) => {

@@ -9,13 +9,17 @@ import {
   ShopOutlined,
   ShoppingCartOutlined,
   StarFilled,
+  MessageOutlined,
 } from '@ant-design/icons';
+import { useAuth } from '../../hooks/useAuth';
+import { useChat } from '../../hooks/useChat';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import ReputationBadge from '../../components/reviews/ReputationBadge';
 import ProductReviewStream from '../../components/reviews/ProductReviewStream';
 import ProductSearchCard from '../../components/search/ProductSearchCard';
+import WishlistButton from '../../components/product/WishlistButton';
 import { resolveRegionLabel } from '../../constants/productSearch';
 import productService from '../../services/productService';
 import '../../styles/search-page.css';
@@ -24,6 +28,8 @@ import '../../styles/product-detail.css';
 const money = (value) => Number(value || 0).toLocaleString('vi-VN');
 
 export default function ProductInformation({ onNavigate, productId }) {
+  const { isLoggedIn } = useAuth();
+  const { openChatWithShop } = useChat();
   const [product, setProduct] = useState(null);
   const [loadedProductId, setLoadedProductId] = useState(null);
   const [variantId, setVariantId] = useState(null);
@@ -98,7 +104,7 @@ export default function ProductInformation({ onNavigate, productId }) {
   const available = productStatus === 'Active' && Boolean(variant?.isAvailable);
   const rating = Number(product?.averageRating || 0);
   const reviewCount = Number(product?.reviewCount || 0);
-  const shopId = product?.shop?.slug || product?.shop?.shopId || product?.shop?.id;
+  const shopSlug = product?.shop?.slug;
 
   const handleOrder = () => {
     if (!available) return message.warning('Biến thể sản phẩm này hiện đang tạm hết hàng.');
@@ -122,6 +128,29 @@ export default function ProductInformation({ onNavigate, productId }) {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (section) section.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
     else onNavigate?.('tim-kiem');
+  };
+
+  const handleChatWithSupplier = async () => {
+    if (!isLoggedIn) {
+      onNavigate?.('dang-nhap');
+      return;
+    }
+    const targetShopId = product?.shop?.id || product?.shop?.shopId || product?.shopId;
+    const targetSupplierId = product?.shop?.supplierId || product?.supplierId;
+    try {
+      await openChatWithShop({
+        shopId: targetShopId,
+        supplierId: targetSupplierId,
+        product: {
+          id: product?.id || product?.productId || productId,
+          name: product?.name || 'Sản phẩm bánh trung thu',
+          imageUrl: currentImageUrl,
+          price: unitPrice,
+        },
+      });
+    } catch (err) {
+      message.error(err?.message || 'Không thể mở cuộc trò chuyện.');
+    }
   };
 
   return (
@@ -228,11 +257,19 @@ export default function ProductInformation({ onNavigate, productId }) {
                       {product.shop?.regionCode && <span>{resolveRegionLabel(product.shop.regionCode)}</span>}
                     </div>
                   </div>
-                  {shopId && (
-                    <Button type="link" onClick={() => onNavigate?.(`nha-cung-cap/gian-hang/${shopId}`)}>
-                      Xem gian hàng <ArrowRightOutlined />
+                  <div className="product-detail__shop-actions">
+                    {shopSlug && (
+                      <Button type="link" onClick={() => onNavigate?.(`shop/${shopSlug}`)}>
+                        Xem gian hàng <ArrowRightOutlined />
+                      </Button>
+                    )}
+                    <Button
+                      icon={<MessageOutlined />}
+                      onClick={handleChatWithSupplier}
+                    >
+                      Nhắn tin
                     </Button>
-                  )}
+                  </div>
                 </div>
 
                 <div className="product-detail__purchase">
@@ -329,6 +366,11 @@ export default function ProductInformation({ onNavigate, productId }) {
                     >
                       {available ? 'Đặt hàng doanh nghiệp' : 'Tạm hết hàng'}
                     </Button>
+                    <WishlistButton
+                      productId={product.productId || product.id}
+                      productName={product.name}
+                      variant="detail"
+                    />
                     {!available && <Button size="large" onClick={scrollToRelated}>Xem sản phẩm tương tự</Button>}
                   </div>
                   {product.supportsCustomPackaging && (

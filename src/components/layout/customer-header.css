@@ -44,3 +44,26 @@
 .customer-header .ant-btn-text:hover {
   background: #f3eee7;
 }
+
+.customer-header__wishlist-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.customer-header__wishlist-count {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 6px;
+  background: #fdf1ee;
+  color: #8c1524;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}

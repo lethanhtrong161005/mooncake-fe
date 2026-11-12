@@ -3,7 +3,7 @@
  * Standardized for ASP.NET Core 8 Web API backend (Clean Architecture)
  */
 
-export { VERIFICATION_HUB_URL } from './apiConfiguration';
+export { VERIFICATION_HUB_URL, CHAT_HUB_URL } from './apiConfiguration';
 
 const API_VERSION = import.meta.env.VITE_API_VERSION || 'v1';
 
@@ -42,7 +42,8 @@ export const API_ENDPOINTS = {
     GOOGLE_LOGIN: `/${API_VERSION}/auth/google/login`,
     REFRESH_TOKEN: `/${API_VERSION}/auth/refresh-token`,
     ME: `/${API_VERSION}/auth/me`,
-    PROFILE: `/${API_VERSION}/users/profile`,
+    PROFILE: `/${API_VERSION}/users/me`,
+    PROFILE_AVATAR: `/${API_VERSION}/users/me/avatar`,
   },
 
   // Products & Catalogs
@@ -273,6 +274,30 @@ export const API_ENDPOINTS = {
     TOP_SUPPLIERS: `/${API_VERSION}/reports/top-suppliers`,
     EXPORT: `/${API_VERSION}/reports/export`,
     AI_SUMMARY: `/${API_VERSION}/reports/ai-summary`,
+  },
+
+  // Wishlist (Product Favorites with Cursor Pagination)
+  WISHLIST: {
+    LIST: `/${API_VERSION}/wishlist`,
+    TOGGLE: (productId) => `/${API_VERSION}/wishlist/${encodeURIComponent(productId)}`,
+    CHECK: `/${API_VERSION}/wishlist/check`,
+  },
+
+  // Real-time B2B Customer <-> Supplier Chat
+  CHAT: {
+    THREADS: `/${API_VERSION}/chat/threads`,
+    THREAD: (threadId) => `/${API_VERSION}/chat/threads/${encodeURIComponent(threadId)}`,
+    MESSAGES: (threadId) => `/${API_VERSION}/chat/threads/${encodeURIComponent(threadId)}/messages`,
+    MESSAGE: (messageId) => `/${API_VERSION}/chat/messages/${encodeURIComponent(messageId)}`,
+    READ: (threadId) => `/${API_VERSION}/chat/threads/${encodeURIComponent(threadId)}/read`,
+    BLOCK: (threadId) => `/${API_VERSION}/chat/threads/${encodeURIComponent(threadId)}/block`,
+    UNBLOCK: (threadId) => `/${API_VERSION}/chat/threads/${encodeURIComponent(threadId)}/unblock`,
+    ATTACHMENTS: `/${API_VERSION}/chat/attachments`,
+    ATTACHMENT_DOWNLOAD: (attachmentId) => `/${API_VERSION}/chat/attachments/${encodeURIComponent(attachmentId)}/download`,
+    UNREAD_COUNT: `/${API_VERSION}/chat/unread-count`,
+    PRESENCE: `/${API_VERSION}/chat/presence`,
+    PRESENCE_SETTINGS: `/${API_VERSION}/chat/presence/settings`,
+    HUB_URL: `/${API_VERSION}/hubs/chat`,
   },
 };
 

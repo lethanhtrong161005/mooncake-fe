@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import { resolveRegionLabel } from '../../constants/productSearch';
 import { formatNumber, formatPriceRange } from '../../utils/formatCurrency';
+import WishlistButton from '../product/WishlistButton';
 
 const { Text, Title } = Typography;
 
@@ -18,7 +19,13 @@ function resolveStatusTag(status) {
   return { color: 'default', label: 'Ngừng kinh doanh' };
 }
 
-export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate }) {
+export default function ProductSearchCard({
+  item,
+  viewMode = 'grid',
+  onNavigate,
+  skipWishlistCheck = false,
+  onWishlistToggled,
+}) {
   const productId = item.productId || item.id;
   const statusTag = resolveStatusTag(item.effectiveStatus || item.status);
   const priceText = formatPriceRange(item.minPrice, item.maxPrice, item.basePrice);
@@ -75,6 +82,13 @@ export default function ProductSearchCard({ item, viewMode = 'grid', onNavigate 
           <Tag color={statusTag.color}>{statusTag.label}</Tag>
           {item.supportsCustomPackaging && <Tag color="gold">In logo</Tag>}
         </div>
+        <WishlistButton
+          productId={productId}
+          productName={item.name}
+          variant="overlay"
+          skipAutoCheck={skipWishlistCheck}
+          onAfterToggle={onWishlistToggled}
+        />
       </div>
 
       <div className="search-product-card__content">
