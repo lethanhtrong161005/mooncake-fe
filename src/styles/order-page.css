@@ -17,8 +17,8 @@
 }
 
 .order-page__main.order-page__main {
-  max-width: 1380px;
-  width: min(100% - 48px, 1380px);
+  max-width: none;
+  width: var(--page-container);
   padding: 36px 0 74px;
 }
 
@@ -266,7 +266,7 @@
 
 @media (max-width: 767px) {
   .order-page__main.order-page__main {
-    width: min(100% - 32px, 600px);
+    width: var(--page-container);
     padding-block: 23px 54px;
   }
 

@@ -17,7 +17,7 @@
 }
 
 .home-page .home-container {
-  width: min(100% - 48px, 1240px);
+  width: var(--page-container);
   margin-inline: auto;
 }
 
@@ -661,7 +661,7 @@
 
 @media (max-width: 767px) {
   .home-page .home-container {
-    width: min(100% - 32px, 600px);
+    width: var(--page-container);
   }
 
   .home-hero {

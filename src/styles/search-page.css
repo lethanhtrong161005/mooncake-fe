@@ -17,7 +17,7 @@
 }
 
 .search-page .search-container {
-  width: min(100% - 48px, 1380px);
+  width: var(--page-container);
   margin-inline: auto;
 }
 
@@ -522,7 +522,7 @@
 
 @media (max-width: 991px) {
   .search-page .search-container {
-    width: min(100% - 32px, 600px);
+    width: var(--page-container);
   }
 
   .search-intro__inner {

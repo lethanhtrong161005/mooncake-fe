@@ -1,3 +1,15 @@
+/* Shared page content width. Mirrors CustomerBreadcrumbBar (max-w-7xl + px-4/sm:px-6/lg:px-8)
+   so page content, breadcrumb and footer share one left/right edge. */
+:root {
+  --page-container: min(100% - 32px, 1248px);
+}
+@media (min-width: 640px) {
+  :root { --page-container: min(100% - 48px, 1232px); }
+}
+@media (min-width: 1024px) {
+  :root { --page-container: min(100% - 64px, 1216px); }
+}
+
 @layer base {
 
   html,

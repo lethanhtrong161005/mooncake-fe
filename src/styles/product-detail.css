@@ -17,7 +17,7 @@
 }
 
 .product-detail__main {
-  width: min(100% - 48px, 1380px);
+  width: var(--page-container);
   min-height: 50vh;
   margin-inline: auto;
   padding-block: 38px 80px;

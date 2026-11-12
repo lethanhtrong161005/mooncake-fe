@@ -16,7 +16,7 @@
 
 /* Same width as the home-page sections so the footer lines up with page content */
 .customer-footer__container {
-  width: min(100% - 48px, 1240px);
+  width: var(--page-container);
   margin-inline: auto;
 }
 
@@ -164,7 +164,7 @@
 
 @media (max-width: 767px) {
   .customer-footer__container {
-    width: min(100% - 32px, 600px);
+    width: var(--page-container);
   }
 
   .customer-footer__trust-list {

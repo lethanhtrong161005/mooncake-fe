@@ -15,7 +15,7 @@
 }
 
 .rfq-page__main {
-  width: min(100% - 48px, 1380px);
+  width: var(--page-container);
   margin: 0 auto;
   padding: 30px 0 76px;
 }
@@ -374,7 +374,7 @@
 
 @media (max-width: 720px) {
   .rfq-page__main {
-    width: min(100% - 32px, 600px);
+    width: var(--page-container);
     padding: 18px 0 52px;
   }
 
