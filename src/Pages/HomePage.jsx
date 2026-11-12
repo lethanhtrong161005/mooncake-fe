@@ -196,29 +196,6 @@ export default function HomePage({ onNavigate }) {
           </div>
         </section>
 
-        <section className="home-moon-scene" aria-labelledby="home-moon-scene-title">
-          <div className="home-moon-scene__art" aria-hidden="true">
-            <img src="/home-moonlit-river.jpg" alt="" loading="lazy" />
-            <span className="home-moon-scene__stars" />
-            <span className="home-moon-scene__mist" />
-            <span className="home-moon-scene__reflection" />
-          </div>
-          <div className="home-container home-moon-scene__content">
-            <Text className="home-moon-scene__lead">Một mùa trăng, nhiều lời tri ân</Text>
-            <Title id="home-moon-scene-title" level={2}>
-              Để món quà kể thay lời cảm ơn.
-            </Title>
-            <Paragraph>
-              Từ chiếc bánh quen thuộc đến hộp quà mang dấu ấn riêng,
-              hãy chọn cách trao gửi phù hợp với người nhận.
-            </Paragraph>
-            <Button type="link" onClick={() => onNavigate?.('tim-kiem')}>
-              Khám phá bộ sưu tập <ArrowRightOutlined aria-hidden="true" />
-            </Button>
-          </div>
-          <div className="home-moon-scene__edge" aria-hidden="true" />
-        </section>
-
         <section className="home-journey" aria-label="Cách chọn quà doanh nghiệp">
           <div className="home-container home-journey__grid">
             {PURCHASE_STEPS.map((step) => (
