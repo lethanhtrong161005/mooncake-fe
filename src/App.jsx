@@ -1,11 +1,15 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { App as AntApp, Button, ConfigProvider, FloatButton, Dropdown, Result, Spin } from 'antd';
+import { App as AntApp, ConfigProvider, FloatButton, Dropdown, Spin } from 'antd';
 import { useAuth } from './hooks/useAuth';
 import { hasSupplierWorkspace } from './utils/supplierAccess';
 import { roleHomeRoute } from './utils/roleNavigation';
 import SupplierRegistration from './Pages/Customer/SupplierRegistration';
 import { CompassOutlined } from '@ant-design/icons';
 import antdTheme from './theme/antdTheme';
+import storage from './utils/storage';
+import { ADMIN_ROUTES, AUTHENTICATED_ROUTES, CUSTOMER_ROUTES, DRIVER_ROUTES, ONBOARDING_ROUTES, SUPPLIER_ROUTES, isKnownRoute, isPublicRoute } from './utils/accessRoutes';
+import AccessDeniedPage from './Pages/Errors/AccessDeniedPage';
+import NotFoundPage from './Pages/Errors/NotFoundPage';
 
 // Customer / General Pages
 import HomePage from './Pages/HomePage';
@@ -23,7 +27,7 @@ import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
 
 // Supplier Pages
-import { currentHashQuery, currentRoute, routeUrl } from './utils/shopRoutes';
+import { currentRouteQuery, currentRoute, normalizeLegacyRoute, routeUrl } from './utils/shopRoutes';
 import SupplierDashboard from './Pages/Supplier/SupplierDashboard';
 import ProductManage from './Pages/Supplier/ProductManage';
 import BiddingPage from './Pages/Supplier/BiddingPage';
@@ -58,11 +62,12 @@ export default function App() {
   const { user, isLoggedIn, isRestoring } = useAuth();
   const isSupplierUser = String(user?.role || '').toLowerCase() === 'supplier';
   const [currentPage, setCurrentPage] = useState(currentRoute);
-  const [hashQuery, setHashQuery] = useState(currentHashQuery);
+  const [routeQuery, setRouteQuery] = useState(currentRouteQuery);
 
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [prefilledPhone, setPrefilledPhone] = useState('');
+  const [pendingPage, setPendingPage] = useState(null);
 
   const navigateTo = (pageKey) => {
     let target = pageKey;
@@ -86,11 +91,19 @@ export default function App() {
       return;
     }
 
+    const targetRoute = target.split('?')[0];
+    if (isKnownRoute(targetRoute) && !isPublicRoute(targetRoute) &&
+      !isLoggedIn && !storage.get('auth_token')) {
+      setPendingPage(target);
+      setShowLogin(true);
+      return;
+    }
+
     const proceed = () => {
       const [routeKey, query] = target.split('?');
       const querySuffix = query ? `?${query}` : '';
       setCurrentPage(routeKey);
-      setHashQuery(querySuffix);
+      setRouteQuery(querySuffix);
       window.history.pushState(null, '', `${routeUrl(routeKey)}${querySuffix}`);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -98,20 +111,21 @@ export default function App() {
   };
 
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleLocationChange = () => {
+      normalizeLegacyRoute();
       const target = currentRoute();
-      if (target === currentPage && currentHashQuery() === hashQuery) return;
-      const proceed = () => { const q = currentHashQuery(); setCurrentPage(target); setHashQuery(q); window.history.replaceState(null, '', `${routeUrl(target)}${q}`); };
+      if (target === currentPage && currentRouteQuery() === routeQuery) return;
+      const proceed = () => { const q = currentRouteQuery(); setCurrentPage(target); setRouteQuery(q); };
       if (window.dispatchEvent(new CustomEvent('app:before-navigate', { cancelable: true, detail: { proceed } }))) proceed();
-      else window.history.replaceState(null, '', routeUrl(currentPage));
+      else window.history.replaceState(null, '', `${routeUrl(currentPage)}${routeQuery}`);
     };
-    window.addEventListener('hashchange', handleHashChange);
-    window.addEventListener('popstate', handleHashChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-      window.removeEventListener('popstate', handleHashChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
     };
-    }, [currentPage, hashQuery]);
+    }, [currentPage, routeQuery]);
 
   useEffect(() => {
     const handleExpiredSession = () => setShowLogin(true);
@@ -130,7 +144,7 @@ export default function App() {
   const renderPage = () => {
     if (currentPage.startsWith('shop/')) return <PublicShopPage key={currentPage} slug={currentPage.slice(5)} onNavigate={navigateTo} />;
     if (currentPage.startsWith('dat-hang-thiet-ke') || currentPage.startsWith('dat-hang-doanh-nghiep')) {
-      return <OrderAndDesgin key={`${currentPage}${hashQuery}`} onNavigate={navigateTo} />;
+      return <OrderAndDesgin key={`${currentPage}${routeQuery}`} onNavigate={navigateTo} />;
     }
     switch (currentPage) {
       // Role 1: Customer (Khách hàng doanh nghiệp B2B)
@@ -138,7 +152,7 @@ export default function App() {
         return <HomePage onNavigate={navigateTo} />;
       case 'tim-kiem':
       case 'bo-suu-tap-banh':
-        return <SearchPage onNavigate={navigateTo} />;
+        return <SearchPage key={`${currentPage}${routeQuery}`} onNavigate={navigateTo} />;
       case 'san-pham':
         return <ProductInformation onNavigate={navigateTo} />;
       case 'dat-hang-thiet-ke':
@@ -164,8 +178,8 @@ export default function App() {
       case 'driver-pod':
         return (
           <DriverMobileView
-            onBack={() => navigateTo('giao-hang-pod')}
-            onComplete={() => navigateTo('giao-hang-pod')}
+            onBack={() => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')}
+            onComplete={() => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')}
           />
         );
       case 'thanh-toan-danh-gia':
@@ -230,7 +244,7 @@ export default function App() {
         if (currentPage.startsWith('san-pham/')) {
           return <ProductInformation onNavigate={navigateTo} productId={currentPage.slice('san-pham/'.length)} />;
         }
-        return <HomePage onNavigate={navigateTo} />;
+        return <NotFoundPage onNavigate={navigateTo} />;
     }
   };
 
@@ -240,33 +254,30 @@ export default function App() {
 
   // Quick Navigator Menu Items for testing & preview
   const renderAuthorizedPage = () => {
+    if (!isKnownRoute(currentPage)) return <NotFoundPage onNavigate={navigateTo} />;
     if (currentPage === 'trang-chu' && isLoggedIn &&
         (isRestoring || roleHomeRoute(user) !== 'trang-chu')) {
       return <Spin fullscreen description="Đang mở không gian làm việc…" />;
     }
-    const admin = currentPage.startsWith('admin/');
-    const supplier = currentPage.startsWith('nha-cung-cap/');
-    const registration = currentPage === 'dang-ky-nha-cung-cap';
-    const myOrders = currentPage === 'don-hang-cua-toi';
-    if (!admin && !supplier && !registration && !myOrders && currentPage !== 'thong-bao') return renderPage();
+    if (isPublicRoute(currentPage)) return renderPage();
     if (isRestoring) return <Spin fullscreen description="Đang kiểm tra phiên đăng nhập…" />;
-    if (!isLoggedIn) return <Result status="403" title="Vui lòng đăng nhập để tiếp tục"
-      extra={<Button type="primary" onClick={() => setShowLogin(true)}>Đăng nhập</Button>} />;
-    if (myOrders && user?.role !== 'Customer') return <Result status="403" title="Trang đơn hàng dành cho tài khoản khách hàng" />;
-    if (admin && user?.role !== 'Admin') return <Result status="403" title="Trang này dành cho quản trị viên" />;
-    if (registration && !['Customer', 'Supplier'].includes(user?.role)) {
-      return <Result status="403" title="Trang đăng ký nhà cung cấp dành cho tài khoản khách hàng" />;
+    if (!isLoggedIn) return <AccessDeniedPage onNavigate={navigateTo} onLogin={() => setShowLogin(true)} />;
+    if (ADMIN_ROUTES.has(currentPage) && user?.role !== 'Admin') return <AccessDeniedPage onNavigate={navigateTo} />;
+    if (CUSTOMER_ROUTES.has(currentPage) && user?.role !== 'Customer') return <AccessDeniedPage onNavigate={navigateTo} />;
+    if (DRIVER_ROUTES.has(currentPage) && !['Customer', 'Supplier'].includes(user?.role)) return <AccessDeniedPage onNavigate={navigateTo} />;
+    if (ONBOARDING_ROUTES.has(currentPage) && !['Customer', 'Supplier'].includes(user?.role)) {
+      return <AccessDeniedPage onNavigate={navigateTo} />;
     }
-    if (supplier) {
-      const isSupplierDashboard = currentPage === 'nha-cung-cap/dashboard' && ['Supplier', 'Admin'].includes(user?.role);
-      const onboarding = currentPage === 'nha-cung-cap/ho-so' || currentPage === 'nha-cung-cap/xac-minh';
+    if (SUPPLIER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage)) {
+      const onboarding = ONBOARDING_ROUTES.has(currentPage);
       const eligible = user?.capabilities?.canReadSupplierVerification;
       const fulfillment = user?.capabilities?.canFulfillExistingOrders &&
         ['nha-cung-cap/dashboard', 'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong', 'nha-cung-cap/quan-ly-giao-hang'].includes(currentPage);
       const canStartOnboarding = onboarding && user?.role === 'Customer';
-      if (!isSupplierDashboard && ((!eligible && !canStartOnboarding) || (!onboarding && !user?.capabilities?.canCreateShop && !fulfillment))) {
-        return <Result status="403" title="Hoàn tất xác minh doanh nghiệp để sử dụng chức năng này"
-          extra={eligible && <Button type="primary" onClick={() => navigateTo('nha-cung-cap/ho-so')}>Xem hồ sơ xác minh</Button>} />;
+      if (SUPPLIER_ROUTES.has(currentPage) && user?.role !== 'Supplier') return <AccessDeniedPage onNavigate={navigateTo} />;
+      if ((!eligible && !canStartOnboarding && !fulfillment && !user?.capabilities?.canCreateShop) ||
+        (!onboarding && !user?.capabilities?.canCreateShop && !fulfillment)) {
+        return <AccessDeniedPage onNavigate={navigateTo} />;
       }
     }
     return renderPage();
@@ -358,7 +369,7 @@ export default function App() {
         </div>
 
         {/* Floating Quick Navigation Hub */}
-        {import.meta.env.DEV && <Dropdown
+        {import.meta.env.DEV && isLoggedIn && ['Admin', 'Supplier'].includes(user?.role) && <Dropdown
           menu={{
             items: quickNavMenuItems,
             onClick: ({ key }) => {
@@ -388,10 +399,10 @@ export default function App() {
         {/* Popups (Preserved Auth Flow) */}
         <LoginPopup
           isOpen={showLogin}
-          onClose={() => setShowLogin(false)}
+          onClose={() => { setShowLogin(false); setPendingPage(null); }}
           onNavigate={navigateTo}
           initialPhone={prefilledPhone}
-          returnPage={['dang-ky-nha-cung-cap', 'nha-cung-cap/xac-minh', 'nha-cung-cap/ho-so'].includes(currentPage) ? currentPage : undefined}
+          returnPage={pendingPage || (ONBOARDING_ROUTES.has(currentPage) ? currentPage : undefined)}
           onSwitchToRegister={() => {
             setShowLogin(false);
             setShowRegister(true);
@@ -410,7 +421,10 @@ export default function App() {
         />
 
         {/* Global AI Chatbot Concierge Widget */}
-        <AiChatWidget onNavigate={navigateTo} />
+        {(!isLoggedIn || user?.role === 'Customer') &&
+          (isPublicRoute(currentPage) || (isLoggedIn &&
+            (CUSTOMER_ROUTES.has(currentPage) || DRIVER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
+          <AiChatWidget onNavigate={navigateTo} />}
       </div>
       </AntApp>
     </ConfigProvider>

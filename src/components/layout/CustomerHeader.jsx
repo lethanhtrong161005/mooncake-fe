@@ -28,6 +28,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import AppLogo from './AppLogo';
+import './customer-header.css';
 
 export default function CustomerHeader({
   activeKey = 'trang-chu',
@@ -38,7 +39,7 @@ export default function CustomerHeader({
   const compact = !screens.lg;
   const [searchValue, setSearchValue] = useState('');
 
-  const menuItems = [
+  const publicMenuItems = [
     {
       key: 'trang-chu',
       icon: <HomeOutlined />,
@@ -49,6 +50,8 @@ export default function CustomerHeader({
       icon: <ShopOutlined />,
       label: 'Sản phẩm',
     },
+  ];
+  const customerMenuItems = [
     {
       key: 'so-sanh-bao-gia',
       icon: <SolutionOutlined />,
@@ -70,6 +73,9 @@ export default function CustomerHeader({
       label: 'Thanh toán & Đánh giá',
     },
   ];
+  const menuItems = isLoggedIn && user?.role === 'Customer'
+    ? [...publicMenuItems, ...customerMenuItems]
+    : publicMenuItems;
 
   const handleMenuClick = ({ key }) => {
     onNavigate?.(key);
@@ -140,13 +146,14 @@ export default function CustomerHeader({
 
   return (
     <header
+      className="customer-header"
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        background: '#ffffff',
-        borderBottom: '1px solid #f0f0f0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+        background: '#faf9f6',
+        borderBottom: '1px solid #e7dcd0',
+        boxShadow: '0 2px 8px rgba(67, 18, 28, 0.04)',
       }}
     >
       <div
@@ -171,6 +178,7 @@ export default function CustomerHeader({
         {/* Navigation Menu */}
         {!compact && <div style={{ flex: 1, minWidth: 0 }}>
           <Menu
+            className="customer-header__menu"
             mode="horizontal"
             selectedKeys={[activeKey]}
             items={menuItems}
@@ -195,7 +203,7 @@ export default function CustomerHeader({
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onPressEnter={handleSearch}
-            prefix={<SearchOutlined style={{ color: '#8c1524', fontSize: 16, marginRight: 4 }} />}
+            prefix={<SearchOutlined style={{ color: '#742435', fontSize: 16, marginRight: 4 }} />}
             suffix={
               <Button
                 type="primary"
@@ -204,9 +212,9 @@ export default function CustomerHeader({
                 icon={<ArrowRightOutlined style={{ fontSize: 11 }} />}
                 onClick={handleSearch}
                 style={{
-                  background: 'linear-gradient(135deg, #8c1524 0%, #d48806 100%)',
+                  background: '#8c1524',
                   borderColor: 'transparent',
-                  boxShadow: '0 2px 6px rgba(140, 21, 36, 0.25)',
+                  boxShadow: '0 2px 6px rgba(140, 21, 36, 0.22)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -221,8 +229,8 @@ export default function CustomerHeader({
               width: 310,
               height: 38,
               borderRadius: 20,
-              background: '#f9f5f2',
-              border: '1px solid #ebdcd5',
+              background: '#f3eee7',
+              border: '1px solid #e7dcd0',
               paddingLeft: 14,
               paddingRight: 6,
               fontSize: 13,
@@ -233,7 +241,7 @@ export default function CustomerHeader({
           {/* Notifications */}
           {isLoggedIn && <NotificationBell onNavigate={onNavigate} />}
 
-          {!compact && <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />}
+          {!compact && <Divider orientation="vertical" style={{ height: 24, margin: '0 4px', borderColor: '#e7dcd0' }} />}
 
           {/* Auth: Logged In or Login/Register Buttons */}
           {isLoggedIn ? (

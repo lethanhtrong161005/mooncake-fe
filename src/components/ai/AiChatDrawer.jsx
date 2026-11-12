@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Drawer, Input, Button, Spin, Tag, Space } from 'antd';
+import { Drawer, Input, Button, Spin, Space } from 'antd';
 import {
   SendOutlined,
   ThunderboltFilled,
@@ -152,7 +152,7 @@ export default function AiChatDrawer({ open, onClose, onNavigate }) {
       open={open}
       onClose={onClose}
       closable={false}
-      width={460}
+      size="min(460px, 100vw)"
       className="luxury-ai-drawer"
       styles={{
         header: { display: 'none' },
@@ -160,22 +160,15 @@ export default function AiChatDrawer({ open, onClose, onNavigate }) {
       }}
     >
       {/* Header bar */}
-      <div className="bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 text-white p-4 border-b border-amber-800/40 shadow-sm shrink-0">
+      <div className="bg-[#43121c] text-white p-4 border-b border-[#c29451]/40 shadow-sm shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 text-lg shadow-inner">
+            <div className="w-9 h-9 rounded-full bg-[#c29451]/20 border border-[#c29451]/40 flex items-center justify-center text-[#e9c792] text-lg shadow-inner">
               🌙
             </div>
             <div>
-              <div className="font-bold text-sm text-amber-100 flex items-center gap-1.5">
-                Nguyệt Phố AI Concierge
-                <Tag color="gold" className="text-[10px] px-1 py-0 border-amber-400 font-semibold m-0 bg-amber-900/60 text-amber-200">
-                  Gemini Flash
-                </Tag>
-              </div>
-              <div className="text-[11px] text-amber-200/70">
-                Trợ lý Quà tặng & Tri thức Mùa Trăng B2B
-              </div>
+              <div className="font-bold text-sm text-[#fff8ef]">Trợ lý Nguyệt Phố</div>
+              <div className="text-[11px] text-[#e9d5bd]">Tư vấn bánh và quà tặng Trung thu</div>
             </div>
           </div>
 

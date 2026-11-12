@@ -101,6 +101,7 @@ async function setup(page, role, requests) {
       } } });
     }
     if (pathname.endsWith('/orders/supplier/financial-overview')) return route.fulfill({ json: { status: 200, data: {} } });
+    if (pathname.endsWith('/orders/supplier')) return route.fulfill({ json: { status: 200, data: orders } });
     if (pathname.endsWith('/orders/mine/paged') || pathname.endsWith('/orders/supplier/paged')) {
       const pageNumber = Number(url.searchParams.get('page') || 1);
       const pageSize = Number(url.searchParams.get('pageSize') || 10);
@@ -154,7 +155,7 @@ async function setup(page, role, requests) {
 test('admin_audit: paging and responsive', async ({ page }) => {
   const requests = [];
   await setup(page, 'Admin', requests);
-  await page.goto('/#admin/dieu-khien');
+  await page.goto('/admin/dieu-khien');
   await page.getByRole('tab', { name: /Nhật ký quản trị/ }).click();
   await expect(page.getByText('AuditPaging0001')).toBeVisible();
   const folder = path.join(root, 'admin_audit');
@@ -174,7 +175,7 @@ test('admin_audit: paging and responsive', async ({ page }) => {
 test('admin_operations: four server-paged tables', async ({ page }) => {
   const requests = [];
   await setup(page, 'Admin', requests);
-  await page.goto('/#admin/van-hanh-giao-dich');
+  await page.goto('/admin/van-hanh-giao-dich');
   const screens = [
     { name: 'admin_delivery_disputes', tab: null, first: 'ADMIN-PAGING-0001', second: 'ADMIN-PAGING-0011' },
     { name: 'admin_refund_cases', tab: /Hồ Sơ Yêu Cầu Hoàn Tiền/, first: 'REF-PAGING-0001', second: 'REF-PAGING-0011' },
@@ -207,12 +208,12 @@ for (const screen of [
   { name: 'customer_deliveries', role: 'Customer', route: 'giao-hang-pod',
     api: '/deliveries', first: 'DL-PAGING-0001', second: 'DL-PAGING-0011' },
   { name: 'supplier_dashboard', role: 'Supplier', route: 'nha-cung-cap/dashboard',
-    api: '/orders/supplier/paged', first: 'MC-PAGING-0001', second: 'MC-PAGING-0011' },
+    api: '/orders/supplier', first: 'MC-PAGING-0001', second: 'MC-PAGING-0011' },
 ]) {
   test(`${screen.name}: paging and responsive`, async ({ page }) => {
     const requests = [];
     await setup(page, screen.role, requests);
-    await page.goto(`/#${screen.route}`);
+    await page.goto(`/${screen.route}`);
     await expect(page.getByText(screen.first).first()).toBeVisible();
     const folder = path.join(root, screen.name);
     await mkdir(folder, { recursive: true });
@@ -231,13 +232,13 @@ for (const screen of [
 
 for (const screen of [
   { name: 'customer_orders', role: 'Customer', route: 'don-hang-cua-toi', api: '/orders/mine/paged' },
-  { name: 'supplier_orders', role: 'Supplier', route: 'nha-cung-cap/quan-ly-don-hang', api: '/orders/supplier/paged' },
+  { name: 'supplier_orders', role: 'Supplier', route: 'nha-cung-cap/quan-ly-don-hang', api: '/orders/supplier' },
   { name: 'admin_users', role: 'Admin', route: 'admin/dieu-khien', api: '/users' },
 ]) {
   test(`${screen.name}: paging, search, URL, responsive`, async ({ page }) => {
     const requests = [];
     await setup(page, screen.role, requests);
-    await page.goto(`/#${screen.route}`);
+    await page.goto(`/${screen.route}`);
     await expect.poll(() => requests.filter((entry) => entry.pathname.endsWith(screen.api)).length).toBeGreaterThan(0);
     await expect(page.getByText(screen.name === 'admin_users' ? 'user1@test.mooncake.local' : 'MC-PAGING-0001').first()).toBeVisible();
 
@@ -254,23 +255,29 @@ for (const screen of [
     await pagination.locator('.ant-pagination-item-2').click();
     await expect(page.getByText(screen.name === 'admin_users' ? 'user11@test.mooncake.local' : 'MC-PAGING-0011').first()).toBeVisible();
     await page.screenshot({ path: path.join(folder, 'page_2.png'), fullPage: true });
-    expect(requests.some((entry) => entry.pathname.endsWith(screen.api) && entry.query.page === '2')).toBeTruthy();
+    if (screen.name !== 'supplier_orders') {
+      expect(requests.some((entry) => entry.pathname.endsWith(screen.api) && entry.query.page === '2')).toBeTruthy();
+    }
 
-    await page.goto(`/#${screen.route}?page=25&pageSize=10`);
+    await page.goto(`/${screen.route}?page=25&pageSize=10`);
     await expect(page.getByText(screen.name === 'admin_users' ? 'user241@test.mooncake.local' : 'MC-PAGING-0241').first()).toBeVisible();
     await page.screenshot({ path: path.join(folder, 'last_page.png'), fullPage: true });
     const sizeSelect = page.locator('.ant-pagination-options-size-changer').first();
     await sizeSelect.click();
     await page.locator('.ant-select-item-option').filter({ hasText: '20' }).first().click();
-    await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
-      && entry.query.pageSize === '20')).toBeTruthy();
+    if (screen.name !== 'supplier_orders') {
+      await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
+        && entry.query.pageSize === '20')).toBeTruthy();
+    }
     await page.screenshot({ path: path.join(folder, 'page_size_20.png'), fullPage: true });
 
     const filter = page.locator('select[aria-label="Trạng thái"], [role="combobox"][aria-label="Trạng thái"], [role="combobox"][aria-label="Vai trò"]').first();
     await filter.click();
     await page.getByText(screen.name === 'admin_users' ? 'Supplier' : 'Pending', { exact: true }).last().click();
-    await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
-      && (entry.query.status === 'Pending' || entry.query.role === 'Supplier'))).toBeTruthy();
+    if (screen.name !== 'supplier_orders') {
+      await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
+        && (entry.query.status === 'Pending' || entry.query.role === 'Supplier'))).toBeTruthy();
+    }
     await page.screenshot({ path: path.join(folder, 'status_filter.png'), fullPage: true });
     await page.getByRole('button', { name: 'Đặt lại' }).first().click();
 

@@ -35,7 +35,7 @@ async function main() {
 
   try {
     // T0_01: Initial load - proves B1 (maxPrice=1000000 sent on initial load), B3 (pageSize=24 hardcoded, no URL sync)
-    await page.goto(`${FE_BASE_URL}/#tim-kiem`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/tim-kiem`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
     await page.screenshot({
       path: path.join(EVIDENCE_DIR, 'T0_01_initial_load_maxPrice_1000000_bug.png'),
@@ -65,14 +65,14 @@ async function main() {
             minPrice: p.minPrice,
             shopName: p.shop?.name,
           })),
-          locationHashAfterLoad: await page.evaluate(() => window.location.hash),
+          locationUrlAfterLoad: await page.evaluate(() => `${window.location.pathname}${window.location.search}`),
         },
         null,
         2
       )
     );
 
-    // T0_02: Click category & page 2 -> URL hash still #tim-kiem, slider max locked at 1,000,000
+    // T0_02: Click category & page 2 -> URL path remains /tim-kiem, slider max locked at 1,000,000
     const firstCheckbox = page.locator('.ant-checkbox-input').first();
     if (await firstCheckbox.count()) {
       await firstCheckbox.check();
@@ -89,7 +89,7 @@ async function main() {
       JSON.stringify(
         {
           bugId: 'B2_B3_SLIDER_CEILING_AND_NO_URL_SYNC',
-          locationHashAfterFilterChange: await page.evaluate(() => window.location.hash),
+          locationUrlAfterFilterChange: await page.evaluate(() => `${window.location.pathname}${window.location.search}`),
           sliderPriceText: await page.locator('.ant-card-body').first().innerText(),
         },
         null,

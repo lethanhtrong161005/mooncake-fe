@@ -180,7 +180,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
       });
     });
 
-    await page.goto('/#so-sanh-bao-gia');
+    await page.goto('/so-sanh-bao-gia');
     await expect(page.getByRole('heading', { name: 'Chọn đúng xưởng cho mùa quà của bạn.' })).toBeVisible();
     await expect(page.getByRole('table').getByText('RFQ-2026-TEST01')).toBeVisible();
 
@@ -261,7 +261,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
       });
     });
 
-    await page.goto('/#nha-cung-cap/dau-thau');
+    await page.goto('/nha-cung-cap/dau-thau');
     await expect(page.getByRole('heading', { name: /RFQ/ })).toBeVisible();
     await expect(page.getByText(rfqFixture.rfqNumber)).toBeVisible();
 
@@ -336,7 +336,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
       });
     });
 
-    await page.goto('/#so-sanh-bao-gia');
+    await page.goto('/so-sanh-bao-gia');
     await expect(page.getByRole('table').getByText(rfqFixture.rfqNumber)).toBeVisible();
 
     // Click "So sánh"
@@ -397,7 +397,7 @@ test.describe('Module 5: RFQ & Bidding E2E Tests', () => {
       });
     });
 
-    await page.goto('/#hop-dong-tien-do');
+    await page.goto('/hop-dong-tien-do');
     await expect(page.getByRole('heading', { name: 'Hợp đồng & tiến độ thanh toán' })).toBeVisible();
     await expect(page.getByText(contractFixture.contractNumber)).toBeVisible();
     await expect(page.getByText('Chờ cọc M1')).toBeVisible();

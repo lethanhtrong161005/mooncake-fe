@@ -110,7 +110,7 @@ async function main() {
     //     and NO transient error flash on reload (StrictMode AbortController check)
     // =========================================================================
     let transientErrorFlashDetected = false;
-    await page.goto(`${BASE_URL}/#tim-kiem`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE_URL}/tim-kiem`, { waitUntil: 'domcontentloaded' });
     if ((await page.locator('[data-testid="search-error-alert"]').count()) > 0) {
       transientErrorFlashDetected = true;
     }
@@ -204,7 +204,7 @@ async function main() {
     // =========================================================================
     // S3: URL Tampering raw pageNumber=99&pageSize=100 -> Stripped & Re-encoded on UI URL, raw 1&9 on API
     // =========================================================================
-    await page.goto(`${BASE_URL}/#tim-kiem?pageNumber=99&pageSize=100`, {
+    await page.goto(`${BASE_URL}/tim-kiem?pageNumber=99&pageSize=100`, {
       waitUntil: 'networkidle',
     });
     await waitForSearchIdle(page);
@@ -431,7 +431,7 @@ async function main() {
     // S9: Deep-link Out-of-Range Page Auto-Clamping (encoded page 999 -> maxValidPage 8)
     // =========================================================================
     await page.goto(
-      `${BASE_URL}/#tim-kiem?${ENCODED_PAGE_NUMBER_PARAM}=${encodePageNumber(999)}&${ENCODED_PAGE_SIZE_PARAM}=${encodePageSize(9)}`,
+      `${BASE_URL}/tim-kiem?${ENCODED_PAGE_NUMBER_PARAM}=${encodePageNumber(999)}&${ENCODED_PAGE_SIZE_PARAM}=${encodePageSize(9)}`,
       {
         waitUntil: 'networkidle',
       }
@@ -465,7 +465,7 @@ async function main() {
     // =========================================================================
     // S10: Empty State & One-Click Reset
     // =========================================================================
-    await page.goto(`${BASE_URL}/#tim-kiem?q=KHONG_TON_TAI_SAN_PHAM_99999`, {
+    await page.goto(`${BASE_URL}/tim-kiem?q=KHONG_TON_TAI_SAN_PHAM_99999`, {
       waitUntil: 'networkidle',
     });
     await waitForSearchIdle(page);
@@ -514,7 +514,7 @@ async function main() {
       await route.continue();
     });
 
-    await page.goto(`${BASE_URL}/#tim-kiem?q=TestErrorRetry`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/tim-kiem?q=TestErrorRetry`, { waitUntil: 'networkidle' });
     await waitForSearchIdle(page);
 
     const errorAlertVisible = await page.locator('[data-testid="search-error-alert"]').isVisible();
@@ -558,7 +558,7 @@ async function main() {
         viewport: { width: vp.width, height: vp.height },
       });
       const vpPage = await vpContext.newPage();
-      await vpPage.goto(`${BASE_URL}/#tim-kiem`, { waitUntil: 'networkidle' });
+      await vpPage.goto(`${BASE_URL}/tim-kiem`, { waitUntil: 'networkidle' });
       await waitForSearchIdle(vpPage);
 
       const overflowInfo = await vpPage.evaluate(() => ({

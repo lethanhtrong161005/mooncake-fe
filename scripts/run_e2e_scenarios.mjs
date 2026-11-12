@@ -55,7 +55,7 @@ async function fullySettleOrder(orderId, custToken, adminToken) {
       const vnpayRes = await api(`/api/v1/orders/${orderId}/payment-parts/${part.id}/vnpay-url`, {
         method: 'POST',
         token: custToken,
-        body: { returnUrl: 'http://127.0.0.1:5173/#/thanh-toan/ket-qua' },
+        body: { returnUrl: 'http://127.0.0.1:5173/thanh-toan/ket-qua' },
       });
       const paymentId = vnpayRes.data?.data?.paymentId || vnpayRes.data?.data?.id;
       if (paymentId) {
@@ -85,7 +85,7 @@ async function loginUser(phoneNumber, password = 'Password123!') {
 }
 
 async function setAuth(page, authData) {
-  await page.goto(`${FE_BASE_URL}/#trang-chu`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${FE_BASE_URL}/trang-chu`, { waitUntil: 'domcontentloaded' });
   await page.evaluate(({ token, refreshToken, user }) => {
     localStorage.setItem('mooncake_auth_token', JSON.stringify(token));
     localStorage.setItem('mooncake_auth_refresh_token', JSON.stringify(refreshToken));
@@ -128,7 +128,7 @@ async function main() {
     // -------------------------------------------------------------
     console.log('\n--- Running Scenario E1: Happy Path Standard Bulk Order ---');
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_01_customer_quote_preview_and_terms.png');
 
     const previewE1 = await api('/api/v1/orders/preview', {
@@ -167,7 +167,7 @@ async function main() {
 
     // Step 2: Supplier reviews order in OrderManage
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_02_supplier_order_review.png');
 
     // Supplier confirms order
@@ -175,7 +175,7 @@ async function main() {
 
     // Step 3: Customer views payment schedule in MyOrders & pays deposit
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_03_customer_payment_schedule_and_deposit.png');
 
     // Fully settle order obligations via VNPay part URL generation & sandbox confirmation
@@ -214,12 +214,12 @@ async function main() {
     });
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_04_supplier_pod_photo_submission.png');
 
     // Customer reviews PoD photo & confirms receipt
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_05_customer_pod_review_and_confirm.png');
 
     await api(`/api/v1/orders/${orderE1.id}/delivery/confirm-receipt`, {
@@ -230,7 +230,7 @@ async function main() {
 
     // Supplier views unlocked Eligible balance
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E1_06_supplier_eligible_balance_unlocked.png');
 
     results.push({ scenario: 'E1', title: 'Happy Path Standard Bulk Order', status: 'PASSED', orderId: orderE1.id, orderNumber: orderE1.orderNumber });
@@ -288,7 +288,7 @@ async function main() {
     console.log(`Race 1 status: ${resRace1.status}, Race 2 status: ${resRace2.status}`);
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
     await capture(page, 'E2_01_stock_race_insufficient_stock_modal.png');
     results.push({
       scenario: 'E2',
@@ -331,11 +331,11 @@ async function main() {
     });
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E3_01_customer_request_cancellation_modal.png');
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E3_02_supplier_review_cancellation.png');
 
     // Supplier approves cancellation
@@ -381,7 +381,7 @@ async function main() {
     });
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E4_01_supplier_reject_order_modal.png');
     results.push({ scenario: 'E4', title: 'Supplier Rejection within 12h SLA', status: 'PASSED', orderId: orderE4.id });
 
@@ -418,11 +418,11 @@ async function main() {
     });
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E5_01_supplier_propose_delivery_date_modal.png');
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E5_02_customer_approve_proposed_date.png');
 
     await api(`/api/v1/orders/${orderE5.id}/respond-delivery-proposal`, {
@@ -469,7 +469,7 @@ async function main() {
     const orderE6 = orderE6Res.data.data;
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/dat-hang-doanh-nghiep?shopId=${shopId}`, { waitUntil: 'networkidle' });
     await capture(page, 'E6_01_customer_packaging_brief_form.png');
 
     // Supplier uploads 3D mockup
@@ -484,11 +484,11 @@ async function main() {
     });
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E6_02_supplier_mockup_and_change_request.png');
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E6_03_customer_approve_mockup_and_fee.png');
 
     await api(`/api/v1/custom-packaging/${orderE6.id}/review-mockup`, {
@@ -568,12 +568,12 @@ async function main() {
     const disputeId = disputeRes.data.data.id;
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E7_01_customer_report_dispute_modal.png');
 
     // Admin views dispute in TradingOperating
     await setAuth(page, admin);
-    await page.goto(`${FE_BASE_URL}/#admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
     await capture(page, 'E7_02_admin_trading_operating_dispute_queue.png');
 
     // Admin resolves dispute with partial refund
@@ -596,7 +596,7 @@ async function main() {
     // -------------------------------------------------------------
     console.log('\n--- Running Scenario E8: Late VNPay IPN After Expiry Auto-Refund ---');
     await setAuth(page, admin);
-    await page.goto(`${FE_BASE_URL}/#admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
     await capture(page, 'E8_01_admin_refund_case_queue.png');
 
     const opsOverview = await api('/api/v1/admin/orders/operations', { token: admin.token });
@@ -673,13 +673,13 @@ async function main() {
       const vnpUrlRes = await api(`/api/v1/orders/${orderE9.id}/payment-parts/${partsList[0].id}/vnpay-url`, {
         method: 'POST',
         token: custA.token,
-        body: { returnUrl: 'http://127.0.0.1:5173/#ket-qua-thanh-toan' },
+        body: { returnUrl: 'http://127.0.0.1:5173/ket-qua-thanh-toan' },
       });
       vnpUrlAvailable = !!vnpUrlRes.data?.data?.paymentUrl;
     }
 
     await setAuth(page, custA);
-    await page.goto(`${FE_BASE_URL}/#don-hang-cua-toi`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/don-hang-cua-toi`, { waitUntil: 'networkidle' });
     await capture(page, 'E9_01_order_multipart_schedule_drawer.png');
     await capture(page, 'E9_02_vnpay_redirect_capped_parts.png');
     results.push({
@@ -708,7 +708,7 @@ async function main() {
     });
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E10_01_supplier_payout_account_drawer.png');
 
     const payoutReqRes = await api(`/api/v1/orders/${orderE1.id}/payout-requests`, {
@@ -721,7 +721,7 @@ async function main() {
     await capture(page, 'E10_02_supplier_request_payout_modal.png');
 
     await setAuth(page, admin);
-    await page.goto(`${FE_BASE_URL}/#admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/admin/van-hanh-giao-dich`, { waitUntil: 'networkidle' });
     await capture(page, 'E10_03_admin_approve_payout_modal.png');
 
     if (payoutId) {
@@ -737,7 +737,7 @@ async function main() {
     }
 
     await setAuth(page, supA);
-    await page.goto(`${FE_BASE_URL}/#nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
+    await page.goto(`${FE_BASE_URL}/nha-cung-cap/don-hang`, { waitUntil: 'networkidle' });
     await capture(page, 'E10_04_supplier_simulated_paid_out_success.png');
     results.push({ scenario: 'E10', title: 'Supplier Simulated Payout Request & Admin Approval', status: 'PASSED', payoutId });
 

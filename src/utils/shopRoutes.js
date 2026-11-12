@@ -1,18 +1,26 @@
 export function currentRoute() {
-  const match = /^\/shop\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?$/.exec(window.location.pathname);
-  if (match) return `shop/${match[1]}`;
-  const raw = decodeURI(window.location.hash.slice(1)).replace(/^\/+/, '');
-  const queryIdx = raw.indexOf('?');
-  const clean = queryIdx !== -1 ? raw.substring(0, queryIdx) : raw;
-  return clean || 'trang-chu';
+  try {
+    const path = decodeURI(window.location.pathname).replace(/^\/+|\/+$/g, '');
+    return !path || path === 'index.html' ? 'trang-chu' : path;
+  } catch {
+    return '__not_found__';
+  }
 }
 
-export function currentHashQuery() {
-  const raw = window.location.hash || '';
-  const queryIdx = raw.indexOf('?');
-  return queryIdx !== -1 ? raw.substring(queryIdx) : '';
+export function currentRouteQuery() {
+  return window.location.search;
 }
 
 export function routeUrl(key) {
-  return key.startsWith('shop/') ? `/${key}` : `/#${encodeURI(key)}`;
+  return `/${encodeURI(String(key || 'trang-chu').replace(/^\/+/, ''))}`;
+}
+
+export function normalizeLegacyRoute() {
+  const legacy = window.location.hash.replace(/^#\/?/, '');
+  if (legacy && ['/', '/index.html'].includes(window.location.pathname)) {
+    const [path, ...query] = legacy.split('?');
+    window.history.replaceState(null, '', `${routeUrl(path)}${query.length ? `?${query.join('?')}` : ''}`);
+  } else if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+    window.history.replaceState(null, '', `${routeUrl('trang-chu')}${window.location.search}`);
+  }
 }

@@ -141,8 +141,8 @@ export function createDefaultSearchState() {
   };
 }
 
-export function parseSearchQuery(hashOrSearch = '') {
-  const raw = String(hashOrSearch || '');
+export function parseSearchQuery(urlOrSearch = '') {
+  const raw = String(urlOrSearch || '');
   const qIndex = raw.indexOf('?');
   const queryString = qIndex >= 0 ? raw.slice(qIndex + 1) : '';
   const params = new URLSearchParams(queryString);
@@ -207,7 +207,7 @@ export function parseSearchQuery(hashOrSearch = '') {
   };
 }
 
-export function buildSearchHash(state) {
+export function buildSearchUrl(state) {
   const params = new URLSearchParams();
   const q = (state.q ?? '').trim().slice(0, 100);
   if (q) params.set('q', q);
@@ -250,7 +250,7 @@ export function buildSearchHash(state) {
   );
 
   const query = params.toString();
-  return query ? `#tim-kiem?${query}` : '#tim-kiem';
+  return query ? `/tim-kiem?${query}` : '/tim-kiem';
 }
 
 export function toApiSearchParams(state) {

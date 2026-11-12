@@ -142,14 +142,14 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
       return route.continue();
     });
 
-    await page.goto('/#dat-hang-thiet-ke');
+    await page.goto('/dat-hang-thiet-ke');
     await expect(page.getByRole('heading', { name: /Đặt hàng doanh nghiệp/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Chọn món quà trước khi tạo đơn.' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Xem sản phẩm' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Tài khoản' }).click();
     await page.getByRole('menuitem', { name: 'Đơn hàng của tôi' }).click();
-    await expect(page).toHaveURL(/#don-hang-cua-toi$/);
+    await expect(page).toHaveURL(/\/don-hang-cua-toi$/);
     await expect(page.getByRole('heading', { name: 'Đơn hàng của tôi' })).toBeVisible();
     await expect(page.locator('text=MC-20261029-TEST01')).toBeVisible();
     await expect(page.locator('text=11.700.000 ₫')).toBeVisible();
@@ -194,7 +194,7 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
       return route.continue();
     });
 
-    await page.goto(`/#dat-hang-thiet-ke?productId=${productFixture.id}`);
+    await page.goto(`/dat-hang-thiet-ke?productId=${productFixture.id}`);
     await expect(page.locator('text=Bánh Trung Thu Hoàng Kim')).toBeVisible();
     await expect(page.locator('text=Chiết khấu doanh nghiệp 10%')).toBeVisible();
     await expect(page.getByTestId('order-quote-total')).toHaveText('11.700.000 ₫');
@@ -209,7 +209,7 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
     await page.getByRole('button', { name: /Gửi đơn đặt hàng/i }).click();
     await page.getByRole('button', { name: 'Gửi đơn đặt hàng', exact: true }).click();
     await expect(page.locator('.ant-message-success')).toContainText('MC-20261029-TEST01');
-    await expect(page).toHaveURL(/#don-hang-cua-toi$/);
+    await expect(page).toHaveURL(/\/don-hang-cua-toi$/);
     await expect(page.getByText('#MC-20261029-TEST01', { exact: true })).toBeVisible();
     expect(orderCreated).toBeTruthy();
   });
@@ -250,7 +250,7 @@ test.describe('Module 4: B2B Ordering & Custom Packaging E2E', () => {
       return route.continue();
     });
 
-    await page.goto('/#nha-cung-cap/quan-ly-don-hang');
+    await page.goto('/nha-cung-cap/quan-ly-don-hang');
     await expect(page.locator('text=MC-20261029-TEST01')).toBeVisible();
     await expect(page.locator('text=11.700.000 ₫')).toBeVisible();
 

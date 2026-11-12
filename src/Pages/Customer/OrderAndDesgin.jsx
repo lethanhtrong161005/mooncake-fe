@@ -69,13 +69,11 @@ function resolveInitialOrderContext() {
     draft = null;
   }
 
-  const hash = window.location.hash || '';
-  const hashParts = hash.replace(/^#\/?/, '').split(/[/?]/);
+  const pathParts = window.location.pathname.replace(/^\//, '').split('/');
   const urlProductId =
     new URLSearchParams(window.location.search).get('productId') ||
-    new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '').get('productId') ||
-    (hashParts[0] === 'dat-hang-thiet-ke' && hashParts[1] && hashParts[1].length > 10
-      ? hashParts[1]
+    (pathParts[0] === 'dat-hang-thiet-ke' && pathParts[1] && pathParts[1].length > 10
+      ? pathParts[1]
       : null) ||
     draft?.productId ||
     null;

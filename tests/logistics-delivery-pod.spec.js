@@ -120,7 +120,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
       }
     });
 
-    await page.goto('/#nha-cung-cap/quan-ly-giao-hang');
+    await page.goto('/nha-cung-cap/quan-ly-giao-hang');
     await expect(page.getByRole('heading', { name: /Quản Lý Vận Chuyển/i })).toBeVisible();
     await expect(page.getByText('DEL-202610-001')).toBeVisible();
 
@@ -178,7 +178,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
       });
     });
 
-    await page.goto('/#nha-cung-cap/quan-ly-giao-hang');
+    await page.goto('/nha-cung-cap/quan-ly-giao-hang');
     await expect(page.getByText('DEL-202610-001')).toBeVisible();
 
     // When PickedUp, button "Xuất bến (In-Transit)" appears
@@ -210,7 +210,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
       });
     });
 
-    await page.goto(`/#driver-delivery-view?id=${deliveryId}`);
+    await page.goto(`/driver-delivery-view?id=${deliveryId}`);
 
     // Verify Mobile UX Header & Destination Card
     await expect(page.getByText('DEL-202610-001')).toBeVisible();
@@ -271,7 +271,7 @@ test.describe('Module 7: Logistics & Delivery Proof of Delivery (PoD)', () => {
       json: { status: 200, data: [mockProof] },
     }));
 
-    await page.goto('/#giao-hang-pod');
+    await page.goto('/giao-hang-pod');
     await expect(page.getByRole('heading', { name: /Từng chuyến giao, rõ từng lần bàn giao/i })).toBeVisible();
     await expect(page.getByRole('table').getByText('DEL-202610-001')).toBeVisible();
     await expect(page.getByRole('table').getByText('Đã bàn giao (PoD)')).toBeVisible();

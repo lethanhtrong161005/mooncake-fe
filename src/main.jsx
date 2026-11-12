@@ -5,6 +5,9 @@ import './styles/lucian-tokens.css';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext';
 import { VerificationNotificationProvider } from './context/VerificationNotificationContext';
+import { normalizeLegacyRoute } from './utils/shopRoutes';
+
+normalizeLegacyRoute();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

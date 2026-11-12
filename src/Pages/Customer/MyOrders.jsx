@@ -167,7 +167,7 @@ export default function MyOrders({ onNavigate }) {
   const handlePayPartVnPay = async (orderId, partId) => {
     setGeneratingUrlPartId(partId);
     try {
-      const returnUrl = `${window.location.origin}/#/thanh-toan/ket-qua`;
+      const returnUrl = `${window.location.origin}/thanh-toan/ket-qua`;
       const res = await orderService.createPartVnPayUrl(orderId, partId, returnUrl);
       if (res?.paymentUrl) {
         message.info('Đang chuyển hướng sang cổng thanh toán VNPay...');

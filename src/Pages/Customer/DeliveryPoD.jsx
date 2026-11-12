@@ -163,7 +163,7 @@ export default function DeliveryPoD({ onNavigate }) {
                   size="small"
                   icon={<MobileOutlined />}
                   onClick={() => {
-                    window.location.hash = `driver-delivery-view?id=${record.id || record.key}`;
+                    onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`);
                   }}
                   className="text-xs border-slate-300"
                 >
@@ -190,7 +190,6 @@ export default function DeliveryPoD({ onNavigate }) {
                 icon={<FileDoneOutlined />}
                 className="bg-emerald-600 hover:bg-emerald-500 font-medium text-xs"
                 onClick={() => {
-                  window.location.hash = 'hop-dong-tien-do';
                   onNavigate?.('hop-dong-tien-do');
                 }}
               >

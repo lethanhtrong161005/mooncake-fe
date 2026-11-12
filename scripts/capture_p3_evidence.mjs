@@ -192,7 +192,7 @@ async function main() {
     vnpUrlRes = await api(`/api/v1/orders/${createdOrderId}/payment-parts/${firstPart.id}/vnpay-url`, {
       method: 'POST',
       token: tokenCustA,
-      body: { returnUrl: 'http://localhost:5173/#/thanh-toan/ket-qua' }
+      body: { returnUrl: 'http://localhost:5173/thanh-toan/ket-qua' }
     });
   }
 

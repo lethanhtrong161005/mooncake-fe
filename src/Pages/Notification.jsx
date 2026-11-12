@@ -34,7 +34,7 @@ import CustomerHeader from '../components/layout/CustomerHeader';
 import ColonyAdminLayout from '../components/layout/ColonyAdminLayout';
 import { verificationDate } from '../utils/verificationDate';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 export default function Notification({ onNavigate }) {
   const { message } = AntApp.useApp();
