@@ -38,7 +38,7 @@ import '../../styles/journey-pages.css';
 const { Paragraph, Text, Title } = Typography;
 const { TextArea } = Input;
 
-const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 
 const parseContractTerms = (value) => {

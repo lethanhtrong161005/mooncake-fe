@@ -49,7 +49,7 @@ import useIsMobile from '../../hooks/useIsMobile';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 
 const statusColor = {

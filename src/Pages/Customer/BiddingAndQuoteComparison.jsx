@@ -50,7 +50,7 @@ function BudgetInput({ value, onChange, ...props }) {
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 const statusColor = { Draft: 'default', Open: 'processing', InNegotiation: 'warning', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 const statusLabel = {

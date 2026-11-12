@@ -34,7 +34,7 @@ function MoneyInput({ value, onChange, ...props }) {
   };
   return <Input {...props} inputMode="decimal" value={formatMoneyInput(value)} onChange={update} />;
 }
-const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 const statusColor = { Open: 'processing', InNegotiation: 'warning', Closed: 'gold', Awarded: 'success', Cancelled: 'error' };
 const helpLabel = (label, explanation) => <Space size={4}>{label}<Tooltip title={explanation}><QuestionCircleOutlined

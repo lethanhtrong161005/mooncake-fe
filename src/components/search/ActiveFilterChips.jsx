@@ -49,9 +49,9 @@ export default function ActiveFilterChips({
   });
 
   if (searchState.minPrice != null || searchState.maxPrice != null) {
-    const minStr = searchState.minPrice != null ? `${formatNumber(searchState.minPrice)}đ` : '0đ';
+    const minStr = searchState.minPrice != null ? `${formatNumber(searchState.minPrice)} ₫` : '0 ₫';
     const maxStr =
-      searchState.maxPrice != null ? `${formatNumber(searchState.maxPrice)}đ` : 'Trở lên';
+      searchState.maxPrice != null ? `${formatNumber(searchState.maxPrice)} ₫` : 'Trở lên';
     chips.push({
       key: 'price',
       label: `Giá: ${minStr} – ${maxStr}`,

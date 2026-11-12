@@ -25,7 +25,7 @@ import packagingTemplateService from '../../services/packagingTemplateService';
 
 const { Text } = Typography;
 const { TextArea } = Input;
-const money = (val) => `${Number(val || 0).toLocaleString('vi-VN')} ₫`;
+const money = (val) => `${Number(val || 0).toLocaleString('vi-VN')} ₫`;
 
 export default function PackagingTemplateManager({ shopId }) {
   const [templates, setTemplates] = useState([]);

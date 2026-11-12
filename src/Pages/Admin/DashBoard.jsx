@@ -205,7 +205,7 @@ export default function DashBoard({ onNavigate }) {
       align: 'right',
       render: (gmv) => (
         <span style={{ fontWeight: 600, color: '#8c1524' }}>
-          {typeof gmv === 'number' ? `${Number(gmv).toLocaleString('vi-VN')} ₫` : gmv || '0 ₫'}
+          {typeof gmv === 'number' ? `${Number(gmv).toLocaleString('vi-VN')} ₫` : gmv || '0 ₫'}
         </span>
       ),
     },
@@ -512,7 +512,7 @@ export default function DashBoard({ onNavigate }) {
                 Ký số OTP
               </Tag>
               <Text type="secondary">
-                {dashboardMetrics?.totalContractsGmv ? `${(dashboardMetrics.totalContractsGmv / 1e9).toFixed(1)} Tỷ VNĐ` : '0 ₫'}
+                {dashboardMetrics?.totalContractsGmv ? `${(dashboardMetrics.totalContractsGmv / 1e9).toFixed(1)} tỷ ₫` : '0 ₫'}
               </Text>
             </div>
           </Card>
@@ -720,8 +720,8 @@ export default function DashBoard({ onNavigate }) {
                             contractNo: item.contractNumber,
                             buyer: item.customerName,
                             seller: item.supplierName,
-                            totalValue: `${Number(item.contractTotalValue).toLocaleString('vi-VN')} ₫`,
-                            depositM1: `${Number(item.heldEscrowAmount).toLocaleString('vi-VN')} ₫`,
+                            totalValue: `${Number(item.contractTotalValue).toLocaleString('vi-VN')} ₫`,
+                            depositM1: `${Number(item.heldEscrowAmount).toLocaleString('vi-VN')} ₫`,
                             escrowStatus: item.escrowStatus === 'Active' ? 'Đã nhận cọc' : item.escrowStatus,
                             milestone: `Mốc ${item.paidMilestonesCount}/${item.totalMilestonesCount}`,
                           }))

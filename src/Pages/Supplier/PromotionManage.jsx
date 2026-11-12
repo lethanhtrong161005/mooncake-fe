@@ -224,7 +224,7 @@ export default function PromotionManage({ onNavigate }) {
             <span style={{ fontSize: 15, fontWeight: 700, color: '#d48806' }}>
               {isPercent
                 ? `Giảm ${record.discountValue}%`
-                : `Giảm ${Number(record.discountValue).toLocaleString('vi-VN')} ₫`}
+                : `Giảm ${Number(record.discountValue).toLocaleString('vi-VN')} ₫`}
             </span>
             <div style={{ fontSize: 12, color: '#666' }}>
               Bậc số lượng: ≥ <strong>{record.minQty || 1}</strong> hộp

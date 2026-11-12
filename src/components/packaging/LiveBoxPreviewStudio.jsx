@@ -11,7 +11,7 @@ import {
   ThunderboltFilled,
 } from '@ant-design/icons';
 
-const money = (val) => `${Number(val || 0).toLocaleString('vi-VN')} ₫`;
+const money = (val) => `${Number(val || 0).toLocaleString('vi-VN')} ₫`;
 
 export default function LiveBoxPreviewStudio({
   selectedTemplate,

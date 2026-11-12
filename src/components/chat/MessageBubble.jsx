@@ -164,7 +164,7 @@ export default function MessageBubble({
               <p className="font-semibold text-xs line-clamp-1 m-0">{msg.product.name}</p>
               {typeof msg.product.price === 'number' && (
                 <p className={`text-xs font-bold mt-0.5 mb-0 ${isOwn ? 'text-amber-300' : 'text-[#8c1524]'}`}>
-                  {msg.product.price.toLocaleString('vi-VN')} đ
+                  {msg.product.price.toLocaleString('vi-VN')} ₫
                 </p>
               )}
             </div>

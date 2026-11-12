@@ -161,7 +161,7 @@ export default function VietQrModal({
                 <span className="text-stone-500 font-medium">Số tiền chuyển:</span>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-base text-amber-700">
-                    {Number(transferData.amount).toLocaleString('vi-VN')} đ
+                    {Number(transferData.amount).toLocaleString('vi-VN')} ₫
                   </span>
                   <Tooltip title="Sao chép số tiền">
                     <Button

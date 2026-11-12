@@ -45,7 +45,7 @@ export default function TradingOperating({ onNavigate }) {
     key: d.id, id: d.id, disputeId: d.id ? `DISP-${d.id.slice(0, 8)}` : 'DISP',
     contractNo: d.contractNumber || 'HĐ-B2B', buyer: d.customerName || 'Bên mua',
     seller: d.supplierName || 'Bên bán', reason: d.disputeReason || 'Tranh chấp hợp đồng',
-    escrowAmount: `${Number(d.heldEscrowAmount || 0).toLocaleString('vi-VN')} ₫`,
+    escrowAmount: `${Number(d.heldEscrowAmount || 0).toLocaleString('vi-VN')} ₫`,
     status: (d.status || 'pending').toLowerCase(), severity: 'high',
     createdAt: d.raisedAt || d.createdAt,
   }));
@@ -108,7 +108,7 @@ export default function TradingOperating({ onNavigate }) {
           contractNo: c.contractNumber || c.contractNo || `HD-2025-${idx + 1}`,
           buyer: c.customerName || c.buyer || 'Khách hàng',
           seller: c.supplierName || c.seller || 'Xưởng Bánh',
-          value: typeof c.totalAmount === 'number' ? `${c.totalAmount.toLocaleString('vi-VN')} ₫` : c.value || '0 ₫',
+          value: typeof c.totalAmount === 'number' ? `${c.totalAmount.toLocaleString('vi-VN')} ₫` : c.value || '0 ₫',
           progress: c.status || 'Active',
           escrowStatus: c.escrowStatus || 'Bảo chứng an toàn',
           status: (c.status || 'active').toLowerCase(),

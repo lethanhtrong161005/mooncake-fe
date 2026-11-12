@@ -38,7 +38,7 @@ export default function AiProductCard({ product, onNavigate }) {
 
           <div className="flex items-baseline gap-2 mt-1.5">
             <span className="font-bold text-amber-900 text-sm">
-              {money(product.basePrice)} đ
+              {money(product.basePrice)} ₫
             </span>
             <span className="text-[11px] text-stone-400">
               · Đơn tối thiểu: {product.minOrderQty} hộp

@@ -3,15 +3,15 @@ export function formatNumber(value) {
 }
 
 export function formatVnd(value) {
-  return `${formatNumber(value)} đ`;
+  return `${formatNumber(value)} ₫`;
 }
 
 export function formatPriceRange(minPrice, maxPrice, fallbackPrice = 0) {
   const resolvedMin = Number(minPrice ?? fallbackPrice ?? 0);
   const resolvedMax = Number(maxPrice ?? resolvedMin);
   if (resolvedMax > resolvedMin) {
-    return `${formatNumber(resolvedMin)} – ${formatNumber(resolvedMax)} đ`;
+    return `${formatNumber(resolvedMin)} – ${formatNumber(resolvedMax)} ₫`;
   }
-  return `${formatNumber(resolvedMin)} đ`;
+  return `${formatNumber(resolvedMin)} ₫`;
 }
 

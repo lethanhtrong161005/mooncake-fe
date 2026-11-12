@@ -34,8 +34,8 @@ export default function B2BPriceCalculator({ onNavigate }) {
   const effectiveUnitPrice = Math.round(500000 * (1 - effectiveDiscount / 100));
   const totalPrice = effectiveUnitPrice * boxes;
   const savedAmount = (500000 - effectiveUnitPrice) * boxes;
-  const displayTotal = `${totalPrice.toLocaleString('vi-VN')} ₫`;
-  const displaySaved = `${savedAmount.toLocaleString('vi-VN')} ₫`;
+  const displayTotal = `${totalPrice.toLocaleString('vi-VN')} ₫`;
+  const displaySaved = `${savedAmount.toLocaleString('vi-VN')} ₫`;
 
   useEffect(() => {
     const pct = ((boxes - MIN) / (MAX - MIN)) * 100;

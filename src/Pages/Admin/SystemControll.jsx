@@ -263,7 +263,7 @@ export default function SystemControll({ onNavigate }) {
       title: 'Ngưỡng Giá Trị HĐ Tối Thiểu',
       dataIndex: 'minContractValue',
       key: 'minContractValue',
-      render: (val) => val ? `${Number(val).toLocaleString('vi-VN')} ₫` : 'Không giới hạn',
+      render: (val) => val ? `${Number(val).toLocaleString('vi-VN')} ₫` : 'Không giới hạn',
     },
     {
       title: 'Thời Hạn Nộp Cọc',

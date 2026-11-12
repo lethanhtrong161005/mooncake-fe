@@ -146,7 +146,7 @@ export default function ProductManage({ onNavigate }) {
 
   const columns = [
     { title: 'Sản phẩm', dataIndex: 'name', render: (name, row) => <Space><img alt="" src={row.primaryImageUrl} style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, background: '#f5f5f5' }} /><div><strong>{name}</strong><br /><small>{row.variantCount} biến thể · tồn {row.totalStockQty}</small></div></Space> },
-    { title: 'Giá', render: (_, row) => `${money(row.minPrice)} – ${money(row.maxPrice)} đ` },
+    { title: 'Giá', render: (_, row) => `${money(row.minPrice)} – ${money(row.maxPrice)} ₫` },
     { title: 'Trạng thái', dataIndex: 'effectiveStatus', render: statusTag },
     { title: 'Cập nhật', dataIndex: 'updatedAtUtc', render: (value) => new Date(value).toLocaleDateString('vi-VN') },
     { title: '', width: 210, render: (_, row) => <Space>

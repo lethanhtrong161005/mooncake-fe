@@ -206,7 +206,7 @@ export default function SearchFilterPanel({
           value={[sliderMin, Math.min(sliderMax, effectiveCeiling)]}
           onChange={handleSliderChange}
           onChangeComplete={handleSliderComplete}
-          tooltip={{ formatter: (val) => `${formatNumber(val)} đ` }}
+          tooltip={{ formatter: (val) => `${formatNumber(val)} ₫` }}
         />
 
         <div
@@ -258,7 +258,7 @@ export default function SearchFilterPanel({
           }}
         >
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {formatNumber(sliderMin)} – {formatNumber(sliderMax)} đ
+            {formatNumber(sliderMin)} – {formatNumber(sliderMax)} ₫
           </Text>
           <Button
             size="small"

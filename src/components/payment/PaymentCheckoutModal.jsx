@@ -34,7 +34,7 @@ export default function PaymentCheckoutModal({
   if (isContract) {
     codDisableReason = 'COD không áp dụng cho hợp đồng ký quỹ sản xuất.';
   } else if (amount > COD_LIMIT) {
-    codDisableReason = `Hạn mức COD tối đa 10.000.000 đ. Đơn này (${amount.toLocaleString('vi-VN')} đ) cần thanh toán trả trước.`;
+    codDisableReason = `Hạn mức COD tối đa 10.000.000 ₫. Đơn này (${amount.toLocaleString('vi-VN')} ₫) cần thanh toán trả trước.`;
   } else if (packagingFee > 0) {
     codDisableReason = 'Đơn hàng có thiết kế bao bì riêng yêu cầu thanh toán trước.';
   }
@@ -135,7 +135,7 @@ export default function PaymentCheckoutModal({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #fef3c7', paddingTop: 8, marginTop: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 500, color: '#44403c' }}>Tổng thanh toán:</span>
             <span style={{ fontSize: 20, fontWeight: 700, color: '#b45309' }}>
-              {amount.toLocaleString('vi-VN')} <span style={{ fontSize: 13, fontWeight: 400 }}>VNĐ</span>
+              {amount.toLocaleString('vi-VN')} <span style={{ fontSize: 13, fontWeight: 400 }}>₫</span>
             </span>
           </div>
         </div>

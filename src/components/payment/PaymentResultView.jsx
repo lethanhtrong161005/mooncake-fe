@@ -207,7 +207,7 @@ export default function PaymentResultView({ onNavigate }) {
               <div>
                 <span className="text-stone-500 block">Số tiền giao dịch:</span>
                 <span className="text-base font-bold text-amber-700 font-mono">
-                  {Number(verificationResult?.amount || 0).toLocaleString('vi-VN')} VNĐ
+                  {Number(verificationResult?.amount || 0).toLocaleString('vi-VN')} ₫
                 </span>
               </div>
               <div>
