@@ -286,6 +286,14 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
     expect(draft.quantity).toBe(20);
   });
 
+  test('Từ sản phẩm mở đúng gian hàng công khai của nhà cung cấp', async ({ page }) => {
+    await setupSession(page, { role: 'Customer' });
+    await page.goto(`/san-pham/${productDetailFixture.id}`);
+
+    await page.getByRole('button', { name: /Xem gian hàng/ }).click();
+    await expect(page).toHaveURL(/\/shop\/hoang-trieu$/);
+  });
+
   test('Nhà cung cấp quản lý danh sách sản phẩm, bật/tắt đăng bán và xóa sản phẩm', async ({
     page,
   }) => {

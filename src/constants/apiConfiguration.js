@@ -7,3 +7,8 @@ export const VERIFICATION_HUB_URL = new URL(
   `${apiLocation.pathname.replace(/\/api\/?$/, '')}/hubs/supplier-verification`,
   apiLocation.origin
 ).href;
+
+export const CHAT_HUB_URL = new URL(
+  `${apiLocation.pathname.replace(/\/api\/?$/, '')}/api/v1/hubs/chat`,
+  apiLocation.origin
+).href;

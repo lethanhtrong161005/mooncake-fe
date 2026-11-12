@@ -9,6 +9,7 @@ import {
   Button,
   Divider,
   Grid,
+  Badge,
 } from 'antd';
 import {
   ShopOutlined,
@@ -26,9 +27,11 @@ import {
   SearchOutlined,
   ArrowRightOutlined,
   MenuOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useWishlist } from '../../hooks/useWishlist';
+import { useChat } from '../../hooks/useChat';
 import AppLogo from './AppLogo';
 import './customer-header.css';
 
@@ -38,6 +41,7 @@ export default function CustomerHeader({
 }) {
   const { isLoggedIn, user, logout } = useAuth();
   const { totalCount: wishlistCount } = useWishlist();
+  const { unreadCount } = useChat();
   const screens = Grid.useBreakpoint();
   const compact = !screens.lg;
   const [searchValue, setSearchValue] = useState('');
@@ -153,6 +157,24 @@ export default function CustomerHeader({
       label: 'Hợp đồng & Đặt cọc M1',
       onClick: () => onNavigate?.('hop-dong-tien-do'),
     }] : []),
+    ...(isLoggedIn ? [{
+      key: 'messages',
+      icon: <MessageOutlined />,
+      label: (
+        <span className="customer-header__wishlist-item">
+          <span>Tin nhắn</span>
+          {unreadCount > 0 && (
+            <span
+              className="customer-header__wishlist-count"
+              data-testid="header-chat-unread-count"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </span>
+      ),
+      onClick: () => onNavigate?.('tin-nhan'),
+    }] : []),
     {
       type: 'divider',
     },
@@ -261,6 +283,20 @@ export default function CustomerHeader({
               boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)',
             }}
           />}
+
+          {/* Chat Messages */}
+          {isLoggedIn && (
+            <Badge count={unreadCount} overflowCount={99} size="small">
+              <Button
+                type="text"
+                shape="circle"
+                icon={<MessageOutlined style={{ fontSize: 18, color: '#444' }} />}
+                onClick={() => onNavigate?.('tin-nhan')}
+                aria-label="Tin nhắn"
+                title="Tin nhắn"
+              />
+            </Badge>
+          )}
 
           {/* Notifications */}
           {isLoggedIn && <NotificationBell onNavigate={onNavigate} />}

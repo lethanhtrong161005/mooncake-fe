@@ -9,7 +9,7 @@ export const CUSTOMER_ROUTES = new Set([
   'ho-so-khach-hang',
 ]);
 
-export const AUTHENTICATED_ROUTES = new Set(['thong-bao', 'san-pham-yeu-thich']);
+export const AUTHENTICATED_ROUTES = new Set(['thong-bao', 'san-pham-yeu-thich', 'tin-nhan']);
 export const DRIVER_ROUTES = new Set(['driver-delivery-view', 'driver-pod']);
 
 export const ONBOARDING_ROUTES = new Set([
@@ -17,12 +17,12 @@ export const ONBOARDING_ROUTES = new Set([
 ]);
 
 export const SUPPLIER_ROUTES = new Set([
-  'nha-cung-cap/dashboard', 'nha-cung-cap/thiet-lap-gian-hang',
+  'nha-cung-cap', 'nha-cung-cap/dashboard', 'nha-cung-cap/thiet-lap-gian-hang',
   'nha-cung-cap/giao-dien-gian-hang', 'nha-cung-cap/quan-ly-san-pham',
   'nha-cung-cap/dau-thau', 'nha-cung-cap/don-hang',
   'nha-cung-cap/quan-ly-don-hang', 'nha-cung-cap/quan-ly-hop-dong',
   'nha-cung-cap/quan-ly-giao-hang', 'nha-cung-cap/khuyen-mai',
-  'nha-cung-cap/quan-ly-khuyen-mai',
+  'nha-cung-cap/quan-ly-khuyen-mai', 'nha-cung-cap/tin-nhan',
 ]);
 
 export const ADMIN_ROUTES = new Set([
