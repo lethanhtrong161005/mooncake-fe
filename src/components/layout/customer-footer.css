@@ -1,6 +1,5 @@
 .customer-footer {
   --cf-bg: #faf9f6;
-  --cf-band: #f3eee7;
   --cf-line: #e7dcd0;
   --cf-chip: #eee1d1;
   --cf-accent: #8c1524;
@@ -27,17 +26,14 @@
   list-style: none;
 }
 
-/* Trust bar */
-.customer-footer__trust {
-  border-bottom: 1px solid var(--cf-line);
-  background: var(--cf-band);
-}
-
+/* Trust row — part of the footer itself (same background, in-container divider),
+   not a separate full-width band that reads like a second footer */
 .customer-footer__trust-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  padding-block: 16px;
+  padding-block: 28px 24px;
+  border-bottom: 1px solid var(--cf-line);
 }
 
 .customer-footer__trust-item {
@@ -76,7 +72,7 @@
   display: grid;
   grid-template-columns: 1.4fr 1fr 1.1fr 1.1fr;
   gap: 24px 32px;
-  padding-block: 32px 20px;
+  padding-block: 28px 20px;
   border-bottom: 1px solid var(--cf-line);
 }
 

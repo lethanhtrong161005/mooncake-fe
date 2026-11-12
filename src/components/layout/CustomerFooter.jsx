@@ -57,19 +57,17 @@ const LEGAL_LINKS = ['Điều khoản dịch vụ', 'Chính sách bảo mật', 
 export default function CustomerFooter({ onNavigate }) {
   return (
     <footer className="customer-footer">
-      <div className="customer-footer__trust">
-        <ul className="customer-footer__container customer-footer__trust-list">
-          {TRUST_ITEMS.map((item) => (
-            <li key={item.title} className="customer-footer__trust-item">
-              <span className="customer-footer__trust-icon" aria-hidden="true">{item.icon}</span>
-              <span>
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ul className="customer-footer__container customer-footer__trust-list">
+        {TRUST_ITEMS.map((item) => (
+          <li key={item.title} className="customer-footer__trust-item">
+            <span className="customer-footer__trust-icon" aria-hidden="true">{item.icon}</span>
+            <span>
+              <strong>{item.title}</strong>
+              <small>{item.description}</small>
+            </span>
+          </li>
+        ))}
+      </ul>
 
       <div className="customer-footer__container customer-footer__main">
         <div className="customer-footer__brand">
