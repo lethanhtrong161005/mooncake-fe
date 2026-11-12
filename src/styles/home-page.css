@@ -812,3 +812,8 @@
     transform: none;
   }
 }
+
+.home-page .home-product__price.ant-typography {
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}

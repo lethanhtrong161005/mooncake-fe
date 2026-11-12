@@ -425,6 +425,8 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
 }
 
 :is(.search-page, .product-detail-page, .wishlist-page) .search-product-card__minimum.ant-typography {

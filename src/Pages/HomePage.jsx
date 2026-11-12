@@ -302,7 +302,7 @@ export default function HomePage({ onNavigate }) {
                         <Title level={3}>{product.name}</Title>
                         <div className="home-product__bottom">
                           <div>
-                            {price != null && <Text strong>Từ {formatCurrency(price)}</Text>}
+                            {price != null && <Text strong className="home-product__price">Từ {formatCurrency(price)}</Text>}
                             {product.minOrderQty != null && (
                               <Text>Đặt từ {product.minOrderQty} {product.unit || 'hộp'}</Text>
                             )}
