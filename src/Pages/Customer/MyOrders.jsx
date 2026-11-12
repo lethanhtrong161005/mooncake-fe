@@ -323,7 +323,7 @@ export default function MyOrders({ onNavigate }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between pb-3 border-b border-stone-200">
         <div>
-          <h3 className="font-['Playfair_Display',serif] text-lg font-bold text-stone-900 m-0">
+          <h3 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-lg font-bold text-stone-900 m-0">
             Lịch Sử Đơn Đặt Hàng B2B &amp; Ký Quỹ VNPay
           </h3>
           <span className="text-xs text-stone-500">
@@ -639,7 +639,7 @@ export default function MyOrders({ onNavigate }) {
       <CustomerHeader activeKey="don-hang-cua-toi" onNavigate={onNavigate} />
       <CustomerBreadcrumbBar items={[{ label: 'Đơn hàng của tôi' }]} onNavigate={onNavigate} />
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
-        <h1 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-extrabold text-stone-900 mb-6">
+        <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-2xl sm:text-3xl font-extrabold text-stone-900 mb-6">
           Đơn hàng của tôi
         </h1>
         {ordersTab}
@@ -1010,7 +1010,7 @@ export default function MyOrders({ onNavigate }) {
       {/* Modal 6: Mockup Review Modal */}
       <Modal
         title={
-          <span className="font-['Playfair_Display',serif] font-bold text-lg text-stone-900">
+          <span className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] font-bold text-lg text-stone-900">
             Duyệt Thiết Kế Mockup Bao Bì · #{reviewingOrder?.orderNumber || ''}
           </span>
         }

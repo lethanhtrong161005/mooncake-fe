@@ -49,7 +49,7 @@
   max-width: 650px;
   margin: 0;
   color: #fff9f0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2.25rem, 3.2vw, 3.4rem);
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -103,7 +103,7 @@
 
 .rfq-page__hero-process span {
   color: #e6bb83;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 24px;
   line-height: 1.15;
 }
@@ -140,7 +140,7 @@
 .rfq-page__section-heading h2 {
   margin: 0;
   color: var(--rfq-wine);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(1.65rem, 2.1vw, 2.1rem);
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -292,7 +292,7 @@
 .rfq-page__empty h3 {
   margin: 0;
   color: var(--rfq-wine);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 600;
 }
@@ -319,7 +319,7 @@
 
 .rfq-page__compare-drawer .ant-drawer-title {
   color: #481b24;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 21px;
 }
 
@@ -540,7 +540,7 @@
 
   .rfq-page__compare-card > strong {
     color: #481b24;
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: var(--font-display);
     font-size: 24px;
   }
 

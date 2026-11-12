@@ -52,7 +52,7 @@ export default function AppLogo({
               fontSize: titlePx,
               color: '#8c1524',
               letterSpacing: '-0.3px',
-              fontFamily: 'serif',
+              fontFamily: 'var(--font-display)',
             }}
           >
             Nguyệt Phố

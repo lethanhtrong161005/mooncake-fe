@@ -251,7 +251,7 @@ export default function GoogleMapAddressPicker({
         title={
           <div className="flex items-center gap-2">
             <EnvironmentFilled style={{ color: '#ea4335', fontSize: 18 }} />
-            <span className="font-['Playfair_Display',serif] font-bold text-base text-stone-900">
+            <span className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] font-bold text-base text-stone-900">
               Định Vị Điểm Giao Hàng B2B Trên Google Map
             </span>
           </div>

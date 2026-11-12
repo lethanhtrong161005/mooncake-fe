@@ -272,7 +272,7 @@ export default function LiveBoxPreviewStudio({
 
             {/* Company Name Inscribed */}
             <h4
-              className="font-['Playfair_Display',serif] text-base sm:text-lg font-bold tracking-widest uppercase m-0 max-w-[90%] truncate"
+              className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-base sm:text-lg font-bold tracking-widest uppercase m-0 max-w-[90%] truncate"
               style={{
                 color: isLightBackground
                   ? '#8c1524'
@@ -328,7 +328,7 @@ export default function LiveBoxPreviewStudio({
               }}
             >
               <p
-                className={`font-['Playfair_Display',serif] italic text-xs sm:text-sm m-0 line-clamp-1 ${
+                className={`font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] italic text-xs sm:text-sm m-0 line-clamp-1 ${
                   isLightBackground ? 'text-stone-800' : 'text-amber-100'
                 }`}
               >
@@ -491,7 +491,7 @@ export default function LiveBoxPreviewStudio({
               Studio Xem Thử Hộp Quà
             </span>
           </div>
-          <h4 className="font-['Playfair_Display',serif] text-base font-bold text-stone-900 m-0 flex items-center gap-2">
+          <h4 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-base font-bold text-stone-900 m-0 flex items-center gap-2">
             <span>{templateName}</span>
           </h4>
         </div>
@@ -570,7 +570,7 @@ export default function LiveBoxPreviewStudio({
       {/* Fullscreen Zoom Modal */}
       <Modal
         title={
-          <span className="font-['Playfair_Display',serif] font-bold text-lg">
+          <span className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] font-bold text-lg">
             Bản Vẽ Phối Cảnh Chi Tiết · {templateName}
           </span>
         }

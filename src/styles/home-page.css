@@ -71,7 +71,7 @@
   max-width: 680px;
   margin: 0 0 23px;
   color: var(--home-lacquer);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(3.2rem, 4.5vw, 5rem);
   font-weight: 600;
   letter-spacing: -0.045em;
@@ -277,7 +277,7 @@
 .home-page .home-faq h2.ant-typography {
   margin: 0;
   color: var(--home-lacquer);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2rem, 3.2vw, 3rem);
   font-weight: 600;
   line-height: 1.2;
@@ -362,7 +362,7 @@
 .home-page .home-category h3.ant-typography {
   margin: 6px 0 8px;
   color: white;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(1.3rem, 2.1vw, 2rem);
   line-height: 1.2;
 }
@@ -534,7 +534,7 @@
   max-width: 690px;
   margin: 0;
   color: #fff8ef;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2.25rem, 4vw, 4rem);
   font-weight: 600;
   line-height: 1.18;
@@ -605,7 +605,7 @@
 
 .home-supplier__inner > div {
   color: var(--home-lacquer);
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(1.05rem, 2vw, 1.4rem);
 }
 

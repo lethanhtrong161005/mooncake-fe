@@ -42,7 +42,7 @@
 .customer-profile-page__heading h1.ant-typography {
   margin: 10px 0 9px;
   color: #43121c;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2.8rem, 4.3vw, 4.25rem);
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -126,7 +126,7 @@
   background: #a32d40;
   box-shadow: 0 0 0 7px rgba(212, 170, 112, 0.1);
   color: #fff8ed;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 38px;
 }
 
@@ -135,7 +135,7 @@
   margin: 0 0 6px;
   overflow-wrap: anywhere;
   color: #fff9f0;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(1.9rem, 2.5vw, 2.55rem);
   font-weight: 600;
 }
@@ -275,7 +275,7 @@
   border: 2px solid #d4aa70;
   background: #a32d40;
   color: #fff8ed;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 26px;
 }
 

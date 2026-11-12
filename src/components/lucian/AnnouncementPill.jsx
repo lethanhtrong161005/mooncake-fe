@@ -147,7 +147,7 @@ export default function AnnouncementPill({ onNavigate, align = 'center' }) {
           <div className="flex items-center justify-between pb-3 border-b border-stone-100">
             <div className="flex items-center gap-2">
               <SafetyCertificateOutlined className="text-[#8c1524] text-base" />
-              <h4 className="font-['Playfair_Display',serif] text-sm sm:text-base font-bold text-stone-900 m-0">
+              <h4 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-sm sm:text-base font-bold text-stone-900 m-0">
                 Chính Sách &amp; Ưu Đãi Mùa Vụ
               </h4>
             </div>

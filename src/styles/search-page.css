@@ -71,7 +71,7 @@
   max-width: 550px;
   margin: 0 0 13px;
   color: #fff8ed;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2.4rem, 3.4vw, 3.45rem);
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -333,7 +333,7 @@
   height: 100%;
   background: #521e29;
   color: #f5dfbd;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 18px;
 }
 

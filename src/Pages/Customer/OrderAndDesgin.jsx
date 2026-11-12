@@ -1211,7 +1211,7 @@ export default function OrderAndDesgin({ onNavigate }) {
                 <div className="pb-4 border-b border-stone-100">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-['Playfair_Display',serif] text-xl font-bold text-stone-900 m-0 leading-tight">
+                      <h3 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-xl font-bold text-stone-900 m-0 leading-tight">
                         Tạm tính đơn hàng
                       </h3>
                       <p className="text-xs text-stone-500 mt-1.5 mb-0 leading-relaxed">
@@ -1541,7 +1541,7 @@ export default function OrderAndDesgin({ onNavigate }) {
       <main className="order-page__main max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         <div className="order-page__intro mb-7 pb-6 border-b border-stone-200">
           <span className="order-page__eyebrow">Mua sỉ bánh Trung thu</span>
-          <h1 className="font-['Playfair_Display',serif] text-3xl sm:text-4xl font-extrabold text-stone-950 m-0 tracking-[-0.02em]">
+          <h1 className="font-['Playfair_Display','Be_Vietnam_Pro',sans-serif] text-3xl sm:text-4xl font-extrabold text-stone-950 m-0 tracking-[-0.02em]">
             Đặt hàng doanh nghiệp
           </h1>
           <p className="text-sm text-stone-600 mt-2.5 max-w-2xl leading-6">

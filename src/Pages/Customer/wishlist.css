@@ -51,7 +51,7 @@
 .wishlist-page__header h1.ant-typography {
   margin: 8px 0 8px;
   color: #43121c;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: clamp(2.1rem, 3.6vw, 3.2rem);
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -148,7 +148,7 @@
 .wishlist-page__empty h2.ant-typography {
   margin: 0 0 8px;
   color: #43121c;
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 600;
 }

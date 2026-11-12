@@ -32,7 +32,7 @@
   position: relative;
   padding-left: clamp(24px, 5vw, 80px);
   color: #43121c;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(112px, 14vw, 190px);
   letter-spacing: -0.08em;
   line-height: 1;
@@ -67,7 +67,7 @@
   max-width: 520px;
   margin: 0;
   color: #43121c;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-size: clamp(32px, 4vw, 50px);
   font-weight: 500;
   line-height: 1.14;
