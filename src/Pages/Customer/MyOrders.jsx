@@ -636,7 +636,7 @@ export default function MyOrders({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-[#faf9f6] flex flex-col font-['Be_Vietnam_Pro',sans-serif]">
-      <CustomerHeader onNavigate={onNavigate} />
+      <CustomerHeader activeKey="don-hang-cua-toi" onNavigate={onNavigate} />
       <CustomerBreadcrumbBar items={[{ label: 'Đơn hàng của tôi' }]} onNavigate={onNavigate} />
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         <h1 className="font-['Playfair_Display',serif] text-2xl sm:text-3xl font-extrabold text-stone-900 mb-6">

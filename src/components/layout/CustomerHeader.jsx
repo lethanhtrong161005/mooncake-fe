@@ -61,6 +61,7 @@ export default function CustomerHeader({
       label: 'Sản phẩm',
     },
   ];
+  // Order-tracking pages share one "Đơn hàng" submenu so the bar never overflows into "...".
   const customerMenuItems = [
     {
       key: 'so-sanh-bao-gia',
@@ -68,19 +69,15 @@ export default function CustomerHeader({
       label: 'Yêu cầu Báo giá',
     },
     {
-      key: 'hop-dong-tien-do',
-      icon: <FileTextOutlined />,
-      label: 'Hợp đồng & Milestone',
-    },
-    {
-      key: 'giao-hang-pod',
-      icon: <CarOutlined />,
-      label: 'Giao nhận',
-    },
-    {
-      key: 'thanh-toan-danh-gia',
-      icon: <StarOutlined />,
-      label: 'Thanh toán & Đánh giá',
+      key: 'customer-orders',
+      icon: <ShoppingOutlined />,
+      label: 'Đơn hàng',
+      children: [
+        { key: 'don-hang-cua-toi', icon: <ShoppingOutlined />, label: 'Đơn hàng của tôi' },
+        { key: 'hop-dong-tien-do', icon: <FileTextOutlined />, label: 'Hợp đồng & tiến độ' },
+        { key: 'giao-hang-pod', icon: <CarOutlined />, label: 'Giao nhận' },
+        { key: 'thanh-toan-danh-gia', icon: <StarOutlined />, label: 'Thanh toán & Đánh giá' },
+      ],
     },
   ];
   const menuItems = isLoggedIn && user?.role === 'Customer'
