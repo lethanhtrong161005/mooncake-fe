@@ -229,6 +229,11 @@ export default function CustomerHeader({
             selectedKeys={[activeKey]}
             items={menuItems}
             onClick={handleMenuClick}
+            overflowedIndicator={
+              <span className="customer-header__more">
+                <MenuOutlined aria-hidden="true" /> Thêm
+              </span>
+            }
             style={{
               borderBottom: 'none',
               fontWeight: 500,

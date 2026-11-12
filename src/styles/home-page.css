@@ -328,7 +328,8 @@
 .home-category::after {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, rgba(22, 8, 12, 0.84), rgba(22, 8, 12, 0.08) 75%);
+  background:
+    linear-gradient(0deg, rgba(22, 8, 12, 0.9) 0%, rgba(22, 8, 12, 0.62) 45%, rgba(22, 8, 12, 0.12) 85%);
   content: '';
   pointer-events: none;
 }
@@ -346,6 +347,7 @@
   justify-content: end;
   height: 100%;
   padding: 24px;
+  text-shadow: 0 1px 12px rgba(22, 8, 12, 0.55);
 }
 
 .home-page .home-category__content > .ant-typography {
