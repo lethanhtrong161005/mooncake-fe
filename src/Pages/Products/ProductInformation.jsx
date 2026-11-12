@@ -16,6 +16,7 @@ import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar
 import ReputationBadge from '../../components/reviews/ReputationBadge';
 import ProductReviewStream from '../../components/reviews/ProductReviewStream';
 import ProductSearchCard from '../../components/search/ProductSearchCard';
+import WishlistButton from '../../components/product/WishlistButton';
 import { resolveRegionLabel } from '../../constants/productSearch';
 import productService from '../../services/productService';
 import '../../styles/search-page.css';
@@ -329,6 +330,11 @@ export default function ProductInformation({ onNavigate, productId }) {
                     >
                       {available ? 'Đặt hàng doanh nghiệp' : 'Tạm hết hàng'}
                     </Button>
+                    <WishlistButton
+                      productId={product.productId || product.id}
+                      productName={product.name}
+                      variant="detail"
+                    />
                     {!available && <Button size="large" onClick={scrollToRelated}>Xem sản phẩm tương tự</Button>}
                   </div>
                   {product.supportsCustomPackaging && (

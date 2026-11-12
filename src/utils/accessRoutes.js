@@ -9,7 +9,7 @@ export const CUSTOMER_ROUTES = new Set([
   'ho-so-khach-hang',
 ]);
 
-export const AUTHENTICATED_ROUTES = new Set(['thong-bao']);
+export const AUTHENTICATED_ROUTES = new Set(['thong-bao', 'san-pham-yeu-thich']);
 export const DRIVER_ROUTES = new Set(['driver-delivery-view', 'driver-pod']);
 
 export const ONBOARDING_ROUTES = new Set([

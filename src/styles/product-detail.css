@@ -243,7 +243,7 @@
 .product-detail__price-note,
 .product-detail__packaging-note { margin: 7px 0 0; color: var(--detail-muted); font-size: 11px; line-height: 1.6; }
 .product-detail__purchase .ant-alert { margin-top: 19px; border-radius: 6px; }
-.product-detail__actions { display: flex; gap: 10px; margin-top: 18px; }
+.product-detail__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .product-detail__actions .ant-btn { min-height: 48px; border-radius: 6px; padding-inline: 18px; font-weight: 700; }
 .product-detail__actions .ant-btn-primary { flex: 1; }
 .product-detail__actions .ant-btn-primary:disabled { border-color: #e4ddd6; background: #eee9e2; color: #81776e; }

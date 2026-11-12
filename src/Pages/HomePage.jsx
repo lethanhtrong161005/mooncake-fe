@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons';
 import CustomerFooter from '../components/layout/CustomerFooter';
 import CustomerHeader from '../components/layout/CustomerHeader';
+import WishlistButton from '../components/product/WishlistButton';
 import productService from '../services/productService';
 import { formatCurrency } from '../utils/formatters';
 import '../styles/home-page.css';
@@ -313,6 +314,11 @@ export default function HomePage({ onNavigate }) {
                             onError={(event) => { event.currentTarget.hidden = true; }} />
                         )}
                         {product.shop?.isVerified === true && <Tag color="gold">Đã xác minh</Tag>}
+                        <WishlistButton
+                          productId={product.productId}
+                          productName={product.name}
+                          variant="overlay"
+                        />
                       </div>
                       <div className="home-product__body">
                         <Text className="home-product__shop">{product.shop?.name || 'Nhà cung cấp'}</Text>

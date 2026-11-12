@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { App as AntApp, ConfigProvider, FloatButton, Dropdown, Spin } from 'antd';
 import { useAuth } from './hooks/useAuth';
+import { WishlistProvider } from './context/WishlistContext';
 import { hasSupplierWorkspace } from './utils/supplierAccess';
 import { roleHomeRoute } from './utils/roleNavigation';
 import SupplierRegistration from './Pages/Customer/SupplierRegistration';
@@ -25,6 +26,7 @@ import DeliveryPoD from './Pages/Customer/DeliveryPoD';
 import DriverMobileView from './Pages/Delivery/DriverMobileView';
 import PaymentAndRate from './Pages/Customer/PaymentAndRate';
 import CustomerProfile from './Pages/Customer/CustomerProfile';
+import WishlistPage from './Pages/Customer/WishlistPage';
 
 // Supplier Pages
 import { currentRouteQuery, currentRoute, normalizeLegacyRoute, routeUrl } from './utils/shopRoutes';
@@ -128,9 +130,13 @@ export default function App() {
     }, [currentPage, routeQuery]);
 
   useEffect(() => {
-    const handleExpiredSession = () => setShowLogin(true);
-    window.addEventListener('auth:unauthorized', handleExpiredSession);
-    return () => window.removeEventListener('auth:unauthorized', handleExpiredSession);
+    const openLoginModal = () => setShowLogin(true);
+    window.addEventListener('auth:unauthorized', openLoginModal);
+    window.addEventListener('app:require-login', openLoginModal);
+    return () => {
+      window.removeEventListener('auth:unauthorized', openLoginModal);
+      window.removeEventListener('app:require-login', openLoginModal);
+    };
   }, []);
 
   useEffect(() => {
@@ -190,6 +196,8 @@ export default function App() {
         return <PaymentResultView onNavigate={navigateTo} />;
       case 'ho-so-khach-hang':
         return <CustomerProfile onNavigate={navigateTo} />;
+      case 'san-pham-yeu-thich':
+        return <WishlistPage onNavigate={navigateTo} />;
       case 'thong-bao':
         return <Notification onNavigate={navigateTo} />;
 
@@ -299,7 +307,7 @@ export default function App() {
         { key: 'driver-delivery-view', label: '8b. Tài xế Mobile PoD (Web View)' },
         { key: 'thanh-toan-danh-gia', label: '9. Thanh toán & Đánh giá' },
         { key: 'thanh-toan/ket-qua', label: '9b. Biên lai VNPay (E-Receipt)' },
-        { key: 'ho-so-khach-hang', label: '10. Hồ sơ doanh nghiệp' },
+        { key: 'ho-so-khach-hang', label: '10. Hồ sơ của tôi' },
       ],
     },
     {
@@ -362,6 +370,7 @@ export default function App() {
   return (
     <ConfigProvider theme={antdTheme}>
       <AntApp>
+      <WishlistProvider>
       <div style={{ minHeight: '100vh', background: '#f5f5f7', display: 'flex', flexDirection: 'column' }}>
         {/* Dynamic Render of Active Page */}
         <div style={{ flex: 1, width: '100%' }}>
@@ -426,6 +435,7 @@ export default function App() {
             (CUSTOMER_ROUTES.has(currentPage) || DRIVER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
           <AiChatWidget onNavigate={navigateTo} />}
       </div>
+      </WishlistProvider>
       </AntApp>
     </ConfigProvider>
   );

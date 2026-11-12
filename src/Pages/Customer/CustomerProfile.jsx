@@ -1,268 +1,358 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, App as AntApp, Avatar, Button, Form, Input, Spin, Typography } from 'antd';
 import {
-  Card,
-  Tag,
-  Avatar,
-  Button,
-  Form,
-  Input,
-  Row,
-  Col,
-  message,
-  Typography,
-  Divider,
-  Spin,
-} from 'antd';
-import {
+  ArrowLeftOutlined,
+  CameraOutlined,
+  CheckCircleOutlined,
+  DeleteOutlined,
+  LoadingOutlined,
+  MailOutlined,
   SaveOutlined,
-  BankOutlined,
-  SafetyCertificateOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
+import CustomerFooter from '../../components/layout/CustomerFooter';
 import { useAuth } from '../../hooks/useAuth';
-import authService from '../../services/authService';
-import apiClient from '../../services/apiClient';
-import storage from '../../utils/storage';
+import profileService from '../../services/profileService';
+import './customer-profile.css';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_AVATAR_EXTENSIONS = /\.(jpe?g|png|webp)$/i;
+
+const toFormValues = (profile) => ({
+  fullName: profile.fullName || '',
+  phone: profile.phone || '',
+  avatarUrl: profile.avatarUrl || profile.avatar_url || '',
+});
+
+const validateAvatarFile = (file) => {
+  if (!file) return 'Vui lòng chọn tệp ảnh đại diện.';
+  const mime = file.type?.toLowerCase() || '';
+  const hasValidType = mime ? ALLOWED_AVATAR_TYPES.has(mime) : ALLOWED_AVATAR_EXTENSIONS.test(file.name || '');
+  if (!hasValidType) {
+    return 'Chỉ hỗ trợ ảnh định dạng JPG, PNG hoặc WEBP.';
+  }
+  if (file.size <= 0) return 'Tệp ảnh đại diện bị rỗng.';
+  if (file.size > MAX_AVATAR_BYTES) return 'Ảnh đại diện không được vượt quá 5MB.';
+  return '';
+};
 
 export default function CustomerProfile({ onNavigate }) {
-  const { user } = useAuth();
+  const { user, refreshCurrentUser } = useAuth();
+  const { message: messageApi } = AntApp.useApp();
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const previewObjectUrlRef = useRef('');
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [removingAvatar, setRemovingAvatar] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [avatarError, setAvatarError] = useState('');
+  const [localPreviewUrl, setLocalPreviewUrl] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const watchedName = Form.useWatch('fullName', form);
+  const watchedAvatar = Form.useWatch('avatarUrl', form);
+  const displayName = watchedName?.trim() || profile?.fullName || user?.fullName || 'Khách hàng';
+  const avatarUrl = watchedAvatar?.trim() || undefined;
+  const previewAvatarUrl = localPreviewUrl || avatarUrl;
+  const avatarBusy = uploadingAvatar || removingAvatar;
+
+  const clearLocalPreview = useCallback(() => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = '';
+    }
+    setLocalPreviewUrl('');
+  }, []);
+
+  useEffect(() => () => clearLocalPreview(), [clearLocalPreview]);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const current = await profileService.getMine();
+      if (!current?.id) throw new Error('Dữ liệu hồ sơ không hợp lệ.');
+      setProfile(current);
+      form.setFieldsValue(toFormValues(current));
+    } catch (error) {
+      setLoadError(error?.message || 'Không thể tải hồ sơ. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  }, [form]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        let meData = user;
-        if (authService.isAuthenticated()) {
-          try {
-            const res = await authService.getMe();
-            if (res) meData = res;
-          } catch {
-            // fallback to context user
-          }
-        }
+    Promise.resolve().then(loadProfile);
+  }, [loadProfile]);
 
-        const storedBusiness = storage.get(`mooncake_b2b_profile_${meData?.id || 'default'}`, {});
-        const combined = {
-          companyName: storedBusiness.companyName || meData?.companyName || 'Công Ty Cổ Phần Đối Tác B2B',
-          taxCode: storedBusiness.taxCode || meData?.taxCode || '0109887766',
-          billingAddress: storedBusiness.billingAddress || meData?.address || 'Số 123 Đường Hoàng Hoa Thám, Ba Đình, Hà Nội',
-          contactPerson: meData?.fullName || 'Người Đại Diện Thu Mua',
-          phone: meData?.phone || meData?.phoneNumber || '0901234567',
-          email: meData?.email || 'buyer@doanhnghiep.vn',
-          bankAccount: storedBusiness.bankAccount || '19036668889999 - Techcombank Hà Nội',
-        };
+  const handleAvatarUpload = async (file) => {
+    const validationError = validateAvatarFile(file);
+    if (validationError) {
+      setAvatarError(validationError);
+      return;
+    }
 
-        setProfileData(combined);
-        form.setFieldsValue(combined);
-      } finally {
-        setLoading(false);
-      }
-    };
+    clearLocalPreview();
+    const objectUrl = URL.createObjectURL(file);
+    previewObjectUrlRef.current = objectUrl;
+    setLocalPreviewUrl(objectUrl);
+    setAvatarError('');
+    setUploadingAvatar(true);
 
-    fetchProfile();
-  }, [user, form]);
+    try {
+      const updated = await profileService.uploadAvatar(file);
+      const nextAvatarUrl = updated?.avatarUrl || updated?.avatar_url || '';
+      if (!nextAvatarUrl) throw new Error('Phản hồi tải ảnh đại diện không hợp lệ.');
+
+      form.setFieldValue('avatarUrl', nextAvatarUrl);
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: nextAvatarUrl } : updated));
+      await refreshCurrentUser().catch(() => null);
+      messageApi.success('Đã cập nhật ảnh đại diện.');
+    } catch (error) {
+      setAvatarError(error?.message || 'Không thể tải ảnh đại diện. Vui lòng thử lại.');
+    } finally {
+      clearLocalPreview();
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarInputChange = (event) => {
+    const selectedFile = event.target.files?.[0];
+    event.target.value = '';
+    if (selectedFile) {
+      handleAvatarUpload(selectedFile);
+    }
+  };
+
+  const handleAvatarDrop = (event) => {
+    event.preventDefault();
+    setDragActive(false);
+    if (saving || avatarBusy) return;
+    const droppedFile = event.dataTransfer?.files?.[0];
+    if (droppedFile) {
+      handleAvatarUpload(droppedFile);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarError('');
+    setRemovingAvatar(true);
+    try {
+      await profileService.removeAvatar();
+      clearLocalPreview();
+      form.setFieldValue('avatarUrl', '');
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
+      await refreshCurrentUser().catch(() => null);
+      messageApi.success('Đã gỡ ảnh đại diện.');
+    } catch (error) {
+      setAvatarError(error?.message || 'Không thể gỡ ảnh đại diện. Vui lòng thử lại.');
+    } finally {
+      setRemovingAvatar(false);
+    }
+  };
 
   const handleSave = async (values) => {
     setSaving(true);
+    setSaveError('');
     try {
-      if (user?.id) {
-        // Attempt backend update for core user fields
-        try {
-          await apiClient.put(`/v1/users/${user.id}`, {
-            fullName: values.contactPerson,
-            email: values.email,
-            phone: values.phone,
-          });
-        } catch {
-          // If users endpoint requires specific admin rights, fallback to updating local profile
-        }
-      }
-
-      // Persist business billing & corporate invoice details
-      storage.set(`mooncake_b2b_profile_${user?.id || 'default'}`, {
-        companyName: values.companyName,
-        taxCode: values.taxCode,
-        billingAddress: values.billingAddress,
-        bankAccount: values.bankAccount,
+      const updated = await profileService.updateMine({
+        fullName: values.fullName.trim(),
+        phone: values.phone?.trim() || null,
+        avatarUrl: values.avatarUrl?.trim() || null,
       });
-
-      // Update in-memory user
-      const currentUser = storage.get('auth_user') || {};
-      storage.set('auth_user', {
-        ...currentUser,
-        fullName: values.contactPerson,
-        email: values.email,
-        phone: values.phone,
-      });
-
-      setProfileData(values);
-      message.success('Đã lưu thông tin hồ sơ doanh nghiệp và hóa đơn VAT thành công!');
-    } catch (err) {
-      message.error(err.message || 'Không thể lưu thông tin hồ sơ.');
+      if (!updated?.id) throw new Error('Phản hồi cập nhật hồ sơ không hợp lệ.');
+      setProfile(updated);
+      form.setFieldsValue(toFormValues(updated));
+      await refreshCurrentUser().catch(() => null);
+      messageApi.success('Đã cập nhật hồ sơ cá nhân.');
+    } catch (error) {
+      setSaveError(error?.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{ background: '#f5f5f7', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="customer-profile-page">
       <CustomerHeader activeKey="ho-so-khach-hang" onNavigate={onNavigate} />
+      <main className="customer-profile-page__main">
+        <div className="customer-profile-page__container">
+          <Button type="link" className="customer-profile-page__back"
+            icon={<ArrowLeftOutlined />} onClick={() => onNavigate?.('trang-chu')}>
+            Về trang chủ
+          </Button>
 
-      <main style={{ maxWidth: 1440, margin: '24px auto', padding: '0 20px', flex: 1, width: '100%' }}>
-        <div
-          style={{
-            background: '#ffffff',
-            padding: '20px 24px',
-            borderRadius: 10,
-            marginBottom: 20,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1f1f1f' }}>
-            Hồ Sơ Doanh Nghiệp Khách Hàng (B2B Buyer Profile)
-          </h1>
-          <p style={{ margin: '4px 0 0', color: '#666', fontSize: 13 }}>
-            Quản lý thông tin pháp nhân xuất hóa đơn VAT, người đại diện mua hàng và lịch sử giao dịch
-          </p>
-        </div>
+          <header className="customer-profile-page__heading">
+            <Text className="customer-profile-page__eyebrow">Tài khoản Nguyệt Phố</Text>
+            <Title level={1}>Hồ sơ của tôi</Title>
+            <Paragraph>Quản lý thông tin cá nhân dùng cho tài khoản và đơn hàng của bạn.</Paragraph>
+          </header>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" description="Đang tải dữ liệu hồ sơ doanh nghiệp..." />
-          </div>
-        ) : (
-          <Row gutter={[20, 20]}>
-            <Col xs={24} lg={8}>
-              <Card bordered={false} style={{ borderRadius: 10, textAlign: 'center' }}>
-                <Avatar
-                  size={80}
-                  icon={<BankOutlined />}
-                  style={{ backgroundColor: '#8c1524', marginBottom: 16 }}
-                />
-                <Title level={4} style={{ margin: 0 }}>
-                  {profileData?.companyName || user?.fullName || 'Tài Khoản Doanh Nghiệp'}
-                </Title>
-                <Text type="secondary">
-                  {user?.role === 'Customer' ? 'Khách Hàng Doanh Nghiệp B2B' : 'Tài Khoản Thành Viên'}
-                </Text>
-                <div style={{ marginTop: 12 }}>
-                  <Tag color="gold" icon={<SafetyCertificateOutlined />}>
-                    TÀI KHOẢN ĐÃ XÁC THỰC MST
-                  </Tag>
+          {loading ? (
+            <div className="customer-profile-page__loading">
+              <Spin size="large" description="Đang tải hồ sơ..." />
+            </div>
+          ) : loadError ? (
+            <Alert type="error" showIcon title="Không thể tải hồ sơ" description={loadError}
+              action={<Button onClick={loadProfile}>Thử lại</Button>} />
+          ) : profile && (
+            <div className="customer-profile-page__layout">
+              <aside className="customer-profile-page__identity" aria-label="Thông tin tài khoản">
+                <div className="customer-profile-page__identity-top">
+                  <span className="customer-profile-page__identity-label">Tài khoản cá nhân</span>
+                  <span className="customer-profile-page__identity-mark" aria-hidden="true">✦</span>
+                </div>
+                <Avatar size={92} src={previewAvatarUrl} alt={`Ảnh đại diện của ${displayName}`}
+                  className="customer-profile-page__avatar">
+                  {displayName[0].toLocaleUpperCase('vi-VN')}
+                </Avatar>
+                <Title level={2}>{displayName}</Title>
+                <Text className="customer-profile-page__identity-role">Khách hàng Nguyệt Phố</Text>
+                <div className="customer-profile-page__identity-rule" />
+                <div className="customer-profile-page__identity-detail">
+                  <MailOutlined aria-hidden="true" />
+                  <span>{profile.email}</span>
+                </div>
+                <div className="customer-profile-page__identity-note">
+                  <CheckCircleOutlined aria-hidden="true" />
+                  <span>Thông tin lưu trực tiếp vào tài khoản của bạn.</span>
+                </div>
+              </aside>
+
+              <section className="customer-profile-page__editor" aria-labelledby="profile-editor-title">
+                <div className="customer-profile-page__editor-heading">
+                  <span className="customer-profile-page__editor-icon"><UserOutlined aria-hidden="true" /></span>
+                  <div>
+                    <Title id="profile-editor-title" level={3}>Thông tin cá nhân</Title>
+                    <Paragraph>Cập nhật tên, số điện thoại và ảnh đại diện.</Paragraph>
+                  </div>
                 </div>
 
-                <Divider style={{ margin: '16px 0' }} />
+                {saveError && <Alert className="customer-profile-page__error" type="error"
+                  showIcon title={saveError} />}
 
-                <div style={{ textAlign: 'left', fontSize: 13, lineHeight: 2.2 }}>
-                  <div>
-                    <strong>Mã Số Thuế:</strong> {profileData?.taxCode || '0109887766'}
-                  </div>
-                  <div>
-                    <strong>Đại diện thu mua:</strong> {profileData?.contactPerson || user?.fullName || '—'}
-                  </div>
-                  <div>
-                    <strong>Số điện thoại:</strong> {profileData?.phone || user?.phone || '—'}
-                  </div>
-                  <div>
-                    <strong>Email liên hệ:</strong> {profileData?.email || user?.email || '—'}
-                  </div>
-                  <div>
-                    <strong>Trạng thái:</strong> <Tag color="green">Hoạt động bình thường</Tag>
-                  </div>
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} lg={16}>
-              <Card
-                title="Cập Nhật Thông Tin Xuất Hóa Đơn VAT & Thanh Toán"
-                bordered={false}
-                style={{ borderRadius: 10 }}
-              >
-                <Form form={form} layout="vertical" onFinish={handleSave} disabled={saving}>
-                  <Form.Item
-                    name="companyName"
-                    label="Tên Pháp Nhân Công Ty / Doanh Nghiệp"
-                    rules={[{ required: true, message: 'Vui lòng nhập tên công ty.' }]}
-                  >
+                <Form form={form} layout="vertical" onFinish={handleSave} disabled={saving}
+                  className="customer-profile-page__form">
+                  <Form.Item name="avatarUrl" hidden>
                     <Input />
                   </Form.Item>
 
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Form.Item name="taxCode" label="Mã Số Thuế (MST)">
-                        <Input placeholder="Mã số thuế doanh nghiệp" />
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item
-                        name="contactPerson"
-                        label="Người Đại Diện Ký HĐ & Nhận Hàng"
-                        rules={[{ required: true, message: 'Vui lòng nhập người đại diện.' }]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <div className="customer-profile-page__avatar-field">
+                    <label htmlFor="customer-avatar-upload" className="customer-profile-page__avatar-label">
+                      Ảnh đại diện
+                    </label>
+                    <input
+                      ref={fileInputRef}
+                      id="customer-avatar-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                      className="customer-profile-page__file-input"
+                      disabled={saving || avatarBusy}
+                      onChange={handleAvatarInputChange}
+                    />
+                    <div
+                      className={`customer-profile-page__avatar-dropzone${dragActive ? ' is-dragging' : ''}`}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        if (!saving && !avatarBusy) setDragActive(true);
+                      }}
+                      onDragLeave={() => setDragActive(false)}
+                      onDrop={handleAvatarDrop}
+                    >
+                      <div className="customer-profile-page__avatar-preview-wrap">
+                        <Avatar size={64} src={previewAvatarUrl} alt={`Ảnh xem trước của ${displayName}`}
+                          className="customer-profile-page__avatar-thumb">
+                          {displayName[0].toLocaleUpperCase('vi-VN')}
+                        </Avatar>
+                        {uploadingAvatar && (
+                          <span className="customer-profile-page__avatar-spinner" aria-hidden="true">
+                            <LoadingOutlined />
+                          </span>
+                        )}
+                      </div>
 
-                  <Form.Item
-                    name="billingAddress"
-                    label="Địa Chỉ Xuất Hóa Đơn Điện Tử VAT"
-                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ xuất hóa đơn.' }]}
-                  >
-                    <Input />
+                      <div className="customer-profile-page__avatar-copy">
+                        <Text strong className="customer-profile-page__avatar-title">
+                          {uploadingAvatar
+                            ? 'Đang tải ảnh lên...'
+                            : avatarUrl
+                              ? 'Ảnh đại diện đang hiển thị trên hồ sơ'
+                              : 'Chưa có ảnh đại diện'}
+                        </Text>
+                        <Text className="customer-profile-page__avatar-hint">
+                          Kéo thả hoặc chọn ảnh JPG, PNG, WEBP tối đa 5MB.
+                        </Text>
+                      </div>
+
+                      <div className="customer-profile-page__avatar-actions">
+                        <Button
+                          type="default"
+                          icon={uploadingAvatar ? <LoadingOutlined /> : <CameraOutlined />}
+                          loading={uploadingAvatar}
+                          disabled={saving || removingAvatar}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {avatarUrl ? 'Đổi ảnh' : 'Tải ảnh lên'}
+                        </Button>
+                        {avatarUrl && (
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            loading={removingAvatar}
+                            disabled={saving || uploadingAvatar}
+                            onClick={handleRemoveAvatar}
+                          >
+                            Gỡ ảnh
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {avatarError && (
+                      <Alert className="customer-profile-page__avatar-error" type="error"
+                        showIcon title={avatarError} />
+                    )}
+                  </div>
+
+                  <Form.Item name="fullName" label="Họ và tên" rules={[
+                    { required: true, whitespace: true, message: 'Vui lòng nhập họ và tên.' },
+                    { max: 100, message: 'Họ và tên tối đa 100 ký tự.' },
+                  ]}>
+                    <Input placeholder="Tên hiển thị của bạn" autoComplete="name" />
                   </Form.Item>
 
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Form.Item
-                        name="phone"
-                        label="Số Điện Thoại Nhận Hàng"
-                        rules={[{ required: true, message: 'Vui lòng nhập số điện thoại.' }]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                      <Form.Item
-                        name="email"
-                        label="Email Nhận Hóa Đơn & Báo Giá"
-                        rules={[
-                          { required: true, message: 'Vui lòng nhập email.' },
-                          { type: 'email', message: 'Email không hợp lệ.' },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <div className="customer-profile-page__form-row">
+                    <Form.Item name="phone" label="Số điện thoại" rules={[
+                      { pattern: /^(?:\+?84|0)[\s.\-()]*[35789](?:[\s.\-()]*[0-9]){8}$/, message: 'Số điện thoại không hợp lệ.' },
+                    ]}>
+                      <Input placeholder="090 123 4567" autoComplete="tel" />
+                    </Form.Item>
+                    <Form.Item label="Email đăng nhập">
+                      <Input value={profile.email} disabled autoComplete="email"
+                        aria-label="Email đăng nhập" />
+                    </Form.Item>
+                  </div>
 
-                  <Form.Item name="bankAccount" label="Tài Khoản Ngân Hàng Thanh Toán & Đối Soát">
-                    <Input placeholder="Số tài khoản - Ngân hàng - Chi nhánh" />
-                  </Form.Item>
-
-                  <Button
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    htmlType="submit"
-                    loading={saving}
-                    style={{ background: '#8c1524', borderColor: '#8c1524' }}
-                  >
-                    Lưu Thông Tin Doanh Nghiệp
-                  </Button>
+                  <div className="customer-profile-page__form-footer">
+                    <Text>Email đăng nhập được giữ nguyên để bảo vệ tài khoản.</Text>
+                    <Button type="primary" htmlType="submit" loading={saving} disabled={avatarBusy}
+                      icon={<SaveOutlined />}>
+                      Lưu thay đổi
+                    </Button>
+                  </div>
                 </Form>
-              </Card>
-            </Col>
-          </Row>
-        )}
+              </section>
+            </div>
+          )}
+        </div>
       </main>
+      <CustomerFooter onNavigate={onNavigate} />
     </div>
   );
 }
