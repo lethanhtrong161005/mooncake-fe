@@ -136,6 +136,7 @@ export const API_ENDPOINTS = {
     BY_SHOP: (shopId) => `/${API_VERSION}/shops/${shopId}/packaging-templates`,
     MINE: `/${API_VERSION}/suppliers/me/packaging-templates`,
     DETAIL: (id) => `/${API_VERSION}/suppliers/me/packaging-templates/${id}`,
+    UPLOAD_IMAGE: `/${API_VERSION}/suppliers/me/packaging-templates/upload-image`,
   },
 
   // e-Contract & Escrow Payments

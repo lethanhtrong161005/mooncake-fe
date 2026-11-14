@@ -1,23 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Card,
-  Table,
   Button,
-  Tag,
   Space,
-  Typography,
-  Alert,
-  message,
+  Table,
+  Tag,
   Tooltip,
+  message,
 } from 'antd';
 import {
-  CarOutlined,
-  PlusOutlined,
   CameraOutlined,
   ClockCircleOutlined,
+  InfoCircleOutlined,
   MobileOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SendOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
@@ -26,8 +24,6 @@ import deliveryService from '../../services/deliveryService';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
-
-const { Text } = Typography;
 
 const STATUS_TAG_MAP = {
   Pending: { text: 'Chờ xếp xe', color: 'default' },
@@ -59,7 +55,7 @@ export default function DeliverManage({ onNavigate }) {
     } catch {
       message.error('Không thể tải dữ liệu giao vận.');
     }
-  }, [deliveryPage.refresh]);
+  }, [deliveryPage]);
 
   useEffect(() => {
     let ignore = false;
@@ -95,7 +91,9 @@ export default function DeliverManage({ onNavigate }) {
   const handleUpdateStatus = async (record, nextStatus, notes) => {
     try {
       await deliveryService.updateStatus(record.id || record.key, nextStatus, notes);
-      message.success(`Đã cập nhật trạng thái chuyến giao sang: ${STATUS_TAG_MAP[nextStatus]?.text || nextStatus}`);
+      message.success(
+        `Đã cập nhật trạng thái chuyến giao sang: ${STATUS_TAG_MAP[nextStatus]?.text || nextStatus}`,
+      );
       fetchData();
     } catch (err) {
       message.error(err.response?.data?.message || 'Lỗi khi cập nhật trạng thái chuyến giao.');
@@ -104,88 +102,91 @@ export default function DeliverManage({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Mã Chuyến Giao',
+      title: 'Mã chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
       render: (text, r) => (
-        <div>
-          <span className="font-bold text-amber-700">{text || r.deliveryCode || 'DEL-N/A'}</span>
-          <div className="text-[11px] text-slate-400">
-            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị VC liên kết'}
+        <div className="whitespace-nowrap">
+          <span className="font-mono text-sm font-semibold text-[#7d1322]">
+            {text || r.deliveryCode || 'DEL-N/A'}
+          </span>
+          <div className="mt-0.5 text-[11px] text-[#6c625e]">
+            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị vận chuyển'}
           </div>
         </div>
       ),
     },
     {
-      title: 'Hợp Đồng Tham Chiếu',
+      title: 'Hợp đồng tham chiếu',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
       render: (text, r) => (
-        <div>
-          <strong className="text-slate-800">{text || r.contractNo || 'HĐ-B2B'}</strong>
-          <div className="text-xs text-slate-500">{r.customerName || 'Doanh nghiệp'}</div>
+        <div className="whitespace-nowrap">
+          <div className="font-medium text-sm text-[#231a18]">{text || r.contractNo || 'HĐ-B2B'}</div>
+          <div className="text-xs text-[#6c625e]">{r.customerName || 'Doanh nghiệp'}</div>
         </div>
       ),
     },
     {
-      title: 'Nơi Nhận & Đại Diện',
+      title: 'Nơi nhận & đại diện',
       key: 'destination',
       render: (_, r) => (
-        <div className="text-xs">
-          <div className="font-medium text-slate-800 truncate max-w-xs">{r.toAddress || 'Kho nhận'}</div>
-          <div className="text-slate-500">
-            👤 {r.recipientName || 'Thủ kho'} ({r.recipientPhone || 'N/A'})
+        <div className="max-w-[200px] space-y-0.5 text-xs">
+          <div className="truncate font-medium text-[#231a18]">
+            {r.toAddress || 'Kho nhận'}
+          </div>
+          <div className="flex items-center gap-1 truncate text-[#6c625e] tabular-nums">
+            <UserOutlined className="shrink-0 text-[11px] text-[#9a6b16]" />
+            <span className="truncate">
+              {r.recipientName || 'Thủ kho'} ({r.recipientPhone || 'N/A'})
+            </span>
           </div>
         </div>
       ),
     },
     {
-      title: 'Mã Tracking / Xe',
+      title: 'Mã tracking / xe',
       dataIndex: 'trackingCode',
       key: 'trackingCode',
       render: (t) => (
-        <Tag color="cyan" className="font-mono">
+        <span className="inline-block whitespace-nowrap rounded border border-[#e4dcd3] bg-[#faf7f2] px-2 py-0.5 font-mono text-xs text-[#231a18]">
           {t || 'Xe xưởng'}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Ngày Dự Kiến',
-      dataIndex: 'scheduledDate',
-      key: 'scheduledDate',
-      render: (d, r) => (
-        <span className="text-xs text-slate-600">
-          <ClockCircleOutlined className="mr-1 text-slate-400" />
-          {d || r.expectedDate || 'Đang cập nhật'}
         </span>
       ),
     },
     {
-      title: 'Trạng Thái',
+      title: 'Ngày dự kiến',
+      dataIndex: 'scheduledDate',
+      key: 'scheduledDate',
+      render: (d, r) => (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs tabular-nums text-[#6c625e]">
+          <ClockCircleOutlined className="text-[#9a6b16]" />
+          <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+        </span>
+      ),
+    },
+    {
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
-        return (
-          <Tag color={config.color} className="font-semibold text-xs px-2.5 py-0.5">
-            {config.text}
-          </Tag>
-        );
+        return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: 'Điều Phối & Bằng Chứng',
+      title: 'Điều phối & bằng chứng',
       key: 'actions',
       align: 'right',
       render: (_, record) => {
         const status = record.status;
         return (
-          <Space size="small">
+          <Space size="small" wrap>
             {status === 'Pending' && (
               <Button
                 size="small"
                 type="primary"
-                className="bg-blue-600 hover:bg-blue-500 text-xs"
+                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                 onClick={() => handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.')}
               >
                 Xác nhận xếp xe
@@ -195,7 +196,7 @@ export default function DeliverManage({ onNavigate }) {
             {status === 'Confirmed' && (
               <Button
                 size="small"
-                className="border-geekblue-400 text-geekblue-600 hover:bg-geekblue-50 text-xs font-semibold"
+                style={{ borderColor: '#7d1322', color: '#7d1322' }}
                 onClick={() => handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.')}
               >
                 Bốc hàng lên xe
@@ -205,8 +206,9 @@ export default function DeliverManage({ onNavigate }) {
             {status === 'PickedUp' && (
               <Button
                 size="small"
-                className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold"
+                type="primary"
                 icon={<SendOutlined />}
+                style={{ backgroundColor: '#9a6b16', borderColor: '#9a6b16' }}
                 onClick={() => handleUpdateStatus(record, 'InTransit', 'Xe xuất bến bắt đầu vận chuyển.')}
               >
                 Xuất bến (In-Transit)
@@ -217,19 +219,17 @@ export default function DeliverManage({ onNavigate }) {
               size="small"
               icon={<CameraOutlined />}
               onClick={() => handleOpenPod(record)}
-              className="border-amber-300 text-amber-800 hover:bg-amber-50 font-medium text-xs"
             >
               Xem PoD ({record.proofCount || 0})
             </Button>
 
-            <Tooltip title="Mở Web Mobile View giả lập tài xế hiện trường chụp ảnh & lấy chữ ký">
+            <Tooltip title="Mở giao diện tài xế hiện trường chụp ảnh và lấy chữ ký PoD">
               <Button
                 size="small"
                 icon={<MobileOutlined />}
                 onClick={() => {
                   onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`);
                 }}
-                className="text-xs border-slate-300"
               >
                 Tài xế PoD
               </Button>
@@ -241,67 +241,72 @@ export default function DeliverManage({ onNavigate }) {
   ];
 
   return (
-    <ColonyAdminLayout role="Supplier" activeKey="nha-cung-cap/quan-ly-giao-hang" onNavigate={onNavigate}>
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <CarOutlined className="text-amber-600" />
-              Quản Lý Vận Chuyển & Giao Hàng B2B (Logistics)
-            </h1>
-            <Text type="secondary" className="text-sm">
-              Xưởng bánh điều phối đội xe nội bộ hoặc hãng chuyển phát, quản lý chia nhiều đợt giao và giám sát PoD
-            </Text>
-          </div>
-
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchData}
-              loading={loading}
-              className="border-slate-300 font-medium"
-            >
-              Làm mới
-            </Button>
-
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalOpen(true)}
-              className="bg-amber-600 hover:bg-amber-500 font-semibold"
-            >
-              Tạo Chuyến Giao (Chia Đợt)
-            </Button>
-          </Space>
+    <ColonyAdminLayout
+      role="Supplier"
+      activeKey="nha-cung-cap/quan-ly-giao-hang"
+      onNavigate={onNavigate}
+      title="Quản lý vận chuyển & giao hàng"
+      subtitle="Điều phối xe xưởng hoặc hãng vận chuyển theo từng đợt và đối soát bằng chứng PoD."
+      extra={
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>
+            Làm mới
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+          >
+            Tạo Chuyến Giao (Chia Đợt)
+          </Button>
+        </Space>
+      }
+    >
+      <div className="space-y-5">
+        <div className="flex items-center gap-2.5 rounded-xl border border-[#e7dccf] bg-[#fdfbf8] px-4 py-3 text-xs text-[#6c625e]">
+          <InfoCircleOutlined className="shrink-0 text-sm text-[#9a6b16]" />
+          <span>
+            Quy trình giao nhận: Tạo chuyến giao → Xếp xe → Bốc hàng tại xưởng → Xuất bến → Bàn giao PoD &amp; chữ ký điện tử để kích hoạt nghiệm thu hợp đồng.
+          </span>
         </div>
 
-        <Alert
-          type="info"
-          showIcon
-          className="bg-amber-50/70 border-amber-200"
-          message={
-            <div className="text-xs text-slate-700">
-              <strong>Quy trình giao nhận tiêu chuẩn B2B:</strong> Tạo chuyến giao ➔ Tiếp nhận ➔ Bốc hàng tại xưởng (Pickup PoD) ➔ Vận chuyển trên đường ➔ Bàn giao tại kho khách (Delivery PoD + Chữ ký số) ➔ Tự động kích hoạt đối soát mốc Milestone nghiệm thu hợp đồng.
-            </div>
-          }
-        />
+        <section
+          aria-label="Danh sách chuyến giao hàng"
+          className="rounded-2xl border border-[#e4dcd3] bg-white p-4 sm:p-6"
+        >
+          <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-3.5">
+            <FilterBar
+              search={deliveryPage.search}
+              onSearchChange={deliveryPage.setSearch}
+              status={deliveryPage.query.status}
+              onStatusChange={deliveryPage.setStatus}
+              onReset={deliveryPage.reset}
+              placeholder="Tìm mã giao hàng"
+              statusOptions={Object.keys(STATUS_TAG_MAP)
+                .filter((value) => value[0] === value[0].toUpperCase())
+                .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))}
+            />
+          </div>
 
-        <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
-          <FilterBar search={deliveryPage.search} onSearchChange={deliveryPage.setSearch}
-            status={deliveryPage.query.status} onStatusChange={deliveryPage.setStatus}
-            onReset={deliveryPage.reset} placeholder="Tìm mã giao hàng"
-            statusOptions={Object.keys(STATUS_TAG_MAP).filter((value) => value[0] === value[0].toUpperCase())
-              .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))} />
-          <Table
-            columns={columns}
-            dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
-            loading={loading}
-            pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
-              total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
-              pageSizeOptions: [10, 20, 50, 100] }}
-            scroll={{ x: 1000 }}
-          />
-        </Card>
+          <div className="mt-4 overflow-x-auto">
+            <Table
+              columns={columns}
+              dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
+              loading={loading}
+              size="middle"
+              pagination={{
+                current: deliveryPage.query.page,
+                pageSize: deliveryPage.query.pageSize,
+                total: deliveryPage.totalCount,
+                onChange: deliveryPage.setPage,
+                showSizeChanger: true,
+                pageSizeOptions: [10, 20, 50, 100],
+              }}
+              scroll={{ x: 860 }}
+            />
+          </div>
+        </section>
 
         <CreateDeliveryModal
           open={createModalOpen}
