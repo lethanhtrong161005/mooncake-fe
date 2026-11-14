@@ -71,7 +71,12 @@ export function ChatProvider({ children }) {
     try {
       const cursor = reset ? null : threadsCursorRef.current;
       const res = await chatService.getThreads({ cursor });
-      setThreads((prev) => (reset ? res.items : [...prev, ...res.items]));
+      setThreads((prev) => {
+        const active = activeDockThreadRef.current;
+        const items = reset ? res.items : [...prev, ...res.items];
+        if (active && !items.some((thread) => thread.id === active.id)) items.unshift(active);
+        return items;
+      });
       threadsCursorRef.current = res.nextCursor;
       setThreadsHasMore(res.hasMore);
 
@@ -251,6 +256,7 @@ export function ChatProvider({ children }) {
 
     const thread = await chatService.openThread({ shopId, supplierId });
     setActiveDockThread(thread);
+    setThreads((prev) => [thread, ...prev.filter((item) => item.id !== thread.id)]);
     setIsDockMinimized(false);
     setProductContext(product || null);
 

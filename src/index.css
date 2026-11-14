@@ -551,3 +551,21 @@
   background-color: rgba(140, 21, 36, 0.5);
 }
 
+/* Legible Ant Design disabled button contrast across light & ruby surfaces */
+.ant-btn-primary:disabled,
+.ant-btn-primary.ant-btn-disabled {
+  background-color: #f3ede6 !important;
+  border-color: #dfd6cb !important;
+  color: #8c7f77 !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+}
+
+.ant-btn-default:disabled,
+.ant-btn-default.ant-btn-disabled {
+  background-color: #faf7f2 !important;
+  border-color: #e4dcd3 !important;
+  color: #a69a92 !important;
+}
+
+

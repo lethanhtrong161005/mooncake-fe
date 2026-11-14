@@ -284,7 +284,6 @@ export default function BiddingPage({ onNavigate }) {
               type="primary"
               size="small"
               loading={submitting}
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
               onClick={() => respondToSelection(item, true)}
             >
               Xác nhận
@@ -299,7 +298,6 @@ export default function BiddingPage({ onNavigate }) {
               type="primary"
               size="small"
               icon={<SendOutlined />}
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
               disabled={item.status !== 'Open' || new Date(item.bidDeadline) <= new Date()}
               onClick={() => openBid(item)}
             >
@@ -397,7 +395,6 @@ export default function BiddingPage({ onNavigate }) {
               <Button
                 type="primary"
                 loading={submitting}
-                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                 onClick={() => form.submit()}
               >
                 {selectedRfq?.myBid ? 'Cập nhật báo giá' : 'Gửi báo giá niêm phong'}

@@ -235,7 +235,6 @@ function InformationForm({ shop, catalog, onSaved, onDirtyChange }) {
               size="large"
               disabled={frozen || uploading > 0}
               loading={mutation.busy}
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
             >
               {shop ? 'Lưu thông tin gian hàng' : 'Tạo gian hàng'}
             </Button>
@@ -434,7 +433,6 @@ export default function ShopInformationPage({ onNavigate }) {
                   <Button
                     type="primary"
                     icon={<DashboardOutlined />}
-                    style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                     onClick={() => navigate('nha-cung-cap/dashboard')}
                   >
                     Dashboard & Đơn hàng mới

@@ -34,17 +34,9 @@ export const orderService = {
     return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST));
   },
   async listSupplierOrdersPaged(params = {}, signal) {
-    const result = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST, { signal }));
-    if (!Array.isArray(result)) return result;
-    const query = String(params.q || '').trim().toLocaleLowerCase();
-    const filtered = result.filter((order) => {
-      const searchable = `${order.orderNumber || ''} ${order.recipientName || ''} ${order.status || ''}`.toLocaleLowerCase();
-      return (!query || searchable.includes(query)) && (!params.status || order.status === params.status);
-    });
-    const page = Math.max(1, Number(params.page) || 1);
-    const pageSize = Math.max(1, Number(params.pageSize) || filtered.length || 1);
-    const offset = (page - 1) * pageSize;
-    return { items: filtered.slice(offset, offset + pageSize), totalCount: filtered.length };
+    return unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_PAGED, {
+      params, signal, paramsSerializer: { indexes: null },
+    }));
   },
   async getSupplierDashboardSummary() {
     const result = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST));

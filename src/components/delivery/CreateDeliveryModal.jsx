@@ -1,17 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Form, Input, Select, DatePicker, Radio, message, Alert } from 'antd';
 import { CarOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import deliveryService from '../../services/deliveryService';
+import contractService from '../../services/contractService';
 
 const { TextArea } = Input;
+const DEFAULT_FROM_ADDRESS = 'Kho Xưởng Tràng An Nghệ Nhân, Cụm CN Bát Tràng, Gia Lâm, Hà Nội';
+
+const minimumScheduledDate = () => {
+  const minimumInstant = dayjs().add(24, 'hour');
+  const day = minimumInstant.startOf('day');
+  return day.isBefore(minimumInstant) ? day.add(1, 'day') : day;
+};
+
+const parseTerms = (value) => {
+  if (!value || typeof value !== 'string') return value || {};
+  try { return JSON.parse(value) || {}; } catch { return {}; }
+};
 
 export default function CreateDeliveryModal({ open, onClose, onSuccess, contracts = [] }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [loadingContract, setLoadingContract] = useState(false);
+  const selectedContractId = Form.useWatch('contractId', form);
+
+  useEffect(() => {
+    if (!open) return;
+    form.resetFields();
+    form.setFieldsValue({ deliveryType: 'SelfArranged', fromAddress: DEFAULT_FROM_ADDRESS });
+  }, [form, open]);
+
+  useEffect(() => {
+    if (!open || !selectedContractId) return undefined;
+    let cancelled = false;
+    setLoadingContract(true);
+    contractService.get(selectedContractId)
+      .then((contract) => {
+        if (cancelled) return;
+        const terms = parseTerms(contract.termsAndConditions);
+        const earliestDate = minimumScheduledDate();
+        const deadline = contract.deliveryDeadline ? dayjs(contract.deliveryDeadline) : null;
+        const scheduledDate = deadline?.isValid() && !deadline.isBefore(earliestDate, 'day')
+          ? deadline
+          : earliestDate;
+        form.setFieldsValue({
+          fromAddress: contract.supplierAddress || DEFAULT_FROM_ADDRESS,
+          toAddress: terms.DeliveryAddress || terms.deliveryAddress || '',
+          recipientName: contract.customerName || '',
+          recipientPhone: contract.customerPhone?.replace(/[\s.\-()]/g, '') || '',
+          scheduledDate,
+          notes: `Chuyến giao theo hợp đồng ${contract.contractNumber}.`,
+        });
+      })
+      .catch((error) => {
+        if (!cancelled) message.error(error.response?.data?.message || error.message || 'Không thể tải thông tin hợp đồng.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingContract(false);
+      });
+    return () => { cancelled = true; };
+  }, [form, open, selectedContractId]);
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      if (values.scheduledDate.startOf('day').isBefore(minimumScheduledDate())) {
+        form.setFields([{ name: 'scheduledDate', errors: ['Ngày giao phải cách thời điểm tạo chuyến ít nhất 24 giờ.'] }]);
+        return;
+      }
       setLoading(true);
 
       const payload = {
@@ -63,7 +120,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
           type="info"
           showIcon
           className="mb-4 bg-amber-50/60 border-amber-200 text-xs"
-          message="Đối với đơn hàng/hợp đồng B2B lớn, bạn có thể tạo nhiều chuyến giao tương ứng với các đợt giao mốc Milestone (M2, M3) hoặc giao tới nhiều chi nhánh kho khác nhau."
+          message="Chọn hợp đồng để tự điền địa chỉ và thông tin người nhận. Ngày giao phải cách lúc tạo chuyến ít nhất 24 giờ; mã vận đơn/biển số xe nhập thủ công."
         />
 
         <Form
@@ -71,7 +128,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
           layout="vertical"
           initialValues={{
             deliveryType: 'SelfArranged',
-            fromAddress: 'Kho Xưởng Tràng An Nghệ Nhân, Cụm CN Bát Tràng, Gia Lâm, Hà Nội',
+            fromAddress: DEFAULT_FROM_ADDRESS,
           }}
         >
           <Form.Item
@@ -79,7 +136,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
             label="Hợp đồng thực hiện"
             rules={[{ required: true, message: 'Vui lòng chọn Hợp đồng áp dụng' }]}
           >
-            <Select placeholder="Chọn Hợp đồng B2B đang có hiệu lực (Active)">
+            <Select placeholder="Chọn Hợp đồng B2B đang có hiệu lực (Active)" loading={loadingContract}>
               {contracts.map((c) => (
                 <Select.Option key={c.id || c.key} value={c.id || c.key}>
                   {c.contractNumber || c.contractNo || 'HD-B2B'} - {c.title || c.customerName || 'Đơn hàng B2B'}
@@ -107,9 +164,19 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
             <Form.Item
               name="scheduledDate"
               label="Ngày dự kiến giao"
-              rules={[{ required: true, message: 'Vui lòng chọn ngày dự kiến giao' }]}
+              rules={[
+                { required: true, message: 'Vui lòng chọn ngày dự kiến giao' },
+                { validator: (_, value) => !value || !value.startOf('day').isBefore(minimumScheduledDate())
+                  ? Promise.resolve()
+                  : Promise.reject(new Error('Ngày giao phải cách thời điểm tạo chuyến ít nhất 24 giờ.')) },
+              ]}
             >
-              <DatePicker className="w-full" placeholder="Chọn ngày giao" format="YYYY-MM-DD" />
+              <DatePicker
+                className="w-full"
+                placeholder="Chọn ngày giao"
+                format="YYYY-MM-DD"
+                disabledDate={(date) => date && date.startOf('day').isBefore(minimumScheduledDate())}
+              />
             </Form.Item>
           </div>
 

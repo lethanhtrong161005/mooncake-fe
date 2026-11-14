@@ -94,7 +94,6 @@ export default function SupplierOnboardingEntry({ onNavigate }) {
             disabled={!confirmed}
             loading={busy}
             onClick={start}
-            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
           >
             Bắt đầu hồ sơ nhà cung cấp
           </Button>

@@ -1,82 +1,139 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert, App, Avatar, Badge, Button, Card, Col, Descriptions,
-  Empty, Form, Image, Input, InputNumber, Modal, Row, Select,
-  Space, Statistic, Table, Tag, Tooltip, Typography,
+  App,
+  Avatar,
+  Button,
+  Descriptions,
+  Empty,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
 } from 'antd';
 import {
-  CheckCircleOutlined, ClockCircleOutlined, DollarOutlined,
-  EyeOutlined, FileTextOutlined, PictureOutlined, ReloadOutlined,
-  ShoppingOutlined, SyncOutlined, WarningOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  DollarOutlined,
+  EyeOutlined,
+  PictureOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
 import customPackagingService from '../../services/customPackagingService';
 import orderService from '../../services/orderService';
-import { useAuth } from '../../hooks/useAuth';
 import usePagedList from '../../hooks/usePagedList';
+import '../../styles/supplier-dashboard.css';
 
-const { Text, Title, Paragraph } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
-const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
+const errorMessage = (error) => (
+  error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.'
+);
 
-const statusColor = {
-  Pending: 'gold',
-  Confirmed: 'blue',
-  Processing: 'purple',
-  Shipped: 'cyan',
-  Delivered: 'green',
-  Cancelled: 'red',
+const STATUS_META = {
+  Pending: { label: 'Chờ xác nhận', color: 'gold' },
+  Confirmed: { label: 'Đã xác nhận', color: 'blue' },
+  AwaitingCustomerDeliveryApproval: { label: 'Chờ duyệt ngày giao', color: 'orange' },
+  Processing: { label: 'Đang sản xuất', color: 'purple' },
+  Shipped: { label: 'Đang giao hàng', color: 'cyan' },
+  Delivered: { label: 'Đã hoàn thành', color: 'green' },
+  CancellationRequested: { label: 'Yêu cầu hủy', color: 'volcano' },
+  Cancelled: { label: 'Đã hủy', color: 'red' },
+  Expired: { label: 'Hết hạn xử lý', color: 'default' },
+  Disputed: { label: 'Đang khiếu nại', color: 'red' },
 };
 
-const statusLabel = {
-  Pending: 'Chờ xác nhận',
-  Confirmed: 'Đã xác nhận',
-  Processing: 'Đang sản xuất',
-  Shipped: 'Đang giao hàng',
-  Delivered: 'Đã giao thành công',
-  Cancelled: 'Đã hủy',
+const PACKAGING_STATUS_LABEL = {
+  Pending: 'Chờ thiết kế',
+  DesignReview: 'Chờ duyệt mẫu',
+  RevisionRequested: 'Cần chỉnh sửa',
+  Approved: 'Đã duyệt mẫu',
 };
 
+/**
+ * Executive supplier dashboard for B2B order intake, production readiness,
+ * and custom packaging mockup workflow.
+ */
 export default function SupplierDashboard({ onNavigate }) {
-  const { user } = useAuth();
   const { message, modal } = App.useApp();
   const orderPage = usePagedList(orderService.listSupplierOrdersPaged);
-  const orders = orderPage.items;
-  const loading = orderPage.loading;
-  const statusFilter = orderPage.query.status || 'All';
-  const setStatusFilter = (value) => orderPage.setStatus(value === 'All' ? '' : value);
-  const [metrics, setMetrics] = useState({ totalOrders: 0, pendingOrders: 0,
-    processingOrders: 0, packagingOrders: 0, totalRevenue: 0 });
+  const {
+    items: orders,
+    loading,
+    query,
+    search,
+    setSearch,
+    setPage,
+    setStatus,
+    totalCount,
+    refresh: refreshPagedOrders,
+  } = orderPage;
 
-  // Modal Packaging State
+  const statusFilter = query.status || 'All';
+  const [metrics, setMetrics] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    processingOrders: 0,
+    packagingOrders: 0,
+    totalRevenue: 0,
+  });
+
+  const [detailOrder, setDetailOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [packaging, setPackaging] = useState(null);
   const [packagingOpen, setPackagingOpen] = useState(false);
   const [packagingLoading, setPackagingLoading] = useState(false);
   const [revisionForm] = Form.useForm();
 
-  // Load orders from API
-  const loadOrders = useCallback(async () => {
-    orderPage.refresh();
+  const loadSummary = useCallback(async () => {
     try {
-      setMetrics(await orderService.getSupplierDashboardSummary());
+      const summary = await orderService.getSupplierDashboardSummary();
+      if (summary) setMetrics(summary);
     } catch (error) {
-      console.warn('Load supplier orders error:', error);
       message.error(errorMessage(error));
     }
-  }, [message, orderPage.refresh]);
+  }, [message]);
+
+  const loadOrders = useCallback(async () => {
+    refreshPagedOrders();
+    await loadSummary();
+  }, [loadSummary, refreshPagedOrders]);
 
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+    let active = true;
+    orderService
+      .getSupplierDashboardSummary()
+      .then((summary) => {
+        if (active && summary) setMetrics(summary);
+      })
+      .catch((error) => {
+        if (active) message.error(errorMessage(error));
+      });
+    return () => {
+      active = false;
+    };
+  }, [message]);
 
-  // Actions
+  const handleStatusChange = (value) => {
+    setStatus(value === 'All' ? '' : value);
+  };
+
   const handleConfirmOrder = async (order) => {
     try {
       await orderService.confirm(order.id);
-      message.success(`Đã xác nhận đơn hàng ${order.orderNumber}.`);
+      message.success(`Đã xác nhận đơn hàng #${order.orderNumber}.`);
       await loadOrders();
     } catch (error) {
       message.error(errorMessage(error));
@@ -86,24 +143,28 @@ export default function SupplierDashboard({ onNavigate }) {
   const handleRejectOrder = (order) => {
     let reason = '';
     modal.confirm({
-      title: `Từ chối đơn hàng ${order.orderNumber}`,
+      title: `Từ chối đơn hàng #${order.orderNumber}`,
       content: (
         <div style={{ marginTop: 12 }}>
-          <Text type="secondary">Vui lòng cung cấp lý do từ chối để thông báo cho khách hàng:</Text>
+          <Text type="secondary">
+            Nhập lý do từ chối để thông báo tới doanh nghiệp đặt hàng:
+          </Text>
           <TextArea
             rows={3}
             style={{ marginTop: 8 }}
-            placeholder="Ví dụ: Xưởng quá tải công suất hoặc nguyên liệu tạm hết..."
-            onChange={(e) => { reason = e.target.value; }}
+            placeholder="Ví dụ: Xưởng kín lịch sản xuất trong khung ngày yêu cầu..."
+            onChange={(e) => {
+              reason = e.target.value;
+            }}
           />
         </div>
       ),
       okText: 'Xác nhận từ chối',
       okButtonProps: { danger: true },
-      cancelText: 'Hủy bỏ',
+      cancelText: 'Đóng',
       onOk: async () => {
         if (!reason.trim() || reason.trim().length < 3) {
-          message.warning('Vui lòng nhập lý do từ chối rõ ràng.');
+          message.warning('Vui lòng nhập lý do từ chối tối thiểu 3 ký tự.');
           throw new Error('Lý do quá ngắn.');
         }
         try {
@@ -139,7 +200,7 @@ export default function SupplierDashboard({ onNavigate }) {
     setPackagingLoading(true);
     try {
       await customPackagingService.submitRevision(selectedOrder.id, values);
-      message.success('Đã gửi phiên bản mockup cho khách hàng duyệt.');
+      message.success('Đã gửi bản phối cảnh mockup cho khách hàng duyệt.');
       const updated = await customPackagingService.get(selectedOrder.id);
       setPackaging(updated);
       revisionForm.resetFields();
@@ -150,132 +211,164 @@ export default function SupplierDashboard({ onNavigate }) {
     }
   };
 
-  // Columns for recent orders table
   const columns = [
     {
-      title: 'Mã đơn hàng',
+      title: 'Đơn hàng',
       key: 'orderNumber',
-      width: 210,
+      width: 165,
       render: (_, order) => (
-        <Space orientation="vertical" size={2}>
-          <Text strong style={{ color: '#8c1524', fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>
-            {order.orderNumber}
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>
+        <div>
+          <button
+            type="button"
+            onClick={() => setDetailOrder(order)}
+            className="sd-order-link"
+            title={order.orderNumber}
+          >
+            #{order.orderNumber}
+          </button>
+          <div className="sd-cell-muted">
             {new Date(order.createdAtUtc || order.createdAt).toLocaleString('vi-VN')}
-          </Text>
-        </Space>
+          </div>
+        </div>
       ),
     },
     {
-      title: 'Doanh nghiệp / Khách hàng',
+      title: 'Khách hàng',
       key: 'customer',
-      width: 260,
+      width: 175,
       render: (_, order) => (
-        <Space orientation="vertical" size={2}>
-          <Text strong style={{ fontSize: 13 }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="sd-customer-name">
             {order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}
-          </Text>
+          </div>
           {order.recipientPhone && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Liên hệ: {order.recipientPhone}
-            </Text>
+            <div className="sd-customer-meta">{order.recipientPhone}</div>
           )}
           {order.deliveryAddress && (
             <Tooltip title={order.deliveryAddress}>
-              <Text type="secondary" ellipsis style={{ maxWidth: 240, fontSize: 12 }}>
-                📍 {order.deliveryAddress}
-              </Text>
+              <div className="sd-customer-meta">{order.deliveryAddress}</div>
             </Tooltip>
           )}
-        </Space>
+        </div>
       ),
     },
     {
       title: 'Sản phẩm B2B',
       key: 'items',
-      width: 260,
-      render: (_, order) => (
-        <Space orientation="vertical" size={4}>
-          {order.items?.map((item) => (
-            <div key={item.variantId || item.productId} style={{ fontSize: 13 }}>
-              <Text strong>{item.productName}</Text>
-              <br />
-              <Tag color="orange" style={{ fontSize: 11, marginTop: 2 }}>{item.quantity} cái</Tag>
-            </div>
-          ))}
-          {(!order.items || order.items.length === 0) && <Text type="secondary">—</Text>}
-        </Space>
-      ),
-    },
-    {
-      title: 'Quy cách & Mẫu hộp',
-      key: 'packaging',
-      width: 230,
+      width: 240,
       render: (_, order) => {
-        if (!order.customPackaging) {
-          return <Tag color="default">Hộp tiêu chuẩn</Tag>;
+        const items = order.items || [];
+        if (items.length === 0) {
+          return <span className="sd-cell-muted">—</span>;
         }
+        const visibleItems = items.slice(0, 2);
+        const remaining = items.length - visibleItems.length;
         return (
-          <Space align="center" size={8}>
-            {order.customPackaging.companyLogoUrl ? (
-              <Image
-                src={order.customPackaging.companyLogoUrl}
-                alt="Logo"
-                width={38}
-                height={38}
-                style={{ objectFit: 'contain', borderRadius: 4, border: '1px solid #f0f0f0', padding: 2 }}
-              />
-            ) : (
-              <Avatar shape="square" size={38} icon={<PictureOutlined />} />
+          <div className="sd-items-list">
+            {visibleItems.map((item) => (
+              <div key={item.variantId || item.productId} className="sd-item-row">
+                <span className="sd-item-name">{item.productName}</span>
+                <span className="sd-item-qty">× {item.quantity}</span>
+              </div>
+            ))}
+            {remaining > 0 && (
+              <div className="sd-cell-muted">+{remaining} dòng hàng khác</div>
             )}
-            <Space orientation="vertical" size={2}>
-              <Text strong style={{ fontSize: 12, lineHeight: 1.3 }}>
-                {order.customPackaging.packagingType || 'Hộp theo yêu cầu'}
-              </Text>
-              <Tag color="geekblue" style={{ fontSize: 11, margin: 0, width: 'fit-content' }}>
-                {order.customPackaging.status || 'Chờ duyệt'}
-              </Tag>
-            </Space>
-          </Space>
+          </div>
         );
       },
     },
     {
-      title: 'Tổng thanh toán',
+      title: 'Bao bì',
+      key: 'packaging',
+      width: 140,
+      render: (_, order) => {
+        if (!order.customPackaging) {
+          return <span className="sd-cell-muted">Hộp tiêu chuẩn</span>;
+        }
+        const statusText = PACKAGING_STATUS_LABEL[order.customPackaging.status]
+          || order.customPackaging.status
+          || 'Chờ duyệt';
+        return (
+          <div className="sd-packaging-cell">
+            {order.customPackaging.companyLogoUrl ? (
+              <Image
+                src={order.customPackaging.companyLogoUrl}
+                alt={`Logo ${order.customPackaging.companyName || 'doanh nghiệp'}`}
+                width={32}
+                height={32}
+                style={{
+                  objectFit: 'contain',
+                  borderRadius: 6,
+                  border: '1px solid #e4dcd3',
+                  padding: 2,
+                  background: '#ffffff',
+                }}
+              />
+            ) : (
+              <Avatar
+                shape="square"
+                size={32}
+                icon={<PictureOutlined />}
+                style={{ backgroundColor: '#faf7f2', color: '#9a6b16', border: '1px solid #e4dcd3' }}
+              />
+            )}
+            <div className="sd-packaging-info">
+              <div className="sd-packaging-type">
+                {order.customPackaging.packagingType || 'Hộp thiết kế'}
+              </div>
+              <div className="sd-packaging-status">{statusText}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       align: 'right',
-      width: 150,
+      width: 115,
       render: (val) => (
-        <Text strong style={{ color: '#8c1524', fontSize: 15, whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            whiteSpace: 'nowrap',
+            fontWeight: 600,
+            fontVariantNumeric: 'tabular-nums',
+            color: '#7d1322',
+          }}
+        >
           {money(val)}
-        </Text>
+        </span>
       ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 140,
-      render: (val) => (
-        <Tag color={statusColor[val] || 'default'} style={{ fontWeight: 500 }}>
-          {statusLabel[val] || val}
-        </Tag>
-      ),
+      width: 115,
+      render: (val) => {
+        const meta = STATUS_META[val] || { label: val, color: 'default' };
+        return (
+          <Tag color={meta.color} style={{ margin: 0, whiteSpace: 'nowrap', fontWeight: 500 }}>
+            {meta.label}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 230,
+      align: 'right',
+      width: 130,
       render: (_, order) => (
-        <Space wrap size={6}>
+        <div className="sd-actions">
           {order.status === 'Pending' && (
             <>
               <Button
                 type="primary"
                 size="small"
-                style={{ backgroundColor: '#2e7d32', borderColor: '#2e7d32' }}
+                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
                 onClick={() => handleConfirmOrder(order)}
               >
                 Xác nhận
@@ -301,11 +394,11 @@ export default function SupplierDashboard({ onNavigate }) {
           <Button
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}
+            onClick={() => setDetailOrder(order)}
           >
             Chi tiết
           </Button>
-        </Space>
+        </div>
       ),
     },
   ];
@@ -315,208 +408,183 @@ export default function SupplierDashboard({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/dashboard"
       onNavigate={onNavigate}
-      title="Dashboard Nhà Cung Cấp"
-      subtitle="Tổng quan hoạt động kinh doanh B2B, tiếp nhận đơn hàng doanh nghiệp và quy trình mockup bao bì."
+      title="Tổng quan Xưởng sản xuất"
+      subtitle="Theo dõi đơn hàng doanh nghiệp vừa tiếp nhận, tiến độ sản xuất và hồ sơ bao bì in logo."
       extra={
         <Space>
           <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading}>
-            Tải lại
+            Làm mới
           </Button>
           <Button
             type="primary"
-            style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
+            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
             onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}
           >
-            Quản lý tất cả đơn hàng
+            Quản lý đơn hàng
           </Button>
         </Space>
       }
     >
-      {/* Alert banner if there are pending orders */}
       {metrics.pendingOrders > 0 && (
-        <Alert
-          type="warning"
-          showIcon
-          icon={<WarningOutlined />}
-          style={{ marginBottom: 20, borderRadius: 8 }}
-          message={
+        <div className="sd-notice" role="status">
+          <div className="sd-notice__content">
+            <ClockCircleOutlined style={{ color: '#9a6b16' }} />
             <span>
-              Bạn đang có <strong>{metrics.pendingOrders} đơn hàng B2B mới</strong> cần xác nhận và chuẩn bị phương án sản xuất.
+              Đang có <strong style={{ color: '#7d1322' }}>{metrics.pendingOrders} đơn hàng</strong>{' '}
+              chờ xưởng xác nhận năng lực sản xuất.
             </span>
-          }
-          action={
-            <Button
-              size="small"
-              type="primary"
-              style={{ backgroundColor: '#d48806', borderColor: '#d48806' }}
-              onClick={() => setStatusFilter('Pending')}
-            >
-              Xem ngay
-            </Button>
-          }
-        />
+          </div>
+          <Button
+            size="small"
+            type="primary"
+            style={{ backgroundColor: '#9a6b16', borderColor: '#9a6b16' }}
+            onClick={() => handleStatusChange('Pending')}
+          >
+            Lọc đơn chờ duyệt
+          </Button>
+        </div>
       )}
 
-      {/* KPI Cards Grid */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #faf8f5 100%)',
-              borderLeft: '4px solid #8c1524',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Tổng doanh thu nhận đơn</Text>}
-              value={money(metrics.totalRevenue)}
-              prefix={<DollarOutlined style={{ color: '#8c1524' }} />}
-              valueStyle={{ color: '#8c1524', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Từ {metrics.totalOrders} đơn hàng toàn sàn
-            </div>
-          </Card>
-        </Col>
+      <section aria-label="Chỉ số vận hành xưởng" className="sd-ribbon">
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <DollarOutlined style={{ color: '#7d1322' }} />
+            Doanh thu ghi nhận
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#7d1322' }}>
+            {money(metrics.totalRevenue)}
+          </div>
+          <div className="sd-kpi__caption">Tổng hợp từ {metrics.totalOrders} đơn hàng</div>
+        </div>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #fffbf0 100%)',
-              borderLeft: '4px solid #d48806',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Đơn chờ duyệt mới</Text>}
-              value={metrics.pendingOrders}
-              prefix={<ClockCircleOutlined style={{ color: '#d48806' }} />}
-              valueStyle={{ color: '#d48806', fontWeight: 700, fontSize: 22 }}
-              suffix={metrics.pendingOrders > 0 ? <Badge status="processing" style={{ marginLeft: 8 }} /> : null}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Cần xưởng phản hồi xác nhận
-            </div>
-          </Card>
-        </Col>
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <ClockCircleOutlined style={{ color: '#9a6b16' }} />
+            Đơn chờ xác nhận
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#9a6b16' }}>
+            {metrics.pendingOrders}
+          </div>
+          <div className="sd-kpi__caption">Ưu tiên phản hồi đúng SLA 12h</div>
+        </div>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f6f8ff 100%)',
-              borderLeft: '4px solid #1890ff',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Đang gia công & Sản xuất</Text>}
-              value={metrics.processingOrders}
-              prefix={<SyncOutlined style={{ color: '#1890ff' }} />}
-              valueStyle={{ color: '#1890ff', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Tiến độ sản xuất theo kế hoạch
-            </div>
-          </Card>
-        </Col>
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <SyncOutlined style={{ color: '#2d5a43' }} />
+            Đang sản xuất
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#2d5a43' }}>
+            {metrics.processingOrders}
+          </div>
+          <div className="sd-kpi__caption">Đơn đang triển khai theo lịch giao</div>
+        </div>
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card
-            bordered={false}
-            style={{
-              borderRadius: 12,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #fcf6ff 100%)',
-              borderLeft: '4px solid #722ed1',
-            }}
-          >
-            <Statistic
-              title={<Text type="secondary" style={{ fontSize: 13 }}>Yêu cầu in logo & Hộp riêng</Text>}
-              value={metrics.packagingOrders}
-              prefix={<PictureOutlined style={{ color: '#722ed1' }} />}
-              valueStyle={{ color: '#722ed1', fontWeight: 700, fontSize: 22 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
-              Đơn hàng cần thiết kế mockup
-            </div>
-          </Card>
-        </Col>
-      </Row>
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <PictureOutlined style={{ color: '#7d1322' }} />
+            Đơn thiết kế bao bì riêng
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#231a18' }}>
+            {metrics.packagingOrders}
+          </div>
+          <div className="sd-kpi__caption">Hồ sơ hộp in logo doanh nghiệp</div>
+        </div>
+      </section>
 
-      {/* Main Table Card */}
-      <Card
-        title={
-          <Space align="center" size={8}>
-            <ShoppingOutlined style={{ color: '#8c1524' }} />
-            <Text strong style={{ fontSize: 16 }}>Đơn hàng mới nhận & Yêu cầu gia công bao bì</Text>
-          </Space>
-        }
-        extra={
-          <Space wrap>
+      <section aria-label="Đơn hàng gần đây và gia công bao bì" className="sd-ledger">
+        <div className="sd-ledger__header">
+          <div>
+            <h2 className="sd-ledger__title">Đơn hàng mới nhận &amp; Gia công bao bì</h2>
+            <p className="sd-ledger__subtitle">
+              Nhấn mã đơn hoặc Chi tiết để xem đủ sản phẩm, lịch sử thanh toán VNPay và sổ cái giao dịch.
+            </p>
+          </div>
+
+          <div className="sd-ledger__controls">
+            <Input
+              allowClear
+              prefix={<SearchOutlined style={{ color: '#6c625e' }} />}
+              placeholder="Tìm mã đơn hoặc người nhận"
+              aria-label="Tìm mã đơn hoặc người nhận"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 220 }}
+            />
             <Select
+              aria-label="Trạng thái"
               value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: 180 }}
+              onChange={handleStatusChange}
+              style={{ width: 185 }}
               options={[
                 { value: 'All', label: 'Tất cả trạng thái' },
-                { value: 'Pending', label: 'Chờ xác nhận (Pending)' },
-                { value: 'Confirmed', label: 'Đã xác nhận (Confirmed)' },
-                { value: 'Processing', label: 'Đang sản xuất (Processing)' },
-                { value: 'Shipped', label: 'Đang giao hàng (Shipped)' },
-                { value: 'Delivered', label: 'Đã giao (Delivered)' },
+                { value: 'Pending', label: 'Chờ xác nhận' },
+                { value: 'Confirmed', label: 'Đã xác nhận' },
+                { value: 'Processing', label: 'Đang sản xuất' },
+                { value: 'Shipped', label: 'Đang giao hàng' },
+                { value: 'Delivered', label: 'Đã hoàn thành' },
+                { value: 'Disputed', label: 'Đang khiếu nại' },
+                { value: 'Cancelled', label: 'Đã hủy' },
               ]}
             />
-            <Button
-              type="link"
-              onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}
-            >
-              Xem toàn bộ →
+            <Button onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}>
+              Mở sổ đơn đầy đủ
             </Button>
-          </Space>
-        }
-        style={{ borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
-      >
+          </div>
+        </div>
+
         <Table
           rowKey="id"
           loading={loading}
           columns={columns}
           dataSource={orders}
-          pagination={{ current: orderPage.query.page, pageSize: orderPage.query.pageSize,
-            total: orderPage.totalCount, onChange: orderPage.setPage, showSizeChanger: true,
-            pageSizeOptions: [10, 20, 50, 100] }}
-          locale={{ emptyText: <Empty description="Chưa có đơn hàng nào trong danh mục này." /> }}
-          scroll={{ x: 1000 }}
+          tableLayout="fixed"
+          scroll={{ x: 1080 }}
+          pagination={{
+            current: query.page,
+            pageSize: query.pageSize,
+            total: totalCount,
+            onChange: setPage,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100],
+          }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Chưa có đơn hàng nào khớp bộ lọc hiện tại."
+              />
+            ),
+          }}
         />
-      </Card>
+      </section>
 
-      {/* Mockup & Custom Packaging Modal */}
       <Modal
         title={
           <Space>
-            <PictureOutlined style={{ color: '#8c1524' }} />
-            <span>Chi tiết bao bì tùy chỉnh · Đơn {selectedOrder?.orderNumber || ''}</span>
+            <PictureOutlined style={{ color: '#7d1322' }} />
+            <span>Hồ sơ bao bì thiết kế · #{selectedOrder?.orderNumber || ''}</span>
           </Space>
         }
         open={packagingOpen}
         onCancel={() => setPackagingOpen(false)}
         footer={null}
-        width={780}
+        width={760}
         loading={packagingLoading}
+        destroyOnHidden
       >
         {!packaging ? (
           <Empty description="Đơn hàng sử dụng quy cách đóng hộp tiêu chuẩn của xưởng." />
         ) : (
-          <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-            <Descriptions bordered column={2} size="small">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Descriptions
+              bordered
+              column={{ xs: 1, sm: 2 }}
+              size="small"
+              styles={{ label: { backgroundColor: '#faf7f2', fontWeight: 600 } }}
+            >
               <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color="blue">{packaging.status}</Tag>
+                <Tag color="blue">{PACKAGING_STATUS_LABEL[packaging.status] || packaging.status}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Quy cách hộp">{packaging.packagingType}</Descriptions.Item>
               <Descriptions.Item label="Logo doanh nghiệp">
@@ -524,58 +592,83 @@ export default function SupplierDashboard({ onNavigate }) {
                   <Space>
                     <Image
                       src={packaging.companyLogoUrl}
-                      alt="Logo"
+                      alt={`Logo ${packaging.companyName || 'doanh nghiệp'}`}
                       width={32}
                       height={32}
                       style={{ objectFit: 'contain' }}
                     />
                     <a href={packaging.companyLogoUrl} target="_blank" rel="noreferrer">
-                      <EyeOutlined /> Xem ảnh gốc
+                      Xem ảnh gốc
                     </a>
                   </Space>
-                ) : 'Chưa tải lên'}
+                ) : (
+                  'Chưa tải lên'
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Thông điệp nắp hộp" span={2}>
                 {packaging.specialMessage || '—'}
               </Descriptions.Item>
             </Descriptions>
 
-            {/* Previous revisions */}
-            {packaging.revisions?.map((revision) => (
-              <Card
-                key={revision.id}
-                size="small"
-                title={`Phiên bản mockup ${revision.revisionNumber}`}
-                extra={<Tag color="purple">{revision.status}</Tag>}
-                style={{ background: '#fafafa', borderRadius: 8 }}
-              >
-                <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                  <a href={revision.mockupUrl} target="_blank" rel="noreferrer">
-                    <EyeOutlined /> Mở bản vẽ mockup 3D/2D
-                  </a>
-                  <Text>Phí thiết kế: <strong>{money(revision.designFee)}</strong></Text>
-                  {revision.supplierNotes && (
-                    <Text type="secondary">Ghi chú từ xưởng: {revision.supplierNotes}</Text>
-                  )}
-                  {revision.customerNotes && (
-                    <Text type="danger">Khách hàng phản hồi: {revision.customerNotes}</Text>
-                  )}
-                </Space>
-              </Card>
-            ))}
+            {packaging.revisions?.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {packaging.revisions.map((revision) => (
+                  <div key={revision.id} className="sd-revision-card">
+                    <div className="sd-revision-card__top">
+                      <strong>Phiên bản mockup {revision.revisionNumber}</strong>
+                      <Tag color="purple" style={{ margin: 0 }}>{revision.status}</Tag>
+                    </div>
+                    <div>
+                      <a
+                        href={revision.mockupUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#7d1322', fontWeight: 600 }}
+                      >
+                        Mở bản vẽ mockup 3D/2D
+                      </a>
+                      <span style={{ margin: '0 8px', color: '#6c625e' }}>·</span>
+                      <span>
+                        Phí thiết kế: <strong>{money(revision.designFee)}</strong>
+                      </span>
+                    </div>
+                    {revision.supplierNotes && (
+                      <div className="sd-cell-muted">Ghi chú xưởng: {revision.supplierNotes}</div>
+                    )}
+                    {revision.customerNotes && (
+                      <div style={{ marginTop: 4, color: '#cf1322' }}>
+                        Phản hồi khách hàng: {revision.customerNotes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Submission form for new mockup */}
             {['Pending', 'DesignReview', 'RevisionRequested'].includes(packaging.status) && (
-              <Card
-                size="small"
-                title="Gửi mẫu mockup mới cho khách hàng phê duyệt"
-                style={{ borderRadius: 8, borderColor: '#d48806' }}
-              >
+              <div className="sd-mockup-form">
+                <div
+                  style={{
+                    marginBottom: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#231a18',
+                  }}
+                >
+                  <CheckCircleOutlined style={{ color: '#9a6b16' }} />
+                  <span>Gửi mẫu mockup mới cho khách hàng duyệt</span>
+                </div>
                 <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
                   <Form.Item
                     name="mockupUrl"
                     label="Đường dẫn file thiết kế mockup (HTTPS)"
-                    rules={[{ required: true, message: 'Vui lòng nhập URL mockup' }, { type: 'url', message: 'URL không hợp lệ' }]}
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập URL mockup.' },
+                      { type: 'url', message: 'URL không hợp lệ.' },
+                    ]}
                   >
                     <Input placeholder="https://res.cloudinary.com/.../mockup.png" />
                   </Form.Item>
@@ -588,22 +681,34 @@ export default function SupplierDashboard({ onNavigate }) {
                     <InputNumber min={0} max={100000000} style={{ width: '100%' }} />
                   </Form.Item>
                   <Form.Item name="supplierNotes" label="Ghi chú kỹ thuật gia công">
-                    <TextArea rows={3} maxLength={1000} showCount placeholder="Mô tả kỹ thuật: Ép kim vàng 24K, khắc laser tên công ty trên mặt gỗ..." />
+                    <TextArea
+                      rows={3}
+                      maxLength={1000}
+                      showCount
+                      placeholder="Mô tả kỹ thuật: Ép kim vàng, khắc laser tên doanh nghiệp..."
+                    />
                   </Form.Item>
                   <Button
                     type="primary"
                     htmlType="submit"
                     loading={packagingLoading}
-                    style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
+                    style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                   >
                     Gửi mockup duyệt
                   </Button>
                 </Form>
-              </Card>
+              </div>
             )}
-          </Space>
+          </div>
         )}
       </Modal>
+
+      <OrderDetailDrawer
+        open={Boolean(detailOrder)}
+        order={detailOrder}
+        role="supplier"
+        onClose={() => setDetailOrder(null)}
+      />
     </ColonyAdminLayout>
   );
 }

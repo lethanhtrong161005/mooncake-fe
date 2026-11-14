@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -27,6 +27,7 @@ import {
   CreditCardOutlined,
   CrownOutlined,
   EyeOutlined,
+  FileTextOutlined,
   PictureOutlined,
   ReloadOutlined,
   TruckOutlined,
@@ -34,8 +35,11 @@ import {
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
+import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
 import customPackagingService from '../../services/customPackagingService';
+import contractService from '../../services/contractService';
 import orderService from '../../services/orderService';
+import { signalRManager } from '../../services/signalrService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -53,7 +57,7 @@ const ORDER_STATUS_MAP = {
   },
   Confirmed: { label: 'Đã xác nhận · Chờ thanh toán cọc (24h)', color: 'blue' },
   Processing: { label: 'Đang sản xuất & đóng gói', color: 'purple' },
-  Shipped: { label: 'Đang vận chuyển · Có ảnh PoD', color: 'cyan' },
+  Shipped: { label: 'Đang vận chuyển', color: 'cyan' },
   Delivered: { label: 'Đã nhận hàng · Hoàn tất', color: 'green' },
   CancellationRequested: { label: 'Đang yêu cầu hủy đơn', color: 'volcano' },
   Cancelled: { label: 'Đã hủy', color: 'default' },
@@ -98,6 +102,8 @@ function SlaCountdownBadge({ deadline, label }) {
 
 export default function MyOrders({ onNavigate }) {
   const mobile = useIsMobile();
+  const [completedContracts, setCompletedContracts] = useState([]);
+  const [loadingContracts, setLoadingContracts] = useState(false);
   const {
     items: orders,
     totalCount,
@@ -111,6 +117,24 @@ export default function MyOrders({ onNavigate }) {
     refresh: loadOrders,
     reset: resetOrders,
   } = usePagedList(orderService.listMinePaged);
+
+  const loadCompletedContracts = useCallback(async () => {
+    setLoadingContracts(true);
+    try {
+      const result = await contractService.listMine();
+      setCompletedContracts((Array.isArray(result) ? result : []).filter((contract) =>
+        ['CompletedOnTime', 'CompletedLate'].includes(contract.status)
+      ));
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setLoadingContracts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCompletedContracts();
+  }, [loadCompletedContracts]);
 
   // Modals & Drawers state
   const [reviewingOrder, setReviewingOrder] = useState(null);
@@ -144,6 +168,33 @@ export default function MyOrders({ onNavigate }) {
   const [cancelModalOrder, setCancelModalOrder] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
+
+  const [detailOrder, setDetailOrder] = useState(null);
+  const loadOrdersRef = useRef(loadOrders);
+
+  useEffect(() => {
+    loadOrdersRef.current = loadOrders;
+  }, [loadOrders]);
+
+  useEffect(() => {
+    const handleRealtimeNotification = (notif) => {
+      if (!notif) return;
+      const category = String(notif.category || '').toLowerCase();
+      const refType = String(notif.referenceType || '').toLowerCase();
+      const type = String(notif.type || '').toLowerCase();
+      if (category === 'order' || refType === 'order' || type.includes('order')) {
+        message.info(notif.title || 'Đơn hàng vừa có cập nhật mới từ xưởng.');
+        loadOrdersRef.current?.();
+      }
+    };
+
+    signalRManager.on('ReceiveNotification', handleRealtimeNotification);
+    signalRManager.startConnection();
+
+    return () => {
+      signalRManager.off('ReceiveNotification', handleRealtimeNotification);
+    };
+  }, []);
 
   useEffect(() => {
     if (orderError) message.error(errorMessage(orderError));
@@ -334,8 +385,8 @@ export default function MyOrders({ onNavigate }) {
 
         <Button
           icon={<ReloadOutlined />}
-          onClick={loadOrders}
-          loading={loadingOrders}
+          onClick={() => Promise.all([loadOrders(), loadCompletedContracts()])}
+          loading={loadingOrders || loadingContracts}
           style={{ borderRadius: 8 }}
         >
           Tải lại danh sách
@@ -361,11 +412,11 @@ export default function MyOrders({ onNavigate }) {
         ].map((value) => ({ value, label: value }))}
       />
 
-      {loadingOrders ? (
+      {loadingOrders || loadingContracts ? (
         <div className="py-20 text-center bg-white rounded-2xl border border-stone-200">
           <Spin size="large" description="Đang tải danh sách đơn hàng..." />
         </div>
-      ) : orders.length === 0 ? (
+      ) : orders.length === 0 && completedContracts.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-xs">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -386,6 +437,39 @@ export default function MyOrders({ onNavigate }) {
         </div>
       ) : (
         <div className="space-y-4">
+          {completedContracts.length > 0 && (
+            <section className="bg-white rounded-2xl p-5 border border-stone-200/90 shadow-xs">
+              <div className="pb-3 mb-3 border-b border-stone-100">
+                <h4 className="font-['Playfair_Display',serif] text-base font-bold text-stone-900 m-0">
+                  Lịch sử hợp đồng đã nghiệm thu
+                </h4>
+                <span className="text-xs text-stone-500">
+                  Hợp đồng được lưu tại đây sau khi khách hàng thanh toán và xác nhận nghiệm thu mốc cuối.
+                </span>
+              </div>
+              <div className="space-y-3">
+                {completedContracts.map((contract) => (
+                  <div key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono font-bold text-stone-900">#{contract.contractNumber}</span>
+                        <Tag color={contract.status === 'CompletedLate' ? 'orange' : 'green'} className="m-0">
+                          {contract.status === 'CompletedLate' ? 'Đã nghiệm thu trễ hạn' : 'Đã nghiệm thu hoàn tất'}
+                        </Tag>
+                      </div>
+                      <div className="mt-1 text-sm text-stone-600">{contract.title || 'Hợp đồng đặt hàng B2B'}</div>
+                      {contract.completedAt && (
+                        <div className="mt-1 text-xs text-stone-500">
+                          Hoàn thành: {new Date(contract.completedAt).toLocaleString('vi-VN')}
+                        </div>
+                      )}
+                    </div>
+                    <b className="text-base font-bold text-[#8c1524]">{money(contract.totalValue)}</b>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {orders.map((order) => {
             const statusConfig = ORDER_STATUS_MAP[order.status] || {
               label: order.status,
@@ -393,6 +477,10 @@ export default function MyOrders({ onNavigate }) {
             };
             const totalQty = order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
             const allowedActions = order.allowedActions || [];
+            const podProofs = (order.latestDelivery?.proofs || []).filter((p) => Boolean(p?.photoUrl));
+            const podCount = order.latestDelivery?.proofCount ?? podProofs.length;
+            const hasPodProofs = podCount > 0 && podProofs.length > 0;
+            const canConfirmReceipt = allowedActions.includes('ConfirmDeliveryReceipt') && hasPodProofs;
 
             // Active deadline depending on state
             const activeDeadline =
@@ -433,6 +521,18 @@ export default function MyOrders({ onNavigate }) {
                         deadline={activeDeadline.date}
                         label={activeDeadline.label}
                       />
+                    )}
+
+                    {order.status === 'Shipped' && !hasPodProofs && (
+                      <Tag color="gold" className="m-0 text-[11px] font-medium">
+                        Đang chờ xưởng tải ảnh PoD
+                      </Tag>
+                    )}
+
+                    {hasPodProofs && (
+                      <Tag color="green" className="m-0 text-[11px] font-medium">
+                        Đã có {podProofs.length} ảnh PoD
+                      </Tag>
                     )}
 
                     {order.financialSummary && (
@@ -549,6 +649,14 @@ export default function MyOrders({ onNavigate }) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      icon={<FileTextOutlined />}
+                      onClick={() => setDetailOrder(order)}
+                      style={{ borderRadius: 8, fontWeight: 600 }}
+                    >
+                      Chi tiết &amp; Giao dịch
+                    </Button>
+
                     {/* View/Pay Payment Schedule */}
                     <Button
                       icon={<CreditCardOutlined />}
@@ -559,7 +667,7 @@ export default function MyOrders({ onNavigate }) {
                     </Button>
 
                     {/* Respond Delivery Proposal */}
-                    {allowedActions.includes('RespondDeliveryProposal') && (
+                    {(allowedActions.includes('ApproveDeliveryProposal') || allowedActions.includes('DeclineDeliveryProposal')) && (
                       <Button
                         type="primary"
                         onClick={() => setProposalModalOrder(order)}
@@ -586,7 +694,7 @@ export default function MyOrders({ onNavigate }) {
                     )}
 
                     {/* PoD Review & Confirm Receipt */}
-                    {order.status === 'Shipped' && (
+                    {canConfirmReceipt && (
                       <Button
                         type="primary"
                         icon={<PictureOutlined />}
@@ -598,7 +706,28 @@ export default function MyOrders({ onNavigate }) {
                           fontWeight: 700,
                         }}
                       >
-                        Kiểm tra ảnh PoD &amp; Xác nhận nhận hàng
+                        Kiểm tra ảnh PoD ({podProofs.length}) &amp; Xác nhận nhận hàng
+                      </Button>
+                    )}
+
+                    {!canConfirmReceipt && hasPodProofs && (
+                      <Button
+                        icon={<PictureOutlined />}
+                        onClick={() => setPodModalOrder(order)}
+                        style={{ borderRadius: 8, fontWeight: 600 }}
+                      >
+                        Xem ảnh PoD ({podProofs.length})
+                      </Button>
+                    )}
+
+                    {allowedActions.includes('ReportDeliveryDispute') && (
+                      <Button
+                        danger
+                        icon={<AlertOutlined />}
+                        onClick={() => setDisputeModalOrder(order)}
+                        style={{ borderRadius: 8 }}
+                      >
+                        Khiếu nại giao hàng
                       </Button>
                     )}
 
@@ -798,85 +927,137 @@ export default function MyOrders({ onNavigate }) {
       </Drawer>
 
       {/* Modal 2: PoD Photo Inspection & Confirm Receipt Modal */}
-      <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <TruckOutlined className="text-emerald-700" />
-            <span className="font-bold">
-              Kiểm Tra Biên Bản Giao Hàng PoD &amp; Xác Nhận Nhận Hàng
-            </span>
-          </div>
-        }
-        open={Boolean(podModalOrder)}
-        onCancel={() => setPodModalOrder(null)}
-        footer={[
-          <Button key="dispute" danger onClick={() => setDisputeModalOrder(podModalOrder)}>
-            Báo cáo vấn đề giao hàng
-          </Button>,
-          <Button key="cancel" onClick={() => setPodModalOrder(null)}>
-            Đóng
-          </Button>,
-          <Button
-            key="confirm"
-            type="primary"
-            loading={podConfirming}
-            onClick={handleConfirmReceipt}
-            style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 700 }}
+      {(() => {
+        const podModalProofs = (podModalOrder?.latestDelivery?.proofs || []).filter((p) => Boolean(p?.photoUrl));
+        const podModalActions = podModalOrder?.allowedActions || [];
+        const canConfirmPodModal = podModalActions.includes('ConfirmDeliveryReceipt') && podModalProofs.length > 0;
+        const canDisputePodModal = podModalActions.includes('ReportDeliveryDispute');
+
+        return (
+          <Modal
+            title={
+              <div className="flex items-center gap-2">
+                <TruckOutlined className="text-emerald-700" />
+                <span className="font-bold">
+                  Kiểm Tra Biên Bản Giao Hàng PoD &amp; Xác Nhận Nhận Hàng
+                </span>
+              </div>
+            }
+            open={Boolean(podModalOrder)}
+            onCancel={() => setPodModalOrder(null)}
+            footer={[
+              canDisputePodModal && (
+                <Button key="dispute" danger onClick={() => setDisputeModalOrder(podModalOrder)}>
+                  Báo cáo vấn đề giao hàng
+                </Button>
+              ),
+              <Button key="cancel" onClick={() => setPodModalOrder(null)}>
+                Đóng
+              </Button>,
+              canConfirmPodModal && (
+                <Button
+                  key="confirm"
+                  type="primary"
+                  loading={podConfirming}
+                  onClick={handleConfirmReceipt}
+                  style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 700 }}
+                >
+                  Xác Nhận Đã Nhận Đủ Hàng
+                </Button>
+              ),
+            ].filter(Boolean)}
+            width={720}
           >
-            Xác Nhận Đã Nhận Đủ Hàng
-          </Button>,
-        ]}
-        width={680}
-      >
-        <div className="space-y-4 my-3 text-xs sm:text-sm text-stone-700">
-          <Alert
-            type="info"
-            showIcon
-            message="Biên bản bàn giao hàng nguyên lô (SLA 48 giờ kiểm tra)"
-            description="Sau khi Quý khách bấm xác nhận, hệ thống sẽ tự động giải phóng khoản tiền ký quỹ cho xưởng. Nếu phát hiện hư hỏng, quý khách có thể gửi khiếu nại trước thời hạn 48 giờ."
-          />
-
-          <Descriptions bordered size="small" column={2}>
-            <Descriptions.Item label="Mã đơn hàng">#{podModalOrder?.orderNumber}</Descriptions.Item>
-            <Descriptions.Item label="Đơn vị giao nhận">Chuyến giao nguyên lô</Descriptions.Item>
-            <Descriptions.Item label="Người nhận">
-              {podModalOrder?.recipientName} ({podModalOrder?.recipientPhone})
-            </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ">{podModalOrder?.deliveryAddress}</Descriptions.Item>
-          </Descriptions>
-
-          {/* PoD Photo viewer */}
-          <div className="space-y-2">
-            <span className="font-bold text-xs text-stone-800 block">
-              Ảnh chụp thực tế lúc bàn giao (Proof-of-Delivery):
-            </span>
-            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-center">
-              <Image
-                src="https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=800&q=80"
-                alt="Ảnh biên bản bàn giao PoD"
-                className="rounded-lg max-h-64 object-contain mx-auto"
+            <div className="space-y-4 my-3 text-xs sm:text-sm text-stone-700">
+              <Alert
+                type="info"
+                showIcon
+                message="Biên bản bàn giao hàng nguyên lô (SLA 48 giờ kiểm tra)"
+                description="Sau khi Quý khách bấm xác nhận, hệ thống sẽ tự động giải phóng khoản tiền ký quỹ cho xưởng. Nếu phát hiện hư hỏng, quý khách có thể gửi khiếu nại trước thời hạn 48 giờ."
               />
-              <span className="text-[11px] text-stone-400 block mt-2">
-                * Nhấp vào ảnh để phóng to kiểm tra con dấu và chữ ký nhận hàng
-              </span>
-            </div>
-          </div>
 
-          <div className="space-y-2 pt-2">
-            <span className="font-semibold text-xs text-stone-800 block">
-              Đánh giá chất lượng bàn giao &amp; đóng gói:
-            </span>
-            <Rate value={podRating} onChange={setPodRating} />
-            <TextArea
-              rows={2}
-              value={podFeedback}
-              onChange={(e) => setPodFeedback(e.target.value)}
-              placeholder="Nhận xét chất lượng bánh, thời gian giao hàng, độ hoàn thiện..."
-              style={{ borderRadius: 8 }}
-            />
-          </div>
-        </div>
-      </Modal>
+              <Descriptions bordered size="small" column={2}>
+                <Descriptions.Item label="Mã đơn hàng">#{podModalOrder?.orderNumber}</Descriptions.Item>
+                <Descriptions.Item label="Mã chuyến giao / Vận đơn">
+                  {podModalOrder?.latestDelivery?.deliveryNumber || 'Chuyến giao nguyên lô'}
+                  {podModalOrder?.latestDelivery?.trackingCode
+                    ? ` · ${podModalOrder.latestDelivery.trackingCode}`
+                    : ''}
+                </Descriptions.Item>
+                <Descriptions.Item label="Người nhận">
+                  {podModalOrder?.recipientName} ({podModalOrder?.recipientPhone})
+                </Descriptions.Item>
+                <Descriptions.Item label="Địa chỉ">{podModalOrder?.deliveryAddress}</Descriptions.Item>
+              </Descriptions>
+
+              {/* PoD Photo viewer */}
+              <div className="space-y-2">
+                <span className="font-bold text-xs text-stone-800 block">
+                  Ảnh chụp thực tế lúc bàn giao (Proof-of-Delivery · {podModalProofs.length} ảnh):
+                </span>
+                {podModalProofs.length === 0 ? (
+                  <div className="p-6 bg-stone-50 rounded-xl border border-stone-200 text-center">
+                    <Empty description="Xưởng chưa tải ảnh biên bản bàn giao (PoD) nào cho đơn hàng này." />
+                  </div>
+                ) : (
+                  <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-3">
+                    <Image.PreviewGroup>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {podModalProofs.map((proof, idx) => (
+                          <div
+                            key={proof.id || idx}
+                            className="bg-white rounded-lg border border-stone-200 p-2 space-y-1.5"
+                          >
+                            <Image
+                              src={proof.photoUrl}
+                              alt={`Ảnh biên bản bàn giao PoD #${idx + 1}`}
+                              className="rounded-md h-40 w-full object-cover"
+                            />
+                            <div className="text-[11px] text-stone-500 space-y-0.5">
+                              {proof.takenBy && (
+                                <div className="truncate font-medium text-stone-700">
+                                  Ký nhận: {proof.takenBy}
+                                </div>
+                              )}
+                              {(proof.takenAtUtc || proof.takenAt) && (
+                                <div>
+                                  {new Date(proof.takenAtUtc || proof.takenAt).toLocaleString('vi-VN')}
+                                </div>
+                              )}
+                              {proof.notes && (
+                                <div className="italic text-stone-600 line-clamp-2">{proof.notes}</div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Image.PreviewGroup>
+                    <span className="text-[11px] text-stone-400 block text-center">
+                      * Nhấp vào ảnh để phóng to và xem lần lượt toàn bộ ảnh biên bản bàn giao
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {canConfirmPodModal && (
+                <div className="space-y-2 pt-2">
+                  <span className="font-semibold text-xs text-stone-800 block">
+                    Đánh giá chất lượng bàn giao &amp; đóng gói:
+                  </span>
+                  <Rate value={podRating} onChange={setPodRating} />
+                  <TextArea
+                    rows={2}
+                    value={podFeedback}
+                    onChange={(e) => setPodFeedback(e.target.value)}
+                    placeholder="Nhận xét chất lượng bánh, thời gian giao hàng, độ hoàn thiện..."
+                    style={{ borderRadius: 8 }}
+                  />
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
 
       {/* Modal 3: Delivery Dispute Modal */}
       <Modal
@@ -1123,6 +1304,17 @@ export default function MyOrders({ onNavigate }) {
           )}
         </Spin>
       </Modal>
+
+      <OrderDetailDrawer
+        open={Boolean(detailOrder)}
+        order={detailOrder}
+        role="customer"
+        onClose={() => setDetailOrder(null)}
+        onOpenPaymentSchedule={(targetOrder) => {
+          setDetailOrder(null);
+          openPaymentSchedule(targetOrder);
+        }}
+      />
     </div>
   );
 }
