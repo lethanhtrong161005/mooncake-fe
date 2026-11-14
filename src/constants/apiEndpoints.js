@@ -95,6 +95,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_LIST: `/${API_VERSION}/orders/mine`,
     CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
+    SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
     PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
@@ -171,6 +172,10 @@ export const API_ENDPOINTS = {
     PROOFS: (deliveryId) => `/${API_VERSION}/deliveries/${deliveryId}/proofs`,
     PROOF_DETAILS: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}`,
     VERIFY_PROOF: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}/verify`,
+    SHARE_LINK: (id) => `/${API_VERSION}/deliveries/${id}/share-link`,
+    PUBLIC_DRIVER: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}`,
+    PUBLIC_DRIVER_UPLOAD_PHOTO: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}/proofs/upload-photo`,
+    PUBLIC_DRIVER_PROOFS: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}/proofs`,
   },
 
   PAYMENTS: {

@@ -24,6 +24,7 @@ import PresenceBadge from './PresenceBadge';
 import { chatService } from '../../services/chatService';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
+import './chat-window.css';
 
 const mergeMessages = (messages, incoming) => {
   const index = messages.findIndex((item) => (
@@ -441,35 +442,32 @@ export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavi
 
       {/* Pending attachments preview tray */}
       {pendingFiles.length > 0 && (
-        <div className="px-4 py-2 border-t border-stone-200 bg-stone-50 flex items-center gap-2 overflow-x-auto">
+        <div className="chat-window__pending">
           {pendingFiles.map((file, idx) => (
-            <div
-              key={idx}
-              className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-xs flex-shrink-0"
-            >
-              <span className="truncate max-w-[120px]">{file.name}</span>
+            <div key={idx} className="chat-window__pending-chip">
+              <span className="truncate max-w-[140px]">{file.name}</span>
               <button
                 type="button"
                 onClick={() => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))}
-                className="text-stone-400 hover:text-red-600 transition-colors"
+                className="chat-window__pending-remove"
                 aria-label="Xóa tệp"
               >
                 ×
               </button>
             </div>
           ))}
-          {uploadingFiles && <Spin size="small" className="ml-2" />}
+          {uploadingFiles && <Spin size="small" />}
         </div>
       )}
 
       {/* Composer Input Bar */}
-      <div className="chat-window__composer p-3 border-t border-stone-200 bg-white">
+      <div className="chat-window__composer">
         {threadState?.isBlocked ? (
           <div className="text-center py-2 text-xs text-stone-400 italic">
             Cuộc trò chuyện đang bị chặn, không thể gửi tin nhắn.
           </div>
         ) : (
-          <div className="chat-window__composer-row flex items-end gap-2">
+          <div className="chat-window__composer-row">
             {/* Attachment Button */}
             <Upload
               multiple
@@ -489,35 +487,37 @@ export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavi
             >
               <Button
                 type="text"
-                icon={<PaperClipOutlined className="text-base text-stone-500" />}
-                className="hover:text-stone-800"
+                icon={<PaperClipOutlined />}
+                className="chat-window__attach-btn"
                 aria-label="Đính kèm tệp"
               />
             </Upload>
 
             {/* Message Textarea */}
-            <Input.TextArea
-              value={inputBody}
-              onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={isCompact ? 'Nhập tin nhắn...' : 'Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)'}
-              autoSize={{ minRows: 1, maxRows: isCompact ? 3 : 5 }}
-              className="chat-window__input text-sm rounded-xl py-2 px-3 border-stone-300 focus:border-[#8c1524] hover:border-[#8c1524]"
-            />
+            <div className="chat-window__input-wrap">
+              <Input.TextArea
+                value={inputBody}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder={isCompact ? 'Nhập tin nhắn...' : 'Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)'}
+                autoSize={{ minRows: 1, maxRows: isCompact ? 3 : 5 }}
+                className="chat-window__input"
+              />
+            </div>
 
             {/* Send Button */}
             <Button
               type="primary"
               icon={<SendOutlined />}
               loading={sending}
+              disabled={!sending && !inputBody.trim() && pendingFiles.length === 0}
               onClick={() => handleSendMessage()}
-              style={{ backgroundColor: '#8c1524' }}
-              className="rounded-xl flex-shrink-0"
+              className="chat-window__send-btn"
               aria-label="Gửi tin nhắn"
             />
           </div>

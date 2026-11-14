@@ -336,7 +336,6 @@ function AppearanceEditor({ data, onSaved, onDirtyChange, onNavigate }) {
                     size="large"
                     disabled={!dirty || shop.status === 'Suspended' || !contrastValid}
                     loading={mutation.busy}
-                    style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                     className="flex-1"
                   >
                     Lưu giao diện
@@ -532,7 +531,6 @@ export default function ShopAppearance({ onNavigate }) {
             </p>
             <Button
               type="primary"
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
               onClick={() => navigate('nha-cung-cap/thiet-lap-gian-hang')}
             >
               Tạo gian hàng trước

@@ -72,21 +72,21 @@
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
-  },
-  {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
-  },
-  {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
-  },
-  {
-    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "pathname": "/api/v1/orders/supplier/paged",
     "query": {
-      "negotiateVersion": "1"
+      "page": "1",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/supplier",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "2",
+      "pageSize": "10"
     }
   }
 ]
