@@ -1,14 +1,24 @@
 [
   {
-    "pathname": "/api/v1/notifications",
+    "pathname": "/api/v1/hubs/chat/negotiate",
     "query": {
-      "category": "SupplierVerification",
-      "page": "1",
-      "pageSize": "20"
+      "negotiateVersion": "1"
     }
   },
   {
-    "pathname": "/api/v1/auth/me",
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/wishlist",
+    "query": {
+      "pageSize": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
     "query": {}
   },
   {
@@ -24,37 +34,59 @@
     "query": {}
   },
   {
-    "pathname": "/api/v1/notifications",
-    "query": {
-      "category": "all"
-    }
-  },
-  {
-    "pathname": "/api/v1/orders/supplier/dashboard-summary",
+    "pathname": "/api/v1/chat/unread-count",
     "query": {}
   },
   {
     "pathname": "/api/v1/notifications",
     "query": {
-      "category": "all"
-    }
-  },
-  {
-    "pathname": "/api/v1/orders/supplier/dashboard-summary",
-    "query": {}
-  },
-  {
-    "pathname": "/api/v1/orders/supplier/paged",
-    "query": {
+      "category": "SupplierVerification",
       "page": "1",
-      "pageSize": "10"
+      "pageSize": "20"
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier/paged",
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
     "query": {
-      "page": "2",
-      "pageSize": "10"
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/supplier",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/orders/supplier",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/orders/supplier",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/orders/supplier",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
     }
   }
 ]

@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
-  Badge,
   Button,
-  Card,
   Col,
   Descriptions,
   Divider,
@@ -14,25 +12,20 @@ import {
   InputNumber,
   Modal,
   Row,
-  Select,
   Slider,
   Space,
   Switch,
   Table,
   Tag,
   Typography,
-  Upload,
   message,
 } from 'antd';
 import {
   BankOutlined,
   CalendarOutlined,
-  CheckCircleFilled,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   CrownOutlined,
   DollarCircleOutlined,
-  ExclamationCircleOutlined,
   EyeOutlined,
   PictureOutlined,
   ReloadOutlined,
@@ -47,28 +40,29 @@ import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import useIsMobile from '../../hooks/useIsMobile';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
-const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
+const errorMessage = (error) => (
+  error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.'
+);
 
-const statusColor = {
-  Pending: 'gold',
-  AwaitingCustomerDeliveryApproval: 'orange',
-  Confirmed: 'blue',
-  Processing: 'purple',
-  Shipped: 'cyan',
-  Delivered: 'green',
-  CancellationRequested: 'volcano',
-  Cancelled: 'red',
-  Expired: 'default',
+const STATUS_META = {
+  Pending: { label: 'Chờ xác nhận', color: 'gold' },
+  AwaitingCustomerDeliveryApproval: { label: 'Chờ khách duyệt ngày', color: 'orange' },
+  Confirmed: { label: 'Đã xác nhận', color: 'blue' },
+  Processing: { label: 'Đang sản xuất', color: 'purple' },
+  Shipped: { label: 'Đã xuất kho', color: 'cyan' },
+  Delivered: { label: 'Đã giao hàng', color: 'green' },
+  CancellationRequested: { label: 'Yêu cầu hủy', color: 'volcano' },
+  Cancelled: { label: 'Đã hủy', color: 'red' },
+  Expired: { label: 'Hết hạn SLA', color: 'default' },
 };
 
 function formatCountdown(targetDateStr) {
   if (!targetDateStr) return null;
   const target = new Date(targetDateStr).getTime();
-  const now = Date.now();
-  const diffMs = target - now;
+  const diffMs = target - Date.now();
   if (diffMs <= 0) return 'Đã hết hạn';
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -93,7 +87,7 @@ function SlaCountdownBadge({ deadline, label }) {
     <Tag
       color={isExpired ? 'red' : 'gold'}
       icon={<ClockCircleOutlined />}
-      className="m-0 font-medium text-xs px-2 py-0.5"
+      className="m-0 text-[11px] font-medium tabular-nums !whitespace-normal leading-tight"
     >
       {label}: {text}
     </Tag>
@@ -102,27 +96,32 @@ function SlaCountdownBadge({ deadline, label }) {
 
 export default function OrderManage({ onNavigate }) {
   const mobile = useIsMobile();
-  const { items: orders, totalCount, loading, error: orderError, query: orderQuery,
-    search, setSearch, setPage, setStatus, refresh: loadOrders,
-    reset: resetOrders } = usePagedList(orderService.listSupplierOrdersPaged);
+  const {
+    items: orders,
+    totalCount,
+    loading,
+    error: orderError,
+    query: orderQuery,
+    search,
+    setSearch,
+    setPage,
+    setStatus,
+    refresh: loadOrders,
+    reset: resetOrders,
+  } = usePagedList(orderService.listSupplierOrdersPaged);
 
-  // Supplier Financial Overview
-
-  // Modals & Drawers
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [packaging, setPackaging] = useState(null);
   const [packagingOpen, setPackagingOpen] = useState(false);
   const [packagingLoading, setPackagingLoading] = useState(false);
   const [revisionForm] = Form.useForm();
 
-  // Propose Delivery Date Modal
   const [proposeModalOpen, setProposeModalOpen] = useState(false);
   const [proposingOrder, setProposingOrder] = useState(null);
   const [proposedDate, setProposedDate] = useState('');
   const [proposedReason, setProposedReason] = useState('');
   const [proposeSubmitting, setProposeSubmitting] = useState(false);
 
-  // PoD Upload Modal
   const [podUploadModalOpen, setPodUploadModalOpen] = useState(false);
   const [podOrder, setPodOrder] = useState(null);
   const [podPhotoUrl, setPodPhotoUrl] = useState('');
@@ -130,22 +129,20 @@ export default function OrderManage({ onNavigate }) {
   const [podNotes, setPodNotes] = useState('');
   const [podSubmitting, setPodSubmitting] = useState(false);
 
-  // Shop Policy Drawer
   const [policyDrawerOpen, setPolicyDrawerOpen] = useState(false);
   const [policyForm] = Form.useForm();
   const [policySaving, setPolicySaving] = useState(false);
 
-  // Payout Bank Account Drawer
   const [payoutDrawerOpen, setPayoutDrawerOpen] = useState(false);
   const [payoutAccountForm] = Form.useForm();
   const [payoutAccountSaving, setPayoutAccountSaving] = useState(false);
 
-  // Create Payout Request Modal
   const [payoutRequestModalOpen, setPayoutRequestModalOpen] = useState(false);
-  const [payoutRequestAmount, setPayoutRequestAmount] = useState(0);
   const [payoutRequestSubmitting, setPayoutRequestSubmitting] = useState(false);
 
-  useEffect(() => { if (orderError) message.error(errorMessage(orderError)); }, [orderError]);
+  useEffect(() => {
+    if (orderError) message.error(errorMessage(orderError));
+  }, [orderError]);
 
   const runAction = async (action, order, successText) => {
     try {
@@ -157,7 +154,6 @@ export default function OrderManage({ onNavigate }) {
     }
   };
 
-  // Open & submit Shop Policy
   const openPolicyDrawer = async () => {
     setPolicyDrawerOpen(true);
     try {
@@ -196,7 +192,7 @@ export default function OrderManage({ onNavigate }) {
           { regionCode: 'PROVINCIAL', regionName: 'Các Tỉnh Thành Khác', feeAmount: values.rateProvincial },
         ],
       });
-      message.success('Đã lưu cấu hình chính sách cọc và biểu phí vận chuyển!');
+      message.success('Đã lưu cấu hình chính sách cọc và biểu phí vận chuyển.');
       setPolicyDrawerOpen(false);
     } catch (error) {
       message.error(errorMessage(error));
@@ -205,7 +201,6 @@ export default function OrderManage({ onNavigate }) {
     }
   };
 
-  // Open & submit Payout Bank Account
   const openPayoutAccountDrawer = async () => {
     setPayoutDrawerOpen(true);
     try {
@@ -227,7 +222,7 @@ export default function OrderManage({ onNavigate }) {
     setPayoutAccountSaving(true);
     try {
       await orderService.upsertMyPayoutAccount(values);
-      message.success('Đã lưu thông tin tài khoản nhận giải ngân thành công!');
+      message.success('Đã lưu thông tin tài khoản nhận giải ngân.');
       setPayoutDrawerOpen(false);
     } catch (error) {
       message.error(errorMessage(error));
@@ -236,7 +231,6 @@ export default function OrderManage({ onNavigate }) {
     }
   };
 
-  // Propose Delivery Date
   const handleOpenProposeModal = (order) => {
     setProposingOrder(order);
     setProposedDate(order.deliveryDateExpected || '');
@@ -255,7 +249,7 @@ export default function OrderManage({ onNavigate }) {
         proposedDeliveryDate: proposedDate,
         reason: proposedReason.trim() || 'Xưởng đề xuất điều chỉnh ngày giao',
       });
-      message.success('Đã gửi đề xuất ngày giao hàng đến khách hàng (SLA 12h)!');
+      message.success('Đã gửi đề xuất ngày giao hàng đến khách hàng (SLA 12h).');
       setProposeModalOpen(false);
       await loadOrders();
     } catch (error) {
@@ -265,7 +259,6 @@ export default function OrderManage({ onNavigate }) {
     }
   };
 
-  // Open PoD Upload Modal
   const handleOpenPodModal = (order) => {
     setPodOrder(order);
     setPodPhotoUrl('https://images.unsplash.com/photo-1549465220-1a8b9238cd48');
@@ -281,7 +274,6 @@ export default function OrderManage({ onNavigate }) {
     }
     setPodSubmitting(true);
     try {
-      // Find or create active shipment delivery
       let deliveryId = podOrder.latestDelivery?.deliveryId;
       if (!deliveryId) {
         const createDeliv = await orderService.createDelivery({
@@ -305,7 +297,7 @@ export default function OrderManage({ onNavigate }) {
         notes: podNotes.trim(),
       });
 
-      message.success('Đã tải ảnh biên bản bàn giao PoD thành công! Khách hàng có 48h để đối soát.');
+      message.success('Đã tải ảnh biên bản bàn giao PoD. Khách hàng có 48h để đối soát.');
       setPodUploadModalOpen(false);
       await loadOrders();
     } catch (error) {
@@ -315,7 +307,6 @@ export default function OrderManage({ onNavigate }) {
     }
   };
 
-  // Packaging review
   const openPackaging = async (order) => {
     setSelectedOrder(order);
     setPackagingOpen(true);
@@ -363,19 +354,22 @@ export default function OrderManage({ onNavigate }) {
       cancelText: 'Quay lại',
       onOk: async () => {
         if (reason.trim().length < 3) throw new Error('Vui lòng nhập lý do từ chối.');
-        await runAction((id) => orderService.reject(id, reason.trim()), order, 'Đã từ chối đơn và hoàn tồn kho.');
+        await runAction(
+          (id) => orderService.reject(id, reason.trim()),
+          order,
+          'Đã từ chối đơn và hoàn tồn kho.',
+        );
       },
     });
   };
 
-  // Submit Payout Request
   const submitPayoutRequest = async () => {
     setPayoutRequestSubmitting(true);
     try {
       await orderService.createPayoutRequest(selectedOrder?.id, {
         notes: 'Yêu cầu quyết toán số dư khả dụng đơn hàng',
       });
-      message.success('Đã gửi yêu cầu giải ngân mô phỏng (Sandbox) thành công!');
+      message.success('Đã gửi yêu cầu giải ngân thành công.');
       setPayoutRequestModalOpen(false);
       await loadOrders();
     } catch (error) {
@@ -390,127 +384,141 @@ export default function OrderManage({ onNavigate }) {
       title: 'Đơn hàng & SLA',
       dataIndex: 'orderNumber',
       key: 'orderNumber',
-      width: 220,
       render: (value, order) => {
-        const sla =
-          order.status === 'Pending'
-            ? { date: order.responseDeadlineAtUtc || order.responseDeadlineAt, label: 'SLA phản hồi' }
-            : order.status === 'AwaitingCustomerDeliveryApproval'
+        const sla = order.status === 'Pending'
+          ? { date: order.responseDeadlineAtUtc || order.responseDeadlineAt, label: 'SLA phản hồi' }
+          : order.status === 'AwaitingCustomerDeliveryApproval'
             ? { date: order.deliveryApprovalDeadlineAtUtc || order.deliveryApprovalDeadlineAt, label: 'Chờ khách duyệt' }
             : null;
 
         return (
-          <Space direction="vertical" size={2}>
-            <Text strong style={{ color: '#8c1524', fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap' }}>
+          <div className="max-w-[175px] space-y-1">
+            <div className="font-mono text-sm font-semibold text-[#7d1322] whitespace-nowrap">
               #{value}
-            </Text>
-            <Text type="secondary" style={{ fontSize: 11 }}>
+            </div>
+            <div className="text-[11px] tabular-nums text-[#8a7f7a]">
               {new Date(order.createdAtUtc || order.createdAt).toLocaleString('vi-VN')}
-            </Text>
+            </div>
             {sla && <SlaCountdownBadge deadline={sla.date} label={sla.label} />}
-          </Space>
+          </div>
         );
       },
     },
     {
-      title: 'Doanh nghiệp / Người nhận',
+      title: 'Doanh nghiệp / người nhận',
       key: 'customer',
       render: (_, order) => (
-        <Space direction="vertical" size={1}>
-          <Text strong>{order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>{order.recipientPhone}</Text>
-          <Text type="secondary" style={{ fontSize: 11 }} className="truncate max-w-xs">{order.deliveryAddress}</Text>
-        </Space>
+        <div className="max-w-[145px] space-y-0.5">
+          <div className="truncate font-medium text-sm text-[#231a18]">
+            {order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}
+          </div>
+          <div className="text-xs tabular-nums text-[#6c625e]">{order.recipientPhone}</div>
+          <div className="truncate text-[11px] text-[#8a7f7a]">{order.deliveryAddress}</div>
+        </div>
       ),
     },
     {
-      title: 'Hạng mục đặt hàng',
+      title: 'Hạng mục & bao bì',
       key: 'items',
       render: (_, order) => (
-        <Space direction="vertical" size={1}>
+        <div className="max-w-[155px] space-y-1 text-xs text-[#231a18]">
           {order.items?.map((item) => (
-            <Text key={item.variantId} style={{ fontSize: 12 }}>
-              • {item.productName || 'Bánh Trung Thu'} ({item.variantName || 'Chuẩn'}) × <b>{item.quantity}</b>
-            </Text>
+            <div key={item.variantId} className="tabular-nums leading-snug">
+              {item.productName || 'Bánh Trung Thu'} ({item.variantName || 'Chuẩn'}) ×{' '}
+              <span className="font-semibold">{item.quantity}</span>
+            </div>
           ))}
-        </Space>
+          <div>
+            {order.customPackaging ? (
+              <Tag color="geekblue" icon={<CrownOutlined />} className="m-0 text-[11px]">
+                Bao bì: {order.customPackaging.status}
+              </Tag>
+            ) : (
+              <Tag className="m-0 text-[11px]">Bao bì tiêu chuẩn</Tag>
+            )}
+          </div>
+        </div>
       ),
     },
     {
       title: 'Ngày giao',
       key: 'deliveryDate',
       render: (_, order) => (
-        <Space direction="vertical" size={0}>
-          <Text style={{ fontSize: 12 }}>
-            {order.confirmedDeliveryDate
-              ? `Xác nhận: ${order.confirmedDeliveryDate}`
-              : order.deliveryDateExpected
-              ? `Dự kiến: ${order.deliveryDateExpected}`
-              : 'Chưa đặt'}
-          </Text>
-          {order.proposedDeliveryDate && order.status === 'AwaitingCustomerDeliveryApproval' && (
-            <Tag color="orange" className="m-0 text-[10px]">Đang đề xuất: {order.proposedDeliveryDate}</Tag>
+        <div className="space-y-0.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
+          {order.confirmedDeliveryDate ? (
+            <>
+              <div className="text-[11px] text-[#6c625e]">Xác nhận</div>
+              <div className="font-medium">{order.confirmedDeliveryDate}</div>
+            </>
+          ) : order.deliveryDateExpected ? (
+            <>
+              <div className="text-[11px] text-[#6c625e]">Dự kiến</div>
+              <div className="font-medium">{order.deliveryDateExpected}</div>
+            </>
+          ) : (
+            <span className="text-[#8a7f7a]">Chưa đặt</span>
           )}
-        </Space>
+          {order.proposedDeliveryDate && order.status === 'AwaitingCustomerDeliveryApproval' && (
+            <Tag color="orange" className="m-0 mt-1 text-[11px]">
+              Đề xuất: {order.proposedDeliveryDate}
+            </Tag>
+          )}
+        </div>
       ),
     },
     {
-      title: 'Tổng tiền & Cọc',
+      title: 'Tổng tiền & cọc',
       key: 'totalAmount',
       align: 'right',
       render: (_, order) => (
-        <Space direction="vertical" size={0} align="end">
-          <Text strong className="text-[#8c1524]">{money(order.totalAmount)}</Text>
+        <div className="space-y-1 text-right whitespace-nowrap">
+          <div className="font-semibold tabular-nums text-sm text-[#7d1322]">
+            {money(order.totalAmount)}
+          </div>
           {order.paymentSummary ? (
-            <Tag color={order.paymentSummary.totalPaidAmount > 0 ? 'green' : 'gold'} className="m-0 text-[10px]">
+            <Tag
+              color={order.paymentSummary.totalPaidAmount > 0 ? 'green' : 'gold'}
+              className="m-0 text-[11px] tabular-nums"
+            >
               Đã cọc: {money(order.paymentSummary.totalPaidAmount)}
             </Tag>
           ) : null}
-        </Space>
+        </div>
       ),
-    },
-    {
-      title: 'Bao bì',
-      key: 'packaging',
-      render: (_, order) =>
-        order.customPackaging ? (
-          <Tag color="geekblue" icon={<CrownOutlined />}>
-            {order.customPackaging.status}
-          </Tag>
-        ) : (
-          <Tag>Tiêu chuẩn</Tag>
-        ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (value) => <Tag color={statusColor[value]}>{value}</Tag>,
+      render: (value) => {
+        const meta = STATUS_META[value] || { label: value, color: 'default' };
+        return <Tag color={meta.color} className="m-0 whitespace-nowrap">{meta.label}</Tag>;
+      },
     },
     {
       title: 'Thao tác xưởng',
       key: 'actions',
-      width: 280,
+      align: 'right',
+      width: 176,
       render: (_, order) => {
         const allowedActions = order.allowedActions || [];
 
         return (
-          <Space wrap size="small">
-            {/* Confirm & Reject (Pending state) */}
+          <div className="flex flex-wrap justify-end gap-1.5">
             {order.status === 'Pending' && (
               <>
                 <Button
                   type="primary"
                   size="small"
                   onClick={() => runAction(orderService.confirm, order, 'Đã xác nhận đơn hàng và tạo lịch thu cọc.')}
-                  style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 600 }}
+                  style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                 >
                   Xác nhận đơn
                 </Button>
                 <Button
                   size="small"
                   onClick={() => handleOpenProposeModal(order)}
-                  style={{ borderColor: '#d48806', color: '#d48806' }}
+                  style={{ borderColor: '#9a6b16', color: '#9a6b16' }}
                 >
                   Đề xuất ngày
                 </Button>
@@ -520,66 +528,68 @@ export default function OrderManage({ onNavigate }) {
               </>
             )}
 
-            {/* Start Processing */}
             {allowedActions.includes('StartProcessing') && (
               <Button
                 type="primary"
                 size="small"
-                onClick={() => runAction(orderService.startProcessing, order, 'Đơn hàng đã chuyển sang giai đoạn sản xuất.')}
-                style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+                onClick={() => runAction(
+                  orderService.startProcessing,
+                  order,
+                  'Đơn hàng đã chuyển sang giai đoạn sản xuất.',
+                )}
+                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
               >
                 Bắt đầu sản xuất
               </Button>
             )}
 
-            {/* Ship Order */}
             {allowedActions.includes('ShipOrder') && (
               <Button
                 type="primary"
                 size="small"
-                onClick={() => runAction(orderService.ship, order, 'Đơn đã xuất kho, vui lòng tải ảnh biên bản PoD.')}
-                style={{ background: '#0284c7', borderColor: '#0284c7' }}
+                onClick={() => runAction(
+                  orderService.ship,
+                  order,
+                  'Đơn đã xuất kho, vui lòng tải ảnh biên bản PoD.',
+                )}
+                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
               >
                 Xuất kho giao
               </Button>
             )}
 
-            {/* Upload PoD Proof */}
             {order.status === 'Shipped' && (
               <Button
                 type="primary"
                 size="small"
                 icon={<UploadOutlined />}
                 onClick={() => handleOpenPodModal(order)}
-                style={{ background: '#059669', borderColor: '#059669' }}
+                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
               >
                 Tải ảnh PoD
               </Button>
             )}
 
-            {/* Packaging Drawer */}
             {order.customPackaging && (
               <Button size="small" icon={<PictureOutlined />} onClick={() => openPackaging(order)}>
                 Bao bì
               </Button>
             )}
 
-            {/* Payout Request */}
             {allowedActions.includes('CreatePayoutRequest') && (
               <Button
                 size="small"
                 icon={<DollarCircleOutlined />}
                 onClick={() => {
                   setSelectedOrder(order);
-                  setPayoutRequestAmount(order.totalAmount);
                   setPayoutRequestModalOpen(true);
                 }}
-                style={{ borderColor: '#16a34a', color: '#16a34a', fontWeight: 600 }}
+                style={{ borderColor: '#2d5a43', color: '#2d5a43' }}
               >
                 Giải ngân
               </Button>
             )}
-          </Space>
+          </div>
         );
       },
     },
@@ -590,151 +600,177 @@ export default function OrderManage({ onNavigate }) {
       role="Supplier"
       activeKey="nha-cung-cap/quan-ly-don-hang"
       onNavigate={onNavigate}
-      title="Quản Lý Đơn Hàng Doanh Nghiệp (B2B)"
-      subtitle="Quy trình xác nhận đơn, duyệt mockup bao bì, quản lý chuyến giao PoD và đối soát sổ cái ký quỹ."
+      title="Quản lý đơn hàng doanh nghiệp"
+      subtitle="Xác nhận đơn theo SLA, duyệt mockup bao bì, bàn giao PoD và quản lý biểu phí xưởng."
+      extra={
+        <Space wrap>
+          <Button icon={<SettingOutlined />} onClick={openPolicyDrawer}>
+            Chính sách &amp; Biểu phí
+          </Button>
+          <Button icon={<BankOutlined />} onClick={openPayoutAccountDrawer}>
+            Tài khoản nhận giải ngân
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading}>
+            Tải lại
+          </Button>
+        </Space>
+      }
     >
-      {/* 1. Financial Overview Cards */}
-      <Alert type="info" showIcon className="mb-5"
-        message="Tổng quan tài chính chưa khả dụng"
-        description="Backend hiện chưa có API tổng hợp số dư ký quỹ, giải ngân và hoàn tiền theo từng supplier. Các số liệu này sẽ được hiển thị khi có nguồn dữ liệu chính xác." />
-
-      {/* Main Order Card */}
-      <Card
-        extra={
-          <Space wrap>
-            <Button icon={<SettingOutlined />} onClick={openPolicyDrawer}>
-              Chính sách &amp; Biểu phí
-            </Button>
-            <Button icon={<BankOutlined />} onClick={openPayoutAccountDrawer}>
-              Tài khoản nhận giải ngân
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={loadOrders}>
-              Tải lại
-            </Button>
-          </Space>
-        }
+      <section
+        aria-label="Danh sách đơn hàng B2B"
+        className="rounded-2xl border border-[#e4dcd3] bg-white p-4 sm:p-6"
       >
-        <FilterBar search={search} onSearchChange={setSearch} status={orderQuery.status}
-          onStatusChange={setStatus} onReset={resetOrders} placeholder="Tìm mã đơn hoặc người nhận"
-          statusOptions={['Pending', 'AwaitingCustomerDeliveryApproval', 'Confirmed', 'Processing',
-            'Shipped', 'Delivered', 'CancellationRequested', 'Cancelled', 'Expired']
-            .map((value) => ({ value, label: value }))} />
-        <Table
-          rowKey="id"
-          loading={loading}
-          columns={columns}
-          dataSource={orders}
-          scroll={{ x: 1200 }}
-          pagination={{ current: orderQuery.page, pageSize: orderQuery.pageSize,
-            total: totalCount, onChange: setPage, simple: mobile, showSizeChanger: !mobile,
-            pageSizeOptions: [10, 20, 50, 100], responsive: true }}
-        />
-      </Card>
+        <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-3.5">
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            status={orderQuery.status}
+            onStatusChange={setStatus}
+            onReset={resetOrders}
+            placeholder="Tìm mã đơn hoặc người nhận"
+            statusOptions={Object.keys(STATUS_META).map((value) => ({
+              value,
+              label: value,
+            }))}
+          />
+        </div>
 
-      {/* Modal 1: Propose Delivery Date */}
+        <div className="mt-4 overflow-x-auto">
+          <Table
+            rowKey="id"
+            loading={loading}
+            columns={columns}
+            dataSource={orders}
+            size="middle"
+            scroll={{ x: 900 }}
+            pagination={{
+              current: orderQuery.page,
+              pageSize: orderQuery.pageSize,
+              total: totalCount,
+              onChange: setPage,
+              simple: mobile,
+              showSizeChanger: !mobile,
+              pageSizeOptions: [10, 20, 50, 100],
+              responsive: true,
+            }}
+          />
+        </div>
+      </section>
+
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <CalendarOutlined className="text-amber-700" />
-            <span>Đề Xuất Ngày Giao Hàng Mới · #{proposingOrder?.orderNumber}</span>
+          <div className="flex items-center gap-2 font-serif text-lg font-semibold text-[#231a18]">
+            <CalendarOutlined className="text-[#9a6b16]" />
+            <span>Đề xuất ngày giao hàng mới · #{proposingOrder?.orderNumber}</span>
           </div>
         }
         open={proposeModalOpen}
         onCancel={() => setProposeModalOpen(false)}
         confirmLoading={proposeSubmitting}
         onOk={submitProposeDeliveryDate}
-        okText="Gửi Đề Xuất (SLA 12h)"
-        okButtonProps={{ style: { background: '#d48806', borderColor: '#d48806', fontWeight: 700 } }}
+        okText="Gửi đề xuất (SLA 12h)"
+        cancelText="Hủy"
+        okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        destroyOnHidden
       >
-        <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
-          <p>
-            Khách hàng mong muốn nhận vào ngày: <b>{proposingOrder?.deliveryDateExpected || 'Chưa đặt'}</b>. Quý xưởng có thể đề xuất ngày giao mới:
+        <div className="my-3 space-y-3 text-xs sm:text-sm text-[#231a18]">
+          <p className="text-[#6c625e]">
+            Khách hàng mong muốn nhận vào ngày:{' '}
+            <strong className="text-[#231a18]">
+              {proposingOrder?.deliveryDateExpected || 'Chưa đặt'}
+            </strong>
+            . Đề xuất ngày phù hợp với lịch xếp lò của xưởng:
           </p>
 
           <div>
-            <span className="font-semibold text-xs text-stone-800 block mb-1">Ngày xưởng đề xuất nhận hàng:</span>
+            <span className="mb-1 block text-xs font-medium text-[#231a18]">
+              Ngày xưởng đề xuất giao hàng
+            </span>
             <Input
               type="date"
               size="large"
               value={proposedDate}
               onChange={(e) => setProposedDate(e.target.value)}
-              style={{ borderRadius: 8 }}
             />
           </div>
 
           <div>
-            <span className="font-semibold text-xs text-stone-800 block mb-1">Lý do điều chỉnh (thông báo đến khách):</span>
+            <span className="mb-1 block text-xs font-medium text-[#231a18]">
+              Lý do điều chỉnh
+            </span>
             <TextArea
               rows={3}
               value={proposedReason}
               onChange={(e) => setProposedReason(e.target.value)}
               placeholder="Giải thích lý do điều chỉnh tiến độ..."
-              style={{ borderRadius: 8 }}
             />
           </div>
         </div>
       </Modal>
 
-      {/* Modal 2: PoD Photo Upload */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <TruckOutlined className="text-emerald-700" />
-            <span>Tải Ảnh Biên Bản Giao Hàng (Proof-of-Delivery) · #{podOrder?.orderNumber}</span>
+          <div className="flex items-center gap-2 font-serif text-lg font-semibold text-[#231a18]">
+            <TruckOutlined className="text-[#2d5a43]" />
+            <span>Biên bản bàn giao (Proof-of-Delivery) · #{podOrder?.orderNumber}</span>
           </div>
         }
         open={podUploadModalOpen}
         onCancel={() => setPodUploadModalOpen(false)}
         confirmLoading={podSubmitting}
         onOk={submitPodProof}
-        okText="Nộp Bằng Chứng PoD"
-        okButtonProps={{ style: { background: '#059669', borderColor: '#059669', fontWeight: 700 } }}
+        okText="Nộp bằng chứng PoD"
+        cancelText="Hủy"
+        okButtonProps={{ style: { backgroundColor: '#2d5a43', borderColor: '#2d5a43' } }}
         width={600}
+        destroyOnHidden
       >
-        <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
+        <div className="my-3 space-y-3 text-xs sm:text-sm text-[#231a18]">
           <Alert
             type="info"
             showIcon
-            message="Chứng từ hoàn tất giao nhận"
-            description="Ảnh chụp biên bản giao hàng có chữ ký / con dấu của đại diện doanh nghiệp là căn cứ giải phóng số tiền ký quỹ được tạm giữ an toàn."
+            title="Chứng từ hoàn tất giao nhận"
+            description="Ảnh chụp biên bản có chữ ký hoặc con dấu đại diện doanh nghiệp là căn cứ mở khóa thanh toán."
           />
 
           <div>
-            <span className="font-semibold text-xs text-stone-800 block mb-1">Đường dẫn ảnh chụp biên bản PoD (HTTPS):</span>
+            <span className="mb-1 block text-xs font-medium text-[#231a18]">
+              Đường dẫn ảnh biên bản PoD (HTTPS)
+            </span>
             <Input
               size="large"
               value={podPhotoUrl}
               onChange={(e) => setPodPhotoUrl(e.target.value)}
               placeholder="https://..."
-              style={{ borderRadius: 8 }}
             />
           </div>
 
           <div>
-            <span className="font-semibold text-xs text-stone-800 block mb-1">Họ tên người ký nhận:</span>
+            <span className="mb-1 block text-xs font-medium text-[#231a18]">
+              Họ tên người ký nhận
+            </span>
             <Input
               size="large"
               value={podSignatureName}
               onChange={(e) => setPodSignatureName(e.target.value)}
-              style={{ borderRadius: 8 }}
             />
           </div>
 
           <div>
-            <span className="font-semibold text-xs text-stone-800 block mb-1">Ghi chú bàn giao:</span>
-            <TextArea
-              rows={2}
-              value={podNotes}
-              onChange={(e) => setPodNotes(e.target.value)}
-              style={{ borderRadius: 8 }}
-            />
+            <span className="mb-1 block text-xs font-medium text-[#231a18]">
+              Ghi chú bàn giao
+            </span>
+            <TextArea rows={2} value={podNotes} onChange={(e) => setPodNotes(e.target.value)} />
           </div>
         </div>
       </Modal>
 
-      {/* Drawer 1: Shop Bulk Order Policy & Rates */}
       <Drawer
-        title={<span className="font-bold">Chính Sách Đơn Hàng &amp; Biểu Phí Vận Chuyển Xưởng</span>}
+        title={
+          <span className="font-serif text-lg font-semibold text-[#231a18]">
+            Chính sách đơn hàng &amp; biểu phí vận chuyển
+          </span>
+        }
         open={policyDrawerOpen}
         onClose={() => setPolicyDrawerOpen(false)}
         width={560}
@@ -744,12 +780,12 @@ export default function OrderManage({ onNavigate }) {
             type="info"
             showIcon
             className="mb-4 text-xs"
-            message="Chính sách được áp dụng tức thời cho các báo giá tạo mới của xưởng."
+            title="Áp dụng tức thời cho các đơn hàng B2B tạo mới của xưởng."
           />
 
           <Form.Item
             name="depositPercent"
-            label={<span className="text-xs font-semibold">Tỷ lệ đặt cọc yêu cầu (%)</span>}
+            label={<span className="text-xs font-medium">Tỷ lệ đặt cọc yêu cầu (%)</span>}
             rules={[{ required: true }]}
             extra="Quy định từ 10% đến 50% tổng giá trị đơn hàng."
           >
@@ -760,68 +796,77 @@ export default function OrderManage({ onNavigate }) {
             <Col span={12}>
               <Form.Item
                 name="minLeadTimeDays"
-                label={<span className="text-xs font-semibold">Thời gian chuẩn bị tối thiểu (ngày)</span>}
+                label={<span className="text-xs font-medium">Thời gian chuẩn bị tối thiểu (ngày)</span>}
                 rules={[{ required: true }]}
               >
-                <InputNumber min={1} max={30} style={{ width: '100%' }} />
+                <InputNumber min={1} max={30} className="w-full" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="vatTaxPercent"
-                label={<span className="text-xs font-semibold">Thuế suất VAT (%)</span>}
+                label={<span className="text-xs font-medium">Thuế suất VAT (%)</span>}
                 rules={[{ required: true }]}
               >
-                <InputNumber min={0} max={10} style={{ width: '100%' }} />
+                <InputNumber min={0} max={10} className="w-full" />
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item
             name="taxIncludedInPrice"
-            label={<span className="text-xs font-semibold">Thuế đã gồm trong giá niêm yết?</span>}
+            label={<span className="text-xs font-medium">Thuế đã gồm trong giá niêm yết</span>}
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
 
-          <Divider orientation="left" style={{ fontSize: 12 }}>
-            Biểu phí vận chuyển giao nguyên lô 1 chuyến (VND)
+          <Divider orientation="left" className="text-xs">
+            Biểu phí vận chuyển nguyên lô (VNĐ)
           </Divider>
 
           <Form.Item
             name="rateHcmInner"
-            label={<span className="text-xs font-semibold">TP.HCM Nội Thành (Q1, 3, 5, 10, Phú Nhuận...)</span>}
+            label={<span className="text-xs font-medium">TP.HCM nội thành</span>}
             rules={[{ required: true }]}
           >
-            <InputNumber min={0} step={10000} style={{ width: '100%' }} />
+            <InputNumber min={0} step={10000} className="w-full" />
           </Form.Item>
 
           <Form.Item
             name="rateHcmOuter"
-            label={<span className="text-xs font-semibold">TP.HCM Ngoại Thành (Q7, 2, 9, Thủ Đức, Bình Tân, Q12...)</span>}
+            label={<span className="text-xs font-medium">TP.HCM ngoại thành</span>}
             rules={[{ required: true }]}
           >
-            <InputNumber min={0} step={10000} style={{ width: '100%' }} />
+            <InputNumber min={0} step={10000} className="w-full" />
           </Form.Item>
 
           <Form.Item
             name="rateProvincial"
-            label={<span className="text-xs font-semibold">Các tỉnh thành lân cận (Bình Dương, Đồng Nai, Long An...)</span>}
+            label={<span className="text-xs font-medium">Các tỉnh thành lân cận</span>}
             rules={[{ required: true }]}
           >
-            <InputNumber min={0} step={10000} style={{ width: '100%' }} />
+            <InputNumber min={0} step={10000} className="w-full" />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" loading={policySaving} block style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-            Lưu Thay Đổi Chính Sách
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={policySaving}
+            block
+            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+          >
+            Lưu thay đổi chính sách
           </Button>
         </Form>
       </Drawer>
 
-      {/* Drawer 2: Payout Bank Account */}
       <Drawer
-        title={<span className="font-bold">Tài Khoản Ngân Hàng Nhận Giải Ngân (Simulated Sandbox)</span>}
+        title={
+          <span className="font-serif text-lg font-semibold text-[#231a18]">
+            Tài khoản ngân hàng nhận giải ngân
+          </span>
+        }
         open={payoutDrawerOpen}
         onClose={() => setPayoutDrawerOpen(false)}
         width={480}
@@ -831,44 +876,70 @@ export default function OrderManage({ onNavigate }) {
             type="warning"
             showIcon
             className="mb-4 text-xs"
-            message="Tài khoản này chỉ dùng để nhận giải ngân từ sàn sau khi đơn hàng hoàn tất; không dùng để nhận tiền thanh toán trực tiếp từ khách."
+            title="Tài khoản nhận giải ngân từ sàn sau khi hoàn tất đơn hàng."
           />
 
-          <Form.Item name="bankName" label={<span className="text-xs font-semibold">Ngân hàng thụ hưởng</span>} rules={[{ required: true }]}>
+          <Form.Item
+            name="bankName"
+            label={<span className="text-xs font-medium">Ngân hàng thụ hưởng</span>}
+            rules={[{ required: true }]}
+          >
             <Input placeholder="Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank)" />
           </Form.Item>
 
-          <Form.Item name="bankCode" label={<span className="text-xs font-semibold">Mã ngân hàng (VietQR Code)</span>} rules={[{ required: true }]}>
+          <Form.Item
+            name="bankCode"
+            label={<span className="text-xs font-medium">Mã ngân hàng (VietQR)</span>}
+            rules={[{ required: true }]}
+          >
             <Input placeholder="VCB" />
           </Form.Item>
 
-          <Form.Item name="accountNumber" label={<span className="text-xs font-semibold">Số tài khoản</span>} rules={[{ required: true }]}>
+          <Form.Item
+            name="accountNumber"
+            label={<span className="text-xs font-medium">Số tài khoản</span>}
+            rules={[{ required: true }]}
+          >
             <Input placeholder="0071000123456" />
           </Form.Item>
 
-          <Form.Item name="accountHolderName" label={<span className="text-xs font-semibold">Tên chủ tài khoản</span>} rules={[{ required: true }]}>
+          <Form.Item
+            name="accountHolderName"
+            label={<span className="text-xs font-medium">Tên chủ tài khoản</span>}
+            rules={[{ required: true }]}
+          >
             <Input placeholder="NGUYEN VAN XUONG" />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" loading={payoutAccountSaving} block style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-            Lưu Tài Khoản Thụ Hưởng
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={payoutAccountSaving}
+            block
+            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+          >
+            Lưu tài khoản thụ hưởng
           </Button>
         </Form>
       </Drawer>
 
-      {/* Modal 3: Packaging Customization Detail & Mockup Upload */}
       <Modal
-        title={`Bao bì tùy chỉnh · ${selectedOrder?.orderNumber || ''}`}
+        title={
+          <span className="font-serif text-lg font-semibold text-[#231a18]">
+            {`Bao bì tùy chỉnh · ${selectedOrder?.orderNumber || ''}`}
+          </span>
+        }
         open={packagingOpen}
         onCancel={() => setPackagingOpen(false)}
         footer={null}
         width={780}
         loading={packagingLoading}
+        destroyOnHidden
       >
         {!packaging ? (
           <Empty description="Đơn hàng không yêu cầu bao bì riêng." />
         ) : (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div className="space-y-5 pt-2">
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
@@ -886,61 +957,94 @@ export default function OrderManage({ onNavigate }) {
             </Descriptions>
 
             {packaging.revisions?.map((revision) => (
-              <Card
+              <div
                 key={revision.id}
-                size="small"
-                title={`Phiên bản #${revision.revisionNumber}`}
-                extra={<Tag>{revision.status}</Tag>}
+                className="rounded-xl border border-[#e4dcd3] bg-[#faf7f2] p-4 space-y-2"
               >
-                <Space direction="vertical">
-                  <a href={revision.mockupUrl} target="_blank" rel="noreferrer">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[#231a18]">
+                    Phiên bản #{revision.revisionNumber}
+                  </span>
+                  <Tag>{revision.status}</Tag>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                  <a href={revision.mockupUrl} target="_blank" rel="noreferrer" className="text-[#7d1322]">
                     Mở tệp mockup
                   </a>
-                  <Text>Phí thiết kế: {money(revision.designFee)}</Text>
-                  {revision.customerNotes && <Text type="danger">Khách yêu cầu sửa: {revision.customerNotes}</Text>}
-                </Space>
-              </Card>
+                  <Text className="tabular-nums text-[#6c625e]">
+                    Phí thiết kế: {money(revision.designFee)}
+                  </Text>
+                </div>
+                {revision.customerNotes && (
+                  <Text type="danger" className="block text-xs">
+                    Khách yêu cầu sửa: {revision.customerNotes}
+                  </Text>
+                )}
+              </div>
             ))}
 
             {['Pending', 'DesignReview', 'RevisionRequested'].includes(packaging.status) && (
-              <Card size="small" title="Gửi phiên bản mockup 3D mới">
+              <div className="rounded-xl border border-[#e4dcd3] bg-white p-4">
+                <h4 className="mb-3 font-medium text-[#231a18]">Gửi phiên bản mockup 3D mới</h4>
                 <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
-                  <Form.Item name="mockupUrl" label="URL mockup HTTPS" rules={[{ required: true }, { type: 'url' }]}>
+                  <Form.Item
+                    name="mockupUrl"
+                    label="URL mockup HTTPS"
+                    rules={[{ required: true }, { type: 'url' }]}
+                  >
                     <Input placeholder="https://..." />
                   </Form.Item>
-                  <Form.Item name="designFee" label="Phí thiết kế phát sinh (nếu có)" initialValue={0} rules={[{ required: true }]}>
-                    <InputNumber min={0} max={100000000} style={{ width: '100%' }} />
+                  <Form.Item
+                    name="designFee"
+                    label="Phí thiết kế phát sinh (nếu có)"
+                    initialValue={0}
+                    rules={[{ required: true }]}
+                  >
+                    <InputNumber min={0} max={100000000} className="w-full" />
                   </Form.Item>
                   <Form.Item name="supplierNotes" label="Ghi chú cho khách hàng">
                     <TextArea rows={3} maxLength={2000} showCount placeholder="Mô tả kỹ thuật ép kim, phối cảnh..." />
                   </Form.Item>
-                  <Button type="primary" htmlType="submit" loading={packagingLoading} style={{ background: '#8c1524', borderColor: '#8c1524' }}>
-                    Gửi Mockup Cho Khách Duyệt
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={packagingLoading}
+                    style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+                  >
+                    Gửi mockup cho khách duyệt
                   </Button>
                 </Form>
-              </Card>
+              </div>
             )}
-          </Space>
+          </div>
         )}
       </Modal>
 
-      {/* Modal 4: Create Payout Request */}
       <Modal
-        title="Yêu cầu giải ngân tiền ký quỹ (Simulated Sandbox)"
+        title={
+          <span className="font-serif text-lg font-semibold text-[#231a18]">
+            Yêu cầu giải ngân tiền ký quỹ
+          </span>
+        }
         open={payoutRequestModalOpen}
         onCancel={() => setPayoutRequestModalOpen(false)}
         confirmLoading={payoutRequestSubmitting}
         onOk={submitPayoutRequest}
-        okText="Gửi Yêu Cầu Giải Ngân"
-        okButtonProps={{ style: { background: '#16a34a', borderColor: '#16a34a', fontWeight: 700 } }}
+        okText="Gửi yêu cầu giải ngân"
+        cancelText="Hủy"
+        okButtonProps={{ style: { backgroundColor: '#2d5a43', borderColor: '#2d5a43' } }}
+        destroyOnHidden
       >
-        <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
-          <p>
-            Đơn hàng <b>#{selectedOrder?.orderNumber}</b> đã được khách hàng xác nhận nhận hàng. Khoản tiền ký quỹ đã được mở khóa vào số dư khả dụng:
+        <div className="my-3 space-y-3 text-xs sm:text-sm text-[#231a18]">
+          <p className="text-[#6c625e]">
+            Đơn hàng <strong className="text-[#231a18]">#{selectedOrder?.orderNumber}</strong> đã hoàn tất đối soát.
+            Khoản ký quỹ sẵn sàng giải ngân về tài khoản xưởng:
           </p>
           <Descriptions bordered size="small" column={1}>
             <Descriptions.Item label="Số tiền đề xuất giải ngân">
-              <b className="text-[#16a34a] text-base">{money(selectedOrder?.totalAmount || 0)}</b>
+              <span className="text-base font-semibold tabular-nums text-[#2d5a43]">
+                {money(selectedOrder?.totalAmount || 0)}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Tài khoản thụ hưởng">
               Chuyển về tài khoản ngân hàng đã cấu hình của xưởng
