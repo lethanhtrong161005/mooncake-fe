@@ -25,6 +25,27 @@ import { chatService } from '../../services/chatService';
 import { useChat } from '../../hooks/useChat';
 import { useAuth } from '../../hooks/useAuth';
 
+const mergeMessages = (messages, incoming) => {
+  const index = messages.findIndex((item) => (
+    (incoming.id && item.id === incoming.id) ||
+    (incoming.clientMessageId && item.clientMessageId === incoming.clientMessageId)
+  ));
+  if (index < 0) return [...messages, incoming];
+
+  const previous = messages[index];
+  const merged = [...messages];
+  // SignalR can arrive before the POST response; retain the richer response
+  // so attachments are not lost when the duplicate event has no attachment data.
+  merged[index] = {
+    ...previous,
+    ...incoming,
+    attachments: (incoming.attachments?.length ?? 0) >= (previous.attachments?.length ?? 0)
+      ? incoming.attachments
+      : previous.attachments,
+  };
+  return merged;
+};
+
 export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavigate, isCompact = false }) {
   const { user } = useAuth();
   const {
@@ -102,8 +123,7 @@ export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavi
 
   useEffect(() => subscribeToMessages((incoming) => {
     if (incoming.threadId !== threadId) return;
-    setMessages((previous) => previous.some((item) => item.id === incoming.id)
-      ? previous : [...previous, incoming]);
+    setMessages((previous) => mergeMessages(previous, incoming));
     if (incoming.senderId !== currentUserId) {
       chatService.markRead(threadId, { messageId: incoming.id })
         .then(refreshUnreadCount).catch(() => {});
@@ -193,10 +213,7 @@ export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavi
       }
 
       setMessages((prev) => {
-        if (prev.some((m) => m.id === sent.id || m.clientMessageId === sent.clientMessageId)) {
-          return prev;
-        }
-        return [...prev, sent];
+        return mergeMessages(prev, sent);
       });
 
       // Scroll to bottom
