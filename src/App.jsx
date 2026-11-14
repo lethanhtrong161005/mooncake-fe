@@ -338,7 +338,8 @@ export default function App() {
             (CUSTOMER_ROUTES.has(currentPage) || DRIVER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
           <AiChatWidget onNavigate={navigateTo} />}
         {/* Real-time B2B Customer <-> Supplier Floating Messenger Dock */}
-        {isLoggedIn && <ChatDock onNavigate={navigateTo} />}
+        {isLoggedIn && !['tin-nhan', 'nha-cung-cap/tin-nhan'].includes(currentPage) &&
+          <ChatDock onNavigate={navigateTo} />}
       </div>
       </ChatProvider>
       </WishlistProvider>

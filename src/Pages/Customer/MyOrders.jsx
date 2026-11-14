@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -35,6 +35,7 @@ import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import customPackagingService from '../../services/customPackagingService';
+import contractService from '../../services/contractService';
 import orderService from '../../services/orderService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -98,6 +99,8 @@ function SlaCountdownBadge({ deadline, label }) {
 
 export default function MyOrders({ onNavigate }) {
   const mobile = useIsMobile();
+  const [completedContracts, setCompletedContracts] = useState([]);
+  const [loadingContracts, setLoadingContracts] = useState(false);
   const {
     items: orders,
     totalCount,
@@ -111,6 +114,24 @@ export default function MyOrders({ onNavigate }) {
     refresh: loadOrders,
     reset: resetOrders,
   } = usePagedList(orderService.listMinePaged);
+
+  const loadCompletedContracts = useCallback(async () => {
+    setLoadingContracts(true);
+    try {
+      const result = await contractService.listMine();
+      setCompletedContracts((Array.isArray(result) ? result : []).filter((contract) =>
+        ['CompletedOnTime', 'CompletedLate'].includes(contract.status)
+      ));
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setLoadingContracts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCompletedContracts();
+  }, [loadCompletedContracts]);
 
   // Modals & Drawers state
   const [reviewingOrder, setReviewingOrder] = useState(null);
@@ -334,8 +355,8 @@ export default function MyOrders({ onNavigate }) {
 
         <Button
           icon={<ReloadOutlined />}
-          onClick={loadOrders}
-          loading={loadingOrders}
+          onClick={() => Promise.all([loadOrders(), loadCompletedContracts()])}
+          loading={loadingOrders || loadingContracts}
           style={{ borderRadius: 8 }}
         >
           Tải lại danh sách
@@ -361,11 +382,11 @@ export default function MyOrders({ onNavigate }) {
         ].map((value) => ({ value, label: value }))}
       />
 
-      {loadingOrders ? (
+      {loadingOrders || loadingContracts ? (
         <div className="py-20 text-center bg-white rounded-2xl border border-stone-200">
           <Spin size="large" description="Đang tải danh sách đơn hàng..." />
         </div>
-      ) : orders.length === 0 ? (
+      ) : orders.length === 0 && completedContracts.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 shadow-xs">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -386,6 +407,39 @@ export default function MyOrders({ onNavigate }) {
         </div>
       ) : (
         <div className="space-y-4">
+          {completedContracts.length > 0 && (
+            <section className="bg-white rounded-2xl p-5 border border-stone-200/90 shadow-xs">
+              <div className="pb-3 mb-3 border-b border-stone-100">
+                <h4 className="font-['Playfair_Display',serif] text-base font-bold text-stone-900 m-0">
+                  Lịch sử hợp đồng đã nghiệm thu
+                </h4>
+                <span className="text-xs text-stone-500">
+                  Hợp đồng được lưu tại đây sau khi khách hàng thanh toán và xác nhận nghiệm thu mốc cuối.
+                </span>
+              </div>
+              <div className="space-y-3">
+                {completedContracts.map((contract) => (
+                  <div key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-100 bg-stone-50 px-4 py-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono font-bold text-stone-900">#{contract.contractNumber}</span>
+                        <Tag color={contract.status === 'CompletedLate' ? 'orange' : 'green'} className="m-0">
+                          {contract.status === 'CompletedLate' ? 'Đã nghiệm thu trễ hạn' : 'Đã nghiệm thu hoàn tất'}
+                        </Tag>
+                      </div>
+                      <div className="mt-1 text-sm text-stone-600">{contract.title || 'Hợp đồng đặt hàng B2B'}</div>
+                      {contract.completedAt && (
+                        <div className="mt-1 text-xs text-stone-500">
+                          Hoàn thành: {new Date(contract.completedAt).toLocaleString('vi-VN')}
+                        </div>
+                      )}
+                    </div>
+                    <b className="text-base font-bold text-[#8c1524]">{money(contract.totalValue)}</b>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {orders.map((order) => {
             const statusConfig = ORDER_STATUS_MAP[order.status] || {
               label: order.status,
