@@ -335,7 +335,6 @@ export default function SupplierVerificationPanel({ onNavigate }) {
                 type="primary"
                 disabled={!enough || uploading > 0}
                 loading={mutation.isBusy}
-                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
               >
                 Kiểm tra &amp; gửi hồ sơ
               </Button>
@@ -370,7 +369,6 @@ export default function SupplierVerificationPanel({ onNavigate }) {
         cancelText="Hủy"
         okButtonProps={{
           disabled: !confirmed || !canSubmit || !enough,
-          style: { backgroundColor: '#7d1322', borderColor: '#7d1322' },
         }}
         confirmLoading={mutation.isBusy}
         destroyOnHidden

@@ -31,6 +31,7 @@ export default function ChatPage({ onNavigate }) {
   const workspaceView = supplierView || user?.role === 'Admin';
   const {
     threads,
+    activeDockThread,
     threadsLoading,
     threadsHasMore,
     loadThreads,
@@ -41,11 +42,19 @@ export default function ChatPage({ onNavigate }) {
 
   const [selectedThread, setSelectedThread] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const requestedThreadId = new URLSearchParams(window.location.search).get('threadId');
 
   // Initial load
   useEffect(() => {
     loadThreads({ reset: true });
   }, [loadThreads]);
+
+  useEffect(() => {
+    if (!requestedThreadId || threadsLoading) return;
+    const requestedThread = threads.find((thread) => thread.id === requestedThreadId)
+      || (activeDockThread?.id === requestedThreadId ? activeDockThread : null);
+    if (requestedThread && selectedThread?.id !== requestedThread.id) handleSelectThread(requestedThread);
+  }, [threads, threadsLoading, activeDockThread]);
 
   // Handle thread selection
   const handleSelectThread = (thread) => {
@@ -58,7 +67,10 @@ export default function ChatPage({ onNavigate }) {
     }
   };
 
-  const filteredThreads = threads.filter((t) => {
+  const inboxThreads = activeDockThread?.id === requestedThreadId && !threads.some((thread) => thread.id === activeDockThread.id)
+    ? [activeDockThread, ...threads]
+    : threads;
+  const filteredThreads = inboxThreads.filter((t) => {
     if (!searchQuery.trim()) return true;
     const name = t.partner?.displayName?.toLowerCase() || '';
     const preview = t.lastMessagePreview?.toLowerCase() || '';

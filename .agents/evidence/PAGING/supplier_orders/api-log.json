@@ -68,12 +68,30 @@
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "2",
+      "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
   },
   {
     "pathname": "/api/v1/hubs/chat/negotiate",
@@ -144,12 +162,18 @@
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "25",
+      "pageSize": "10"
+    }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "20"
+    }
   },
   {
     "pathname": "/api/v1/hubs/notifications/negotiate",
@@ -158,25 +182,36 @@
     }
   },
   {
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "20",
+      "status": "Pending"
+    }
+  },
+  {
     "pathname": "/api/v1/hubs/chat/negotiate",
     "query": {
       "negotiateVersion": "1"
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "MC-PAGING-0250"
+    }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
-  },
-  {
-    "pathname": "/api/v1/hubs/chat/negotiate",
+    "pathname": "/api/v1/hubs/notifications/negotiate",
     "query": {
       "negotiateVersion": "1"
     }
@@ -226,6 +261,12 @@
     "query": {}
   },
   {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
     "pathname": "/api/v1/hubs/notifications/negotiate",
     "query": {
       "negotiateVersion": "1"
@@ -244,12 +285,20 @@
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "MC-PAGING-0250"
+    }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10",
+      "q": "no-matching-record-999"
+    }
   },
   {
     "pathname": "/api/v1/hubs/notifications/negotiate",
@@ -258,7 +307,10 @@
     }
   },
   {
-    "pathname": "/api/v1/orders/supplier",
-    "query": {}
+    "pathname": "/api/v1/orders/supplier/paged",
+    "query": {
+      "page": "1",
+      "pageSize": "10"
+    }
   }
 ]

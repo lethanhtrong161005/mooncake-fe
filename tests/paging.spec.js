@@ -232,7 +232,7 @@ for (const screen of [
 
 for (const screen of [
   { name: 'customer_orders', role: 'Customer', route: 'don-hang-cua-toi', api: '/orders/mine/paged' },
-  { name: 'supplier_orders', role: 'Supplier', route: 'nha-cung-cap/quan-ly-don-hang', api: '/orders/supplier' },
+  { name: 'supplier_orders', role: 'Supplier', route: 'nha-cung-cap/quan-ly-don-hang', api: '/orders/supplier/paged' },
   { name: 'admin_users', role: 'Admin', route: 'admin/dieu-khien', api: '/users' },
 ]) {
   test(`${screen.name}: paging, search, URL, responsive`, async ({ page }) => {
@@ -255,9 +255,7 @@ for (const screen of [
     await pagination.locator('.ant-pagination-item-2').click();
     await expect(page.getByText(screen.name === 'admin_users' ? 'user11@test.mooncake.local' : 'MC-PAGING-0011').first()).toBeVisible();
     await page.screenshot({ path: path.join(folder, 'page_2.png'), fullPage: true });
-    if (screen.name !== 'supplier_orders') {
-      expect(requests.some((entry) => entry.pathname.endsWith(screen.api) && entry.query.page === '2')).toBeTruthy();
-    }
+    expect(requests.some((entry) => entry.pathname.endsWith(screen.api) && entry.query.page === '2')).toBeTruthy();
 
     await page.goto(`/${screen.route}?page=25&pageSize=10`);
     await expect(page.getByText(screen.name === 'admin_users' ? 'user241@test.mooncake.local' : 'MC-PAGING-0241').first()).toBeVisible();
@@ -265,19 +263,15 @@ for (const screen of [
     const sizeSelect = page.locator('.ant-pagination-options-size-changer').first();
     await sizeSelect.click();
     await page.locator('.ant-select-item-option').filter({ hasText: '20' }).first().click();
-    if (screen.name !== 'supplier_orders') {
-      await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
-        && entry.query.pageSize === '20')).toBeTruthy();
-    }
+    await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
+      && entry.query.pageSize === '20')).toBeTruthy();
     await page.screenshot({ path: path.join(folder, 'page_size_20.png'), fullPage: true });
 
     const filter = page.locator('select[aria-label="Trạng thái"], [role="combobox"][aria-label="Trạng thái"], [role="combobox"][aria-label="Vai trò"]').first();
     await filter.click();
     await page.getByText(screen.name === 'admin_users' ? 'Supplier' : 'Pending', { exact: true }).last().click();
-    if (screen.name !== 'supplier_orders') {
-      await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
-        && (entry.query.status === 'Pending' || entry.query.role === 'Supplier'))).toBeTruthy();
-    }
+    await expect.poll(() => requests.some((entry) => entry.pathname.endsWith(screen.api)
+      && (entry.query.status === 'Pending' || entry.query.role === 'Supplier'))).toBeTruthy();
     await page.screenshot({ path: path.join(folder, 'status_filter.png'), fullPage: true });
     await page.getByRole('button', { name: 'Đặt lại' }).first().click();
 

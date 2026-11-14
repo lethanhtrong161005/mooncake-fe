@@ -8,6 +8,7 @@ import {
   Drawer,
   Empty,
   Form,
+  Image,
   Input,
   InputNumber,
   Modal,
@@ -18,6 +19,7 @@ import {
   Table,
   Tag,
   Typography,
+  Upload,
   message,
 } from 'antd';
 import {
@@ -27,14 +29,18 @@ import {
   CrownOutlined,
   DollarCircleOutlined,
   EyeOutlined,
+  FileTextOutlined,
   PictureOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SettingOutlined,
   TruckOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
 import customPackagingService from '../../services/customPackagingService';
+import deliveryService from '../../services/deliveryService';
 import orderService from '../../services/orderService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -124,7 +130,7 @@ export default function OrderManage({ onNavigate }) {
 
   const [podUploadModalOpen, setPodUploadModalOpen] = useState(false);
   const [podOrder, setPodOrder] = useState(null);
-  const [podPhotoUrl, setPodPhotoUrl] = useState('');
+  const [podFileList, setPodFileList] = useState([]);
   const [podSignatureName, setPodSignatureName] = useState('');
   const [podNotes, setPodNotes] = useState('');
   const [podSubmitting, setPodSubmitting] = useState(false);
@@ -139,6 +145,7 @@ export default function OrderManage({ onNavigate }) {
 
   const [payoutRequestModalOpen, setPayoutRequestModalOpen] = useState(false);
   const [payoutRequestSubmitting, setPayoutRequestSubmitting] = useState(false);
+  const [detailOrder, setDetailOrder] = useState(null);
 
   useEffect(() => {
     if (orderError) message.error(errorMessage(orderError));
@@ -261,43 +268,103 @@ export default function OrderManage({ onNavigate }) {
 
   const handleOpenPodModal = (order) => {
     setPodOrder(order);
-    setPodPhotoUrl('https://images.unsplash.com/photo-1549465220-1a8b9238cd48');
-    setPodSignatureName(order.recipientName || 'Người đại diện nhận hàng');
-    setPodNotes('Đã bàn giao đủ số lượng hộp bánh kèm hóa đơn tại sảnh kho');
+    setPodFileList([]);
+    setPodSignatureName(order.recipientName || '');
+    setPodNotes('');
     setPodUploadModalOpen(true);
   };
 
-  const submitPodProof = async () => {
-    if (!podPhotoUrl.trim()) {
-      message.warning('Vui lòng nhập đường dẫn ảnh chụp bàn giao PoD.');
+  const handlePodUploadRequest = async ({ file, onSuccess, onError }) => {
+    if (!file.type?.startsWith('image/')) {
+      const err = new Error('Vui lòng chỉ chọn tệp hình ảnh (JPG, PNG, WEBP).');
+      message.error(err.message);
+      onError?.(err);
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      const err = new Error('Dung lượng mỗi ảnh PoD không được vượt quá 10MB.');
+      message.error(err.message);
+      onError?.(err);
+      return;
+    }
+
+    try {
+      const uploaded = await deliveryService.uploadProofImage(file);
+      const imageUrl = uploaded?.url;
+      if (!imageUrl) {
+        throw new Error('Không nhận được đường dẫn ảnh sau khi tải lên.');
+      }
+      onSuccess?.({ url: imageUrl, publicId: uploaded?.publicId }, file);
+    } catch (error) {
+      message.error(errorMessage(error));
+      onError?.(error);
+    }
+  };
+
+  const collectPodUrls = () => {
+    const uploadedUrls = podFileList
+      .filter((item) => item.status === 'done')
+      .map((item) => item.url || item.response?.url)
+      .filter(Boolean);
+
+    return [...new Set(uploadedUrls)];
+  };
+
+  const submitPodProof = async () => {
+    if (podFileList.some((item) => item.status === 'uploading')) {
+      message.warning('Vui lòng đợi các ảnh đang tải lên hoàn tất.');
+      return;
+    }
+
+    const photoUrls = collectPodUrls();
+    if (photoUrls.length === 0) {
+      message.warning('Vui lòng tải lên ít nhất 1 ảnh chụp biên bản bàn giao PoD.');
+      return;
+    }
+
     setPodSubmitting(true);
     try {
       let deliveryId = podOrder.latestDelivery?.deliveryId;
       if (!deliveryId) {
-        const createDeliv = await orderService.createDelivery({
+        const existingDeliveries = await deliveryService.getByOrder(podOrder.id).catch(() => []);
+        if (Array.isArray(existingDeliveries) && existingDeliveries[0]?.id) {
+          deliveryId = existingDeliveries[0].id;
+        }
+      }
+
+      if (!deliveryId) {
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const safeScheduledDate = podOrder.deliveryDateExpected && podOrder.deliveryDateExpected >= todayIso
+          ? podOrder.deliveryDateExpected
+          : todayIso;
+
+        const createdDelivery = await deliveryService.create({
           orderId: podOrder.id,
           deliveryType: 'SelfArranged',
-          scheduledDate: podOrder.deliveryDateExpected,
+          scheduledDate: safeScheduledDate,
           fromAddress: 'Kho xưởng sản xuất bánh',
-          toAddress: podOrder.deliveryAddress,
-          recipientName: podOrder.recipientName,
-          recipientPhone: podOrder.recipientPhone,
+          toAddress: podOrder.deliveryAddress || 'Kho nhận khách hàng',
+          recipientName: podOrder.recipientName || 'Đại diện nhận hàng',
+          recipientPhone: podOrder.recipientPhone || '0900000000',
           trackingCode: `SHIP-${podOrder.orderNumber}`,
           notes: 'Chuyến giao nguyên lô',
         });
-        deliveryId = createDeliv?.id;
+        deliveryId = createdDelivery?.id;
       }
 
-      await orderService.submitDeliveryProof(deliveryId, {
-        proofType: 'Delivery',
-        photoUrl: podPhotoUrl.trim(),
-        takenBy: podSignatureName.trim(),
-        notes: podNotes.trim(),
-      });
+      const takenBy = podSignatureName.trim() || podOrder.recipientName || 'Đại diện nhận hàng';
+      const notes = podNotes.trim() || 'Đã bàn giao đơn hàng kèm biên bản PoD';
 
-      message.success('Đã tải ảnh biên bản bàn giao PoD. Khách hàng có 48h để đối soát.');
+      for (const url of photoUrls) {
+        await deliveryService.submitProof(deliveryId, {
+          proofType: 'Delivery',
+          photoUrl: url,
+          takenBy,
+          notes,
+        });
+      }
+
+      message.success(`Đã nộp ${photoUrls.length} ảnh biên bản bàn giao PoD. Khách hàng có 48h để đối soát.`);
       setPodUploadModalOpen(false);
       await loadOrders();
     } catch (error) {
@@ -393,7 +460,7 @@ export default function OrderManage({ onNavigate }) {
 
         return (
           <div className="max-w-[175px] space-y-1">
-            <div className="font-mono text-sm font-semibold text-[#7d1322] whitespace-nowrap">
+            <div className="font-mono text-sm font-semibold text-[#7d1322] break-all leading-snug">
               #{value}
             </div>
             <div className="text-[11px] tabular-nums text-[#8a7f7a]">
@@ -505,6 +572,13 @@ export default function OrderManage({ onNavigate }) {
 
         return (
           <div className="flex flex-wrap justify-end gap-1.5">
+            <Button
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => setDetailOrder(order)}
+            >
+              Chi tiết &amp; GD
+            </Button>
             {order.status === 'Pending' && (
               <>
                 <Button
@@ -528,7 +602,7 @@ export default function OrderManage({ onNavigate }) {
               </>
             )}
 
-            {allowedActions.includes('StartProcessing') && (
+            {allowedActions.includes('StartProduction') && (
               <Button
                 type="primary"
                 size="small"
@@ -543,7 +617,7 @@ export default function OrderManage({ onNavigate }) {
               </Button>
             )}
 
-            {allowedActions.includes('ShipOrder') && (
+            {allowedActions.includes('MarkShipped') && (
               <Button
                 type="primary"
                 size="small"
@@ -566,7 +640,9 @@ export default function OrderManage({ onNavigate }) {
                 onClick={() => handleOpenPodModal(order)}
                 style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
               >
-                Tải ảnh PoD
+                {(order.latestDelivery?.proofCount || 0) > 0
+                  ? `Thêm ảnh PoD (${order.latestDelivery.proofCount})`
+                  : 'Tải ảnh PoD'}
               </Button>
             )}
 
@@ -576,7 +652,7 @@ export default function OrderManage({ onNavigate }) {
               </Button>
             )}
 
-            {allowedActions.includes('CreatePayoutRequest') && (
+            {allowedActions.includes('RequestSimulatedPayout') && (
               <Button
                 size="small"
                 icon={<DollarCircleOutlined />}
@@ -722,27 +798,54 @@ export default function OrderManage({ onNavigate }) {
         okText="Nộp bằng chứng PoD"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#2d5a43', borderColor: '#2d5a43' } }}
-        width={600}
+        width={660}
         destroyOnHidden
       >
-        <div className="my-3 space-y-3 text-xs sm:text-sm text-[#231a18]">
+        <div className="my-3 space-y-4 text-xs sm:text-sm text-[#231a18]">
           <Alert
             type="info"
             showIcon
             title="Chứng từ hoàn tất giao nhận"
-            description="Ảnh chụp biên bản có chữ ký hoặc con dấu đại diện doanh nghiệp là căn cứ mở khóa thanh toán."
+            description="Tải lên nhiều ảnh thực tế khi bàn giao (thùng hàng tại kho khách, biên bản ký nhận, con dấu...) làm căn cứ đối soát và mở khóa thanh toán."
           />
 
+          {(podOrder?.latestDelivery?.proofs?.length || 0) > 0 && (
+            <div className="rounded-xl border border-[#e4dcd3] bg-[#faf7f2] p-3">
+              <div className="mb-2 text-xs font-medium text-[#231a18]">
+                Ảnh PoD đã nộp trước đó ({podOrder.latestDelivery.proofs.length} ảnh):
+              </div>
+              <Image.PreviewGroup>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {podOrder.latestDelivery.proofs.map((proof, idx) => (
+                    <Image
+                      key={proof.id || idx}
+                      src={proof.photoUrl}
+                      alt={`PoD đã nộp ${idx + 1}`}
+                      className="h-20 w-full rounded-lg object-cover border border-[#e4dcd3]"
+                    />
+                  ))}
+                </div>
+              </Image.PreviewGroup>
+            </div>
+          )}
+
           <div>
-            <span className="mb-1 block text-xs font-medium text-[#231a18]">
-              Đường dẫn ảnh biên bản PoD (HTTPS)
+            <span className="mb-1.5 block text-xs font-medium text-[#231a18]">
+              Ảnh biên bản &amp; kiện hàng bàn giao (chọn nhiều ảnh)
             </span>
-            <Input
-              size="large"
-              value={podPhotoUrl}
-              onChange={(e) => setPodPhotoUrl(e.target.value)}
-              placeholder="https://..."
-            />
+            <Upload
+              multiple
+              accept="image/*"
+              listType="picture-card"
+              fileList={podFileList}
+              customRequest={handlePodUploadRequest}
+              onChange={({ fileList }) => setPodFileList(fileList)}
+            >
+              <div className="flex flex-col items-center justify-center text-xs text-[#6c625e]">
+                <PlusOutlined className="text-base text-[#2d5a43]" />
+                <span className="mt-1">Tải ảnh lên</span>
+              </div>
+            </Upload>
           </div>
 
           <div>
@@ -753,6 +856,7 @@ export default function OrderManage({ onNavigate }) {
               size="large"
               value={podSignatureName}
               onChange={(e) => setPodSignatureName(e.target.value)}
+              placeholder="Ví dụ: Nguyễn Văn A - Thủ kho nhận hàng"
             />
           </div>
 
@@ -760,7 +864,12 @@ export default function OrderManage({ onNavigate }) {
             <span className="mb-1 block text-xs font-medium text-[#231a18]">
               Ghi chú bàn giao
             </span>
-            <TextArea rows={2} value={podNotes} onChange={(e) => setPodNotes(e.target.value)} />
+            <TextArea
+              rows={2}
+              value={podNotes}
+              onChange={(e) => setPodNotes(e.target.value)}
+              placeholder="Mô tả tình trạng kiện hàng, số lượng bàn giao tại kho khách..."
+            />
           </div>
         </div>
       </Modal>
@@ -1052,6 +1161,13 @@ export default function OrderManage({ onNavigate }) {
           </Descriptions>
         </div>
       </Modal>
+
+      <OrderDetailDrawer
+        open={Boolean(detailOrder)}
+        order={detailOrder}
+        role="supplier"
+        onClose={() => setDetailOrder(null)}
+      />
     </ColonyAdminLayout>
   );
 }

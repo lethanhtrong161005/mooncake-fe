@@ -8,6 +8,7 @@ import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import rfqService from '../../services/rfqService';
+import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import dayjs from 'dayjs';
@@ -80,6 +81,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const [bids, setBids] = useState([]);
   const [supplierProfiles, setSupplierProfiles] = useState([]);
   const [detailBid, setDetailBid] = useState(null);
+  const [contracts, setContracts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
@@ -90,10 +92,20 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   };
 
   const loadRfqs = rfqPage.refresh;
+  useEffect(() => {
+    contractService.listMine()
+      .then((data) => setContracts(Array.isArray(data) ? data : []))
+      .catch((error) => message.error(errorMessage(error)));
+  }, []);
   useEffect(() => { if (rfqPage.error) message.error(errorMessage(rfqPage.error)); }, [rfqPage.error]);
   useEffect(() => {
     const refreshRfqs = (notification) => {
       if (notification?.type?.startsWith('bid.') || notification?.type?.startsWith('rfq.')) loadRfqs();
+      if (notification?.category === 'contract' || notification?.type?.startsWith('contract.')) {
+        contractService.listMine()
+          .then((data) => setContracts(Array.isArray(data) ? data : []))
+          .catch((error) => message.error(errorMessage(error)));
+      }
     };
     signalRManager.on('ReceiveNotification', refreshRfqs);
     signalRManager.on('MarketplaceChanged', refreshRfqs);
@@ -216,6 +228,10 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const renderActions = (item) => <Space wrap className="rfq-page__row-actions">
     {item.status === 'Open' && <Button icon={<TeamOutlined />} onClick={() => openInvite(item)}>Mời xưởng</Button>}
     <Button type="primary" icon={<SolutionOutlined />} disabled={!item.bidCount} onClick={() => openCompare(item)}>So sánh</Button>
+    {contracts.some((contract) => contract.rfqId === item.id) && <Button
+      icon={<FileProtectOutlined />}
+      onClick={() => onNavigate?.('hop-dong-tien-do')}
+    >Xem hợp đồng</Button>}
   </Space>;
   const columns = [
     {
