@@ -225,15 +225,32 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
 
   const confirmBidSelection = (bid) => {
     const deadlineNotPassed = selectedRfq?.bidDeadline && new Date(selectedRfq.bidDeadline) > new Date();
+    const validBids = bids.filter((item) => !item.isExpired && item.status === 'Submitted');
     const submit = () => acceptBid(bid);
-    if (!deadlineNotPassed) return submit();
-    Modal.confirm({
-      title: 'Chọn xưởng trước hạn báo giá?',
-      content: 'Yêu cầu sẽ tạm đóng và không nhận thêm báo giá. Xưởng được chọn sẽ nhận thông báo; hợp đồng chỉ được tạo sau khi xưởng xác nhận.',
-      okText: 'Gửi yêu cầu chọn',
-      cancelText: 'Xem lại',
-      onOk: submit,
-    });
+
+    const proceedWithDeadlineCheck = () => {
+      if (!deadlineNotPassed) return submit();
+      Modal.confirm({
+        title: 'Chọn xưởng trước hạn báo giá?',
+        content: 'Yêu cầu sẽ tạm đóng và không nhận thêm báo giá. Xưởng được chọn sẽ nhận thông báo; hợp đồng chỉ được tạo sau khi xưởng xác nhận.',
+        okText: 'Gửi yêu cầu chọn',
+        cancelText: 'Xem lại',
+        onOk: submit,
+      });
+    };
+
+    if (validBids.length < 2) {
+      Modal.confirm({
+        title: 'Cảnh báo ít báo giá',
+        content: `RFQ mới có ${validBids.length} báo giá. Bạn vẫn muốn trao thầu?`,
+        okText: 'Đồng ý',
+        cancelText: 'Xem lại',
+        onOk: proceedWithDeadlineCheck,
+      });
+      return;
+    }
+
+    proceedWithDeadlineCheck();
   };
 
   const bestBidId = useMemo(() => bids.filter((bid) => !bid.isExpired && bid.status === 'Submitted')

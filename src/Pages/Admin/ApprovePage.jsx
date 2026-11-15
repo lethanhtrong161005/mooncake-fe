@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Card, Drawer, Form, Input, Modal, Select, Space, Table, Typography, App as AntApp } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import { Alert, Button, Card, Drawer, Form, Input, Modal, Select, Space, Table, Tag, Typography, App as AntApp } from 'antd';
 import { EyeOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import { useVerificationNotifications } from '../../hooks/useVerificationNotifications';
@@ -44,6 +45,7 @@ export default function ApprovePage({ onNavigate }) {
   const { message } = AntApp.useApp();
   const { workflowVersion = 0 } = useVerificationNotifications() || {};
   const [status, setStatus] = useState('Pending');
+  const [expiryFilter, setExpiryFilter] = useState('');
   const [query, setQuery] = useState('');
   const search = useDebounce(query, 300);
   const [page, setPage] = useState(1);
@@ -53,10 +55,30 @@ export default function ApprovePage({ onNavigate }) {
   const [decision, setDecision] = useState(null);
   const [forceStale, setForceStale] = useState(false);
   const loader = useCallback((signal) => supplierService.listApplications({
-    status: status || undefined, q: search, page, pageSize, sort: 'submittedAtAsc',
-  }, signal), [status, search, page, pageSize]);
+    status: status || undefined,
+    expiry: expiryFilter || undefined,
+    q: search,
+    page,
+    pageSize,
+    sort: 'submittedAtAsc',
+  }, signal), [status, expiryFilter, search, page, pageSize]);
   const resource = useVerificationResource(loader, workflowVersion);
   const stale = selected && forceStale;
+
+  const filteredItems = useMemo(() => {
+    const items = resource.data?.items || [];
+    if (!expiryFilter) return items;
+    const now = dayjs().startOf('day');
+    return items.filter((row) => {
+      const val = row.foodSafetyExpiresOn || row.foodSafetyExpiry || row.attpExpiresOn || row.expiresOn
+        || row.documents?.find((doc) => doc.documentType === 'FoodSafetyCertificate')?.expiresOn;
+      if (!val || !dayjs(val).isValid()) return false;
+      const diff = dayjs(val).startOf('day').diff(now, 'day');
+      if (expiryFilter === 'expiring') return diff >= 0 && diff <= 30;
+      if (expiryFilter === 'expired') return diff < 0;
+      return true;
+    });
+  }, [resource.data?.items, expiryFilter]);
   useEffect(() => {
     if (!selected) return;
     let active = true;
@@ -88,17 +110,61 @@ export default function ApprovePage({ onNavigate }) {
           onChange={(value) => { setStatus(value); setPage(1); }}
           options={[{ value: '', label: 'Tất cả trạng thái' }, ...Object.entries(VERIFICATION_LABELS)
             .filter(([key]) => key !== 'NotSubmitted').map(([value, label]) => ({ value, label }))]} />
+        <Select
+          aria-label="Lọc hạn ATTP"
+          placeholder="Hạn giấy ATTP"
+          value={expiryFilter}
+          style={{ width: 220 }}
+          onChange={(value) => { setExpiryFilter(value); setPage(1); }}
+          options={[
+            { value: '', label: 'Tất cả hạn ATTP' },
+            { value: 'expiring', label: 'Sắp hết hạn (≤ 30 ngày)' },
+            { value: 'expired', label: 'Đã hết hạn' },
+          ]}
+        />
         <Input allowClear prefix={<SearchOutlined />} placeholder="Tên doanh nghiệp / mã số thuế" maxLength={100}
           aria-label="Tìm hồ sơ" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} />
       </Space>
       {resource.error && <Alert style={{ marginBottom: 16 }} type="error" showIcon title={resource.error} />}
-      <Table rowKey="profileId" loading={resource.isLoading} dataSource={resource.data?.items || []} scroll={{ x: 850 }}
+      <Table rowKey="profileId" loading={resource.isLoading} dataSource={filteredItems} scroll={{ x: 950 }}
         pagination={{ current: page, pageSize, total: resource.data?.totalCount || 0, showSizeChanger: true, pageSizeOptions: [20, 50, 100],
           onChange: (next, size) => { setPage(size !== pageSize ? 1 : next); setPageSize(size); } }}
         columns={[
           { title: 'Doanh nghiệp', dataIndex: 'companyName' }, { title: 'Mã số thuế', dataIndex: 'taxCode' },
           { title: 'Phiên bản', dataIndex: 'revision' }, { title: 'Ngày gửi', dataIndex: 'submittedAtUtc', render: verificationDate },
           { title: 'Trạng thái', dataIndex: 'status', render: (value) => <VerificationTag status={value} /> },
+          {
+            title: 'Hạn giấy ATTP',
+            key: 'foodSafetyExpiresOn',
+            render: (_, row) => {
+              const value = row.foodSafetyExpiresOn || row.foodSafetyExpiry || row.attpExpiresOn || row.expiresOn
+                || row.documents?.find((doc) => doc.documentType === 'FoodSafetyCertificate')?.expiresOn;
+              if (!value) return <span className="text-[#6c625e]">Không có</span>;
+              const date = dayjs(value);
+              if (!date.isValid()) return <span className="text-[#6c625e]">{value}</span>;
+              const now = dayjs().startOf('day');
+              const target = date.startOf('day');
+              const diff = target.diff(now, 'day');
+              const formatted = date.format('DD/MM/YYYY');
+              if (diff < 0) {
+                return (
+                  <Space size={4}>
+                    <span className="tabular-nums">{formatted}</span>
+                    <Tag color="red">Đã hết hạn</Tag>
+                  </Space>
+                );
+              }
+              if (diff <= 30) {
+                return (
+                  <Space size={4}>
+                    <span className="tabular-nums">{formatted}</span>
+                    <Tag color="orange">Còn {diff} ngày</Tag>
+                  </Space>
+                );
+              }
+              return <span className="tabular-nums">{formatted}</span>;
+            },
+          },
           { title: 'Tài liệu', dataIndex: 'documentCount' },
           { title: 'Thao tác', key: 'view', render: (_, row) => <Button icon={<EyeOutlined />} loading={detailLoading}
             onClick={() => open(row.profileId)}>Xem hồ sơ</Button> },

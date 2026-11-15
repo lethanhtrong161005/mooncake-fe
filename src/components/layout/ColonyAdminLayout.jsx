@@ -1,6 +1,8 @@
 import { VERIFICATION_LABELS } from '../../constants/supplierVerification';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 import {
+  Alert,
   Layout,
   Menu,
   Badge,
@@ -66,6 +68,37 @@ export default function ColonyAdminLayout({
   const isAdmin = user?.role === 'Admin';
   const canCreateShop = user?.capabilities?.canCreateShop === true;
   const canFulfill = user?.capabilities?.canFulfillExistingOrders === true;
+
+  const attpStatus = useMemo(() => {
+    if (isAdmin) return null;
+    const expiresOn = user?.supplierVerification?.foodSafetyExpiresOn
+      || user?.supplierVerification?.expiresOn
+      || user?.foodSafetyExpiresOn;
+    const isSuspended = user?.shop?.status === 'Suspended'
+      || user?.shopStatus === 'Suspended'
+      || user?.supplierVerification?.shopStatus === 'Suspended'
+      || user?.isSuspended;
+    const suspensionReason = user?.shop?.suspensionReason
+      || user?.suspensionReason
+      || user?.supplierVerification?.suspensionReason
+      || '';
+
+    let diff = null;
+    if (expiresOn && dayjs(expiresOn).isValid()) {
+      diff = dayjs(expiresOn).startOf('day').diff(dayjs().startOf('day'), 'day');
+    }
+
+    if (isSuspended && (suspensionReason.toLowerCase().includes('attp')
+      || suspensionReason.toLowerCase().includes('an toàn thực phẩm')
+      || (diff !== null && diff < 0))) {
+      return { type: 'suspended', diff };
+    }
+    if (diff !== null) {
+      if (diff < 0) return { type: 'suspended', diff };
+      if (diff <= 30) return { type: 'expiring', diff };
+    }
+    return null;
+  }, [isAdmin, user]);
 
   const adminMenuItems = [
     {
@@ -319,6 +352,34 @@ export default function ColonyAdminLayout({
 
           {/* Child Page Views */}
           <div className="workspace-content__body">
+            {!isAdmin && attpStatus?.type === 'suspended' && (
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="Shop tạm ngưng do giấy ATTP hết hạn"
+                description="Giấy chứng nhận ATTP đã hết hạn khiến gian hàng bị tạm ngưng. Vui lòng nộp giấy chứng nhận mới để khôi phục hoạt động."
+                action={
+                  <Button type="primary" danger onClick={() => onNavigate?.('nha-cung-cap/xac-minh')}>
+                    Nộp giấy mới
+                  </Button>
+                }
+              />
+            )}
+            {!isAdmin && attpStatus?.type === 'expiring' && (
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="Chứng nhận an toàn thực phẩm (ATTP) sắp hết hạn"
+                description={`Giấy chứng nhận ATTP còn ${attpStatus.diff} ngày nữa sẽ hết hạn. Vui lòng nộp giấy chứng nhận mới để tránh bị gián đoạn hoạt động.`}
+                action={
+                  <Button onClick={() => onNavigate?.('nha-cung-cap/xac-minh')}>
+                    Nộp giấy mới
+                  </Button>
+                }
+              />
+            )}
             <WorkspaceErrorBoundary resetKey={activeKey}>{children}</WorkspaceErrorBoundary>
           </div>
         </Content>

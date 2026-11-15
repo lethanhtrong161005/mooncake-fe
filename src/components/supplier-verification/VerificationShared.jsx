@@ -25,6 +25,7 @@ import { supplierDocumentService } from '../../services/supplierDocumentService'
 import supplierService from '../../services/supplierService';
 import { useVerificationResource } from '../../hooks/useVerificationResource';
 import { verificationDate } from '../../utils/verificationDate';
+import dayjs from 'dayjs';
 
 export function VerificationTag({ status }) {
   return (
@@ -85,11 +86,51 @@ export function VerificationDocuments({ documents = [], removable = false, reloa
           {
             title: 'Hết hạn',
             dataIndex: 'expiresOn',
-            render: (value) => (
-              <span className="tabular-nums text-xs text-[#6c625e]">
-                {value || 'Không khai báo'}
-              </span>
-            ),
+            render: (value) => {
+              if (!value) {
+                return (
+                  <span className="tabular-nums text-xs text-[#6c625e]">
+                    Không khai báo
+                  </span>
+                );
+              }
+              const expiryDate = dayjs(value);
+              if (!expiryDate.isValid()) {
+                return (
+                  <span className="tabular-nums text-xs text-[#6c625e]">
+                    {value}
+                  </span>
+                );
+              }
+              const formattedDate = expiryDate.format('DD/MM/YYYY');
+              const now = dayjs().startOf('day');
+              const target = expiryDate.startOf('day');
+              const diff = target.diff(now, 'day');
+
+              if (diff < 0) {
+                return (
+                  <Space size={4} wrap>
+                    <span className="tabular-nums text-xs text-[#6c625e]">{formattedDate}</span>
+                    <Tag color="red">Đã hết hạn</Tag>
+                  </Space>
+                );
+              }
+
+              if (diff <= 30) {
+                return (
+                  <Space size={4} wrap>
+                    <span className="tabular-nums text-xs text-[#6c625e]">{formattedDate}</span>
+                    <Tag color="orange">Còn {diff} ngày</Tag>
+                  </Space>
+                );
+              }
+
+              return (
+                <span className="tabular-nums text-xs text-[#6c625e]">
+                  {formattedDate}
+                </span>
+              );
+            },
           },
           {
             title: 'Thao tác',
