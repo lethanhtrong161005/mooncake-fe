@@ -73,6 +73,43 @@ export const orderService = {
   async requestCancellation(orderId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.CANCELLATION_REQUESTS(orderId), payload));
   },
+  calculateCancellationRefundSuggestion(order) {
+    if (!order) {
+      return {
+        amount: 0,
+        percent: 100,
+        reason: 'Hoàn lại 100% số tiền đã thanh toán.',
+      };
+    }
+
+    if (order.pendingCancellationRequest?.suggestedRefundAmount != null) {
+      return {
+        amount: Number(order.pendingCancellationRequest.suggestedRefundAmount),
+        percent: Number(order.pendingCancellationRequest.suggestedRefundPercent ?? 100),
+        reason: order.pendingCancellationRequest.suggestionReason
+          || (order.pendingCancellationRequest.suggestedRefundPercent === 50
+            ? 'Đơn hàng đang sản xuất có thiết kế bao bì riêng đã duyệt: đề xuất hoàn 50% số tiền đã thanh toán.'
+            : 'Hoàn lại 100% số tiền đã thanh toán.'),
+      };
+    }
+
+    const paidAmount = Number(
+      order.paymentSummary?.totalPaidAmount
+      ?? order.financialSummary?.capturedAmount
+      ?? 0,
+    );
+
+    const inProduction = order.status === 'Processing'
+      && (order.customPackaging?.status === 'Approved' || order.customPackaging?.status === 'InProduction');
+
+    const percent = inProduction ? 50 : 100;
+    const amount = Math.round((paidAmount * percent) / 100);
+    const reason = inProduction
+      ? 'Đơn hàng đang sản xuất có thiết kế bao bì riêng đã duyệt: đề xuất hoàn 50% số tiền đã thanh toán.'
+      : 'Hoàn lại 100% số tiền đã thanh toán.';
+
+    return { amount, percent, reason };
+  },
   async respondCancellationRequest(orderId, requestId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.RESPOND_CANCELLATION_REQUEST(orderId, requestId), payload));
   },
