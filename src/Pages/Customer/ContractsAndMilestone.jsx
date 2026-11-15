@@ -15,6 +15,7 @@ import {
   Space,
   Steps,
   Table,
+  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -31,9 +32,12 @@ import {
   MessageOutlined,
   OrderedListOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   SearchOutlined,
+  TruckOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
@@ -42,12 +46,15 @@ import paymentService from '../../services/paymentService';
 import deliveryService from '../../services/deliveryService';
 import { signalRManager } from '../../services/signalrService';
 import { useChat } from '../../hooks/useChat';
+import ContractSignModal from '../../components/contracts/ContractSignModal';
+import ContractFulfillmentTable from '../../components/contracts/ContractFulfillmentTable';
+import { renderMilestoneStatusTag } from '../../components/contracts/milestoneUtils';
 import '../../styles/journey-pages.css';
 
 const { Paragraph, Text, Title } = Typography;
 const { TextArea } = Input;
 
-const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 const normalizeSearch = (value) => String(value || '')
   .normalize('NFD')
@@ -126,18 +133,6 @@ const statusMap = {
   Cancelled: ['default', 'Đã hủy'],
 };
 
-const milestoneStatusMap = {
-  Pending: ['default', 'Chưa đến hạn'],
-  AwaitingPayment: ['warning', 'Chờ thanh toán'],
-  Paid: ['success', 'Đã thanh toán'],
-  InProgress: ['processing', 'Đang thực hiện'],
-  PendingReview: ['orange', 'Chờ khách nghiệm thu'],
-  CompletedOnTime: ['success', 'Đạt chuẩn (Đúng hạn)'],
-  CompletedLate: ['purple', 'Đạt chuẩn (Trễ hạn)'],
-  Overdue: ['error', 'Quá hạn'],
-  Failed: ['error', 'Từ chối / Cần sửa'],
-};
-
 const paymentStatusMap = {
   Pending: ['gold', 'Chờ thanh toán'],
   Processing: ['processing', 'Đang đối soát'],
@@ -160,6 +155,14 @@ export default function ContractsAndMilestone({ onNavigate }) {
   const [contractSearch, setContractSearch] = useState('');
   const [contractStatusFilter, setContractStatusFilter] = useState('all');
 
+  // Customer OTP Contract Signing Modal
+  const [signModalOpen, setSignModalOpen] = useState(false);
+  const [signContractTarget, setSignContractTarget] = useState(null);
+
+  const openSignModal = (contract) => {
+    setSignContractTarget(contract);
+    setSignModalOpen(true);
+  };
 
   // Milestones Drawer
   const [milestonesDrawerOpen, setMilestonesDrawerOpen] = useState(false);
@@ -538,13 +541,31 @@ export default function ContractsAndMilestone({ onNavigate }) {
     },
     {
       title: 'Các bước xác nhận',
-      render: (_, item) =>
-        <Space orientation="vertical" size={2}>
-          {item.signedBySupplierAt
-            ? <Tag color="success" icon={<CheckCircleOutlined />}>Xưởng đã ký</Tag>
-            : <Tag color="processing">Đang chờ xưởng ký</Tag>}
-          {item.status === 'PendingDeposit' && <Tag color="warning">Bạn cần xác nhận điều khoản và thanh toán M1</Tag>}
-        </Space>,
+      render: (_, item) => {
+        const supplierSigned = Boolean(item.signedBySupplierAt || item.isSignedBySupplier);
+        const customerSigned = Boolean(item.signedByCustomerAt || item.isSignedByCustomer);
+        return (
+          <Space direction="vertical" size={2}>
+            {supplierSigned ? (
+              <Tag color="success" icon={<CheckCircleOutlined />}>
+                Xưởng đã ký lúc {item.signedBySupplierAt ? dayjs(item.signedBySupplierAt).format('HH:mm DD/MM/YYYY') : 'thành công'}
+              </Tag>
+            ) : (
+              <Tag color="processing" icon={<ClockCircleOutlined />}>Đang chờ xưởng ký</Tag>
+            )}
+            {customerSigned ? (
+              <Tag color="success" icon={<CheckCircleOutlined />}>
+                Bạn đã ký lúc {item.signedByCustomerAt ? dayjs(item.signedByCustomerAt).format('HH:mm DD/MM/YYYY') : 'thành công'}
+              </Tag>
+            ) : (
+              <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ bạn ký</Tag>
+            )}
+            {item.status === 'PendingDeposit' && (
+              <Tag color="gold">Chờ bạn xác nhận điều khoản và thanh toán M1</Tag>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Trạng thái',
@@ -577,6 +598,22 @@ export default function ContractsAndMilestone({ onNavigate }) {
             >
               Gửi ký
             </Button>
+          )}
+
+          {item.status === 'PendingSignature' && (
+            !(item.signedByCustomerAt || item.isSignedByCustomer) ? (
+              <Button
+                type="primary"
+                size="small"
+                style={{ background: '#8c1524', borderColor: '#8c1524' }}
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => openSignModal(item)}
+              >
+                Ký hợp đồng
+              </Button>
+            ) : (
+              <Tag color="success" icon={<CheckCircleOutlined />}>Bạn đã ký (Chờ xưởng)</Tag>
+            )
           )}
 
           {item.status === 'PendingDeposit' && (
@@ -826,172 +863,203 @@ export default function ContractsAndMilestone({ onNavigate }) {
               </Button>
             </div>
 
-            {/* Banner nếu có yêu cầu xin gia hạn đang chờ xử lý */}
-            {contractDetails.pendingExtension && (
-              <Alert
-                type="warning"
-                showIcon
-                icon={<ClockCircleOutlined />}
-                style={{ marginBottom: 20 }}
-                message="Xưởng sản xuất xin gia hạn tiến độ"
-                description={
-                  <div>
-                    <p style={{ margin: '4px 0' }}>
-                      <strong>Ngày đề xuất mới: </strong>
-                      {contractDetails.pendingExtension.proposedDueDate}
-                    </p>
-                    <p style={{ margin: '4px 0' }}>
-                      <strong>Lý do: </strong>
-                      {contractDetails.pendingExtension.reason}
-                    </p>
-                    <Space style={{ marginTop: 8 }}>
-                      <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => openExtensionReview(contractDetails)}
-                      >
-                        Phản hồi đơn gia hạn
-                      </Button>
-                    </Space>
-                  </div>
-                }
-              />
-            )}
-
-            <Title level={5} style={{ marginBottom: 16 }}>Danh sách các mốc thanh toán & giao hàng</Title>
-            <Steps
-              direction="vertical"
-              current={contractDetails.milestones?.findIndex((m) => m.status === 'PendingReview' || m.status === 'InProgress')}
-              items={contractDetails.milestones?.map((milestone) => ({
-                title: (
-                  <Space>
-                    <Text strong>{milestone.name}</Text>
-                    <Tag color={milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
-                      ? 'processing'
-                      : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
-                        ? 'warning' : milestoneStatusMap[milestone.status]?.[0] || 'default'}>
-                      {milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
-                        ? 'Đang tiến hành giao hàng'
-                        : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
-                          ? 'Chờ thanh toán & nghiệm thu' : milestoneStatusMap[milestone.status]?.[1] || milestone.status}
-                    </Tag>
-                  </Space>
-                ),
-                description: (
-                  <div style={{ marginTop: 6, marginBottom: 16, background: '#fafafa', padding: 12, borderRadius: 6 }}>
+            <Tabs
+              defaultActiveKey="milestones"
+              items={[
+                {
+                  key: 'milestones',
+                  label: (
+                    <span>
+                      <OrderedListOutlined />
+                      Tiến độ &amp; Mốc nghiệm thu
+                    </span>
+                  ),
+                  children: (
                     <div>
-                      <span>Giá trị mốc: </span>
-                      <strong style={{ color: '#8c1524' }}>{money(milestone.amount)}</strong>
-                      <span> ({milestone.percentage}%)</span>
-                    </div>
-                    <div>Hạn thực hiện: <strong>{milestone.dueDate || '—'}</strong></div>
-                    {milestone.completionDate && (
-                      <div>Ngày nghiệm thu: <strong>{milestone.completionDate}</strong></div>
-                    )}
-
-                    {milestone.progressNotes && (
-                      <div style={{ marginTop: 8 }}>
-                        <Text type="secondary">Báo cáo từ xưởng:</Text>
-                        <Paragraph style={{ margin: '4px 0', background: '#fff', padding: 8, borderRadius: 4 }}>
-                          {milestone.progressNotes}
-                        </Paragraph>
-                      </div>
-                    )}
-
-                    {milestone.evidenceUrls && milestone.evidenceUrls.length > 0 && (
-                      <div style={{ marginTop: 8 }}>
-                        <Text type="secondary">Hình ảnh/Chứng chỉ thực tế:</Text>
-                        <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <Image.PreviewGroup>
-                            {milestone.evidenceUrls.map((url, index) => (
-                              <Image
-                                key={index}
-                                width={80}
-                                height={80}
-                                src={url}
-                                style={{ objectFit: 'cover', borderRadius: 4 }}
-                                fallback="https://placehold.co/100x100?text=Evidence"
-                              />
-                            ))}
-                          </Image.PreviewGroup>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Customer review and payment actions for production milestones */}
-                    {!milestone.isDeposit && (
-                      <div style={{ marginTop: 12 }}>
-                        <Divider style={{ margin: '8px 0' }} />
-                        {(() => {
-                          const canConfirm = ['InProgress', 'PendingReview'].includes(milestone.status);
-                          const fullContractPaid = payments.some((payment) => (
-                            payment.contractId === selected.id && !payment.milestoneId && payment.status === 'Completed'
-                          ));
-                          const canPay = milestone.sequenceNumber === 3
-                            ? finalMilestoneReadyForSettlement
-                            : ['CompletedOnTime', 'CompletedLate'].includes(milestone.status);
-                          const alreadyPaid = milestone.status === 'Paid' || fullContractPaid || payments.some((payment) => (
-                            payment.contractId === selected.id &&
-                            payment.milestoneId === milestone.id &&
-                            payment.status === 'Completed'
-                          ));
-                          return (
-                            <Space wrap>
-                              {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
+                      {/* Banner nếu có yêu cầu xin gia hạn đang chờ xử lý */}
+                      {contractDetails.pendingExtension && (
+                        <Alert
+                          type="warning"
+                          showIcon
+                          icon={<ClockCircleOutlined />}
+                          style={{ marginBottom: 20 }}
+                          message="Xưởng sản xuất xin gia hạn tiến độ"
+                          description={
+                            <div>
+                              <p style={{ margin: '4px 0' }}>
+                                <strong>Ngày đề xuất mới: </strong>
+                                {contractDetails.pendingExtension.proposedDueDate}
+                              </p>
+                              <p style={{ margin: '4px 0' }}>
+                                <strong>Lý do: </strong>
+                                {contractDetails.pendingExtension.reason}
+                              </p>
+                              <Space style={{ marginTop: 8 }}>
                                 <Button
+                                  type="primary"
                                   size="small"
-                                  icon={<CarOutlined />}
-                                  onClick={() => {
-                                    setMilestonesDrawerOpen(false);
-                                    onNavigate?.('giao-hang-pod');
-                                  }}
+                                  onClick={() => openExtensionReview(contractDetails)}
                                 >
-                                  Xem giao nhận
+                                  Phản hồi đơn gia hạn
                                 </Button>
+                              </Space>
+                            </div>
+                          }
+                        />
+                      )}
+
+                      <Title level={5} style={{ marginBottom: 16 }}>Danh sách các mốc thanh toán &amp; giao hàng</Title>
+                      <Steps
+                        direction="vertical"
+                        current={contractDetails.milestones?.findIndex((m) => m.status === 'PendingReview' || m.status === 'InProgress')}
+                        items={contractDetails.milestones?.map((milestone) => ({
+                          title: (
+                            <Space>
+                              <Text strong>{milestone.name}</Text>
+                              {milestone.sequenceNumber === 3 && contractHasDeliveryInProgress ? (
+                                <Tag color="processing">Đang tiến hành giao hàng</Tag>
+                              ) : (
+                                renderMilestoneStatusTag(milestone)
                               )}
-                              {canConfirm && (
-                                <>
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    icon={<CheckCircleOutlined />}
-                                    loading={actionLoading}
-                                    onClick={() => handleVerifyMilestone(milestone, true)}
-                                  >
-                                    Đã xem và xác nhận
-                                  </Button>
-                                  {milestone.status === 'PendingReview' && (
-                                    <Button
-                                      danger
-                                      size="small"
-                                      icon={<CloseCircleOutlined />}
-                                      onClick={() => handleVerifyMilestone(milestone, false)}
-                                    >
-                                      Yêu cầu chỉnh sửa
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                              {alreadyPaid ? (
-                                <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
-                              ) : canPay ? (
-                                <Button
-                                  size="small"
-                                  icon={<DollarOutlined />}
-                                  loading={payingMilestoneId === milestone.id}
-                                  onClick={() => handlePayMilestone(milestone)}
-                                >
-                                  Thanh toán mốc {money(milestone.amount)}
-                                </Button>
-                              ) : null}
                             </Space>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                ),
-              }))}
+                          ),
+                          description: (
+                            <div style={{ marginTop: 6, marginBottom: 16, background: '#fafafa', padding: 12, borderRadius: 6 }}>
+                              <div>
+                                <span>Giá trị mốc: </span>
+                                <strong style={{ color: '#8c1524' }}>{money(milestone.amount)}</strong>
+                                <span> ({milestone.percentage}%)</span>
+                              </div>
+                              <div>Hạn thực hiện: <strong>{milestone.dueDate || '—'}</strong></div>
+                              {milestone.completionDate && (
+                                <div>Ngày nghiệm thu: <strong>{milestone.completionDate}</strong></div>
+                              )}
+
+                              {milestone.progressNotes && (
+                                <div style={{ marginTop: 8 }}>
+                                  <Text type="secondary">Báo cáo từ xưởng:</Text>
+                                  <Paragraph style={{ margin: '4px 0', background: '#fff', padding: 8, borderRadius: 4 }}>
+                                    {milestone.progressNotes}
+                                  </Paragraph>
+                                </div>
+                              )}
+
+                              {milestone.evidenceUrls && milestone.evidenceUrls.length > 0 && (
+                                <div style={{ marginTop: 8 }}>
+                                  <Text type="secondary">Hình ảnh/Chứng chỉ thực tế:</Text>
+                                  <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <Image.PreviewGroup>
+                                      {milestone.evidenceUrls.map((url, index) => (
+                                        <Image
+                                          key={index}
+                                          width={80}
+                                          height={80}
+                                          src={url}
+                                          style={{ objectFit: 'cover', borderRadius: 4 }}
+                                          fallback="https://placehold.co/100x100?text=Evidence"
+                                        />
+                                      ))}
+                                    </Image.PreviewGroup>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Customer review and payment actions for production milestones */}
+                              {!milestone.isDeposit && (
+                                <div style={{ marginTop: 12 }}>
+                                  <Divider style={{ margin: '8px 0' }} />
+                                  {(() => {
+                                    const canConfirm = ['InProgress', 'PendingReview'].includes(milestone.status);
+                                    const fullContractPaid = payments.some((payment) => (
+                                      payment.contractId === selected.id && !payment.milestoneId && payment.status === 'Completed'
+                                    ));
+                                    const canPay = milestone.sequenceNumber === 3
+                                      ? finalMilestoneReadyForSettlement
+                                      : ['CompletedOnTime', 'CompletedLate'].includes(milestone.status);
+                                    const alreadyPaid = milestone.status === 'Paid' || fullContractPaid || payments.some((payment) => (
+                                      payment.contractId === selected.id &&
+                                      payment.milestoneId === milestone.id &&
+                                      payment.status === 'Completed'
+                                    ));
+                                    return (
+                                      <Space wrap>
+                                        {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
+                                          <Button
+                                            size="small"
+                                            icon={<CarOutlined />}
+                                            onClick={() => {
+                                              setMilestonesDrawerOpen(false);
+                                              onNavigate?.('giao-hang-pod');
+                                            }}
+                                          >
+                                            Xem giao nhận
+                                          </Button>
+                                        )}
+                                        {canConfirm && (
+                                          <>
+                                            <Button
+                                              type="primary"
+                                              size="small"
+                                              icon={<CheckCircleOutlined />}
+                                              loading={actionLoading}
+                                              onClick={() => handleVerifyMilestone(milestone, true)}
+                                            >
+                                              Đã xem và xác nhận
+                                            </Button>
+                                            {milestone.status === 'PendingReview' && (
+                                              <Button
+                                                danger
+                                                size="small"
+                                                icon={<CloseCircleOutlined />}
+                                                onClick={() => handleVerifyMilestone(milestone, false)}
+                                              >
+                                                Yêu cầu chỉnh sửa
+                                              </Button>
+                                            )}
+                                          </>
+                                        )}
+                                        {alreadyPaid ? (
+                                          <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
+                                        ) : canPay ? (
+                                          <Button
+                                            size="small"
+                                            icon={<DollarOutlined />}
+                                            loading={payingMilestoneId === milestone.id}
+                                            onClick={() => handlePayMilestone(milestone)}
+                                          >
+                                            Thanh toán mốc {money(milestone.amount)}
+                                          </Button>
+                                        ) : null}
+                                      </Space>
+                                    );
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          ),
+                        }))}
+                      />
+                    </div>
+                  ),
+                },
+                {
+                  key: 'fulfillment',
+                  label: (
+                    <span>
+                      <TruckOutlined />
+                      Đối soát giao hàng &amp; PoD
+                    </span>
+                  ),
+                  children: (
+                    <div style={{ marginTop: 8 }}>
+                      <ContractFulfillmentTable
+                        contractId={contractDetails.id}
+                        contractNumber={contractDetails.contractNumber}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
             />
           </div>
         )}
@@ -1125,6 +1193,15 @@ export default function ContractsAndMilestone({ onNavigate }) {
           />
         </div>
       </Modal>
+
+      {/* Modal Ký Hợp Đồng B2B Bằng Mã OTP */}
+      <ContractSignModal
+        open={signModalOpen}
+        onClose={() => setSignModalOpen(false)}
+        onSuccess={load}
+        contract={signContractTarget}
+        role="Customer"
+      />
     </div>
   );
 }

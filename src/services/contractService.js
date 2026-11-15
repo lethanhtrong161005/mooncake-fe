@@ -87,6 +87,22 @@ export const contractService = {
       adminVerdict,
     }));
   },
+
+  async getFulfillment(contractId) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.CONTRACT_FULFILLMENT(contractId)));
+  },
+
+  async getDeliveries(contractId) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.BY_CONTRACT(contractId)));
+  },
+
+  async getDeliveryProofs(deliveryId) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.PROOFS(deliveryId)));
+  },
+
+  async createDelivery(payload) {
+    return unwrap(await apiClient.post(API_ENDPOINTS.DELIVERIES.CREATE, payload));
+  },
 };
 
 export default contractService;
