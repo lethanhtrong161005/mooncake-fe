@@ -1,6 +1,8 @@
 import { VERIFICATION_LABELS } from '../../constants/supplierVerification';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import shopService from '../../services/shopService';
+import supplierService from '../../services/supplierService';
 import {
   Alert,
   Layout,
@@ -69,36 +71,45 @@ export default function ColonyAdminLayout({
   const canCreateShop = user?.capabilities?.canCreateShop === true;
   const canFulfill = user?.capabilities?.canFulfillExistingOrders === true;
 
+  const [shop, setShop] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (isAdmin || !user) return;
+    let active = true;
+    Promise.allSettled([
+      shopService.mine(),
+      supplierService.getMyProfile(),
+    ]).then(([shopRes, profileRes]) => {
+      if (!active) return;
+      if (shopRes.status === 'fulfilled') setShop(shopRes.value);
+      if (profileRes.status === 'fulfilled') setProfile(profileRes.value);
+    });
+    return () => { active = false; };
+  }, [isAdmin, user, verification?.workflowVersion]);
+
   const attpStatus = useMemo(() => {
     if (isAdmin) return null;
-    const expiresOn = user?.supplierVerification?.foodSafetyExpiresOn
-      || user?.supplierVerification?.expiresOn
-      || user?.foodSafetyExpiresOn;
-    const isSuspended = user?.shop?.status === 'Suspended'
-      || user?.shopStatus === 'Suspended'
-      || user?.supplierVerification?.shopStatus === 'Suspended'
-      || user?.isSuspended;
-    const suspensionReason = user?.shop?.suspensionReason
-      || user?.suspensionReason
-      || user?.supplierVerification?.suspensionReason
-      || '';
+    const isSuspended = shop?.status === 'Suspended' && shop?.suspensionReason === 'Giấy ATTP hết hạn';
+
+    const foodSafetyDoc = profile?.currentSubmission?.documents?.find(
+      (doc) => doc.documentType === 'FoodSafetyCertificate',
+    );
+    const expiresOn = foodSafetyDoc?.expiresOn;
 
     let diff = null;
     if (expiresOn && dayjs(expiresOn).isValid()) {
       diff = dayjs(expiresOn).startOf('day').diff(dayjs().startOf('day'), 'day');
     }
 
-    if (isSuspended && (suspensionReason.toLowerCase().includes('attp')
-      || suspensionReason.toLowerCase().includes('an toàn thực phẩm')
-      || (diff !== null && diff < 0))) {
+    if (isSuspended) {
       return { type: 'suspended', diff };
     }
-    if (diff !== null) {
-      if (diff < 0) return { type: 'suspended', diff };
-      if (diff <= 30) return { type: 'expiring', diff };
+    if (diff !== null && diff <= 30 && diff >= 0) {
+      return { type: 'expiring', diff };
     }
     return null;
-  }, [isAdmin, user]);
+  }, [isAdmin, shop, profile]);
 
   const adminMenuItems = [
     {

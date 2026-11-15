@@ -54,14 +54,39 @@ export default function ApprovePage({ onNavigate }) {
   const [detailLoading, setDetailLoading] = useState(false);
   const [decision, setDecision] = useState(null);
   const [forceStale, setForceStale] = useState(false);
-  const loader = useCallback((signal) => supplierService.listApplications({
-    status: status || undefined,
-    expiry: expiryFilter || undefined,
-    q: search,
-    page,
-    pageSize,
-    sort: 'submittedAtAsc',
-  }, signal), [status, expiryFilter, search, page, pageSize]);
+  const loader = useCallback(async (signal) => {
+    const data = await supplierService.listApplications({
+      status: status || undefined,
+      q: search,
+      page,
+      pageSize,
+      sort: 'submittedAtAsc',
+    }, signal);
+
+    if (data?.items?.length) {
+      const enrichedItems = await Promise.all(
+        data.items.map(async (item) => {
+          try {
+            const profile = await supplierService.getVerification(item.profileId);
+            const foodSafetyDoc = profile?.currentSubmission?.documents?.find(
+              (doc) => doc.documentType === 'FoodSafetyCertificate',
+            );
+            return {
+              ...item,
+              foodSafetyExpiresOn: foodSafetyDoc?.expiresOn ?? null,
+            };
+          } catch {
+            return {
+              ...item,
+              foodSafetyExpiresOn: null,
+            };
+          }
+        }),
+      );
+      return { ...data, items: enrichedItems };
+    }
+    return data;
+  }, [status, search, page, pageSize]);
   const resource = useVerificationResource(loader, workflowVersion);
   const stale = selected && forceStale;
 
@@ -70,8 +95,7 @@ export default function ApprovePage({ onNavigate }) {
     if (!expiryFilter) return items;
     const now = dayjs().startOf('day');
     return items.filter((row) => {
-      const val = row.foodSafetyExpiresOn || row.foodSafetyExpiry || row.attpExpiresOn || row.expiresOn
-        || row.documents?.find((doc) => doc.documentType === 'FoodSafetyCertificate')?.expiresOn;
+      const val = row.foodSafetyExpiresOn;
       if (!val || !dayjs(val).isValid()) return false;
       const diff = dayjs(val).startOf('day').diff(now, 'day');
       if (expiryFilter === 'expiring') return diff >= 0 && diff <= 30;
@@ -137,8 +161,7 @@ export default function ApprovePage({ onNavigate }) {
             title: 'Hạn giấy ATTP',
             key: 'foodSafetyExpiresOn',
             render: (_, row) => {
-              const value = row.foodSafetyExpiresOn || row.foodSafetyExpiry || row.attpExpiresOn || row.expiresOn
-                || row.documents?.find((doc) => doc.documentType === 'FoodSafetyCertificate')?.expiresOn;
+              const value = row.foodSafetyExpiresOn;
               if (!value) return <span className="text-[#6c625e]">Không có</span>;
               const date = dayjs(value);
               if (!date.isValid()) return <span className="text-[#6c625e]">{value}</span>;

@@ -20,12 +20,13 @@ import {
   Typography,
   Upload,
 } from 'antd';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import { DOCUMENT_TYPES, verificationError } from '../../constants/supplierVerification';
 import { useAuth } from '../../hooks/useAuth';
 import { useVerificationNotifications } from '../../hooks/useVerificationNotifications';
 import { useVerificationMutation, useVerificationResource } from '../../hooks/useVerificationResource';
+import shopService from '../../services/shopService';
 import { supplierDocumentService } from '../../services/supplierDocumentService';
 import supplierService from '../../services/supplierService';
 import {
@@ -49,7 +50,16 @@ export default function SupplierVerificationPanel({ onNavigate }) {
   const [uploading, setUploading] = useState(0);
   const [review, setReview] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [shop, setShop] = useState(null);
   const uploadKeys = useRef(new Map());
+
+  useEffect(() => {
+    let active = true;
+    shopService.mine().then((data) => {
+      if (active) setShop(data);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [version]);
 
   const profile = resource.data;
   const canRead = user?.capabilities?.canReadSupplierVerification
@@ -73,18 +83,14 @@ export default function SupplierVerificationPanel({ onNavigate }) {
   const foodSafetyDoc = profile?.currentSubmission?.documents?.find(
     (doc) => doc.documentType === 'FoodSafetyCertificate',
   );
-  const foodSafetyExpiresOn = foodSafetyDoc?.expiresOn || profile?.foodSafetyExpiresOn || profile?.expiresOn;
+  const foodSafetyExpiresOn = foodSafetyDoc?.expiresOn;
   const foodSafetyDiff = foodSafetyExpiresOn && dayjs(foodSafetyExpiresOn).isValid()
     ? dayjs(foodSafetyExpiresOn).startOf('day').diff(dayjs().startOf('day'), 'day')
     : null;
-  const isShopSuspendedForAttp = (profile?.shopStatus === 'Suspended' || user?.shop?.status === 'Suspended' || profile?.isSuspended)
-    && ((profile?.suspensionReason || user?.shop?.suspensionReason || '').toLowerCase().includes('attp')
-      || (profile?.suspensionReason || user?.shop?.suspensionReason || '').toLowerCase().includes('an toàn thực phẩm')
-      || (foodSafetyDiff !== null && foodSafetyDiff < 0));
-  const isFoodSafetyExpired = (foodSafetyDiff !== null && foodSafetyDiff < 0) || isShopSuspendedForAttp;
-  const isFoodSafetyExpiringSoon = !isFoodSafetyExpired && foodSafetyDiff !== null && foodSafetyDiff >= 0 && foodSafetyDiff <= 30;
+  const isShopSuspendedForAttp = shop?.status === 'Suspended' && shop?.suspensionReason === 'Giấy ATTP hết hạn';
+  const isFoodSafetyExpiringSoon = !isShopSuspendedForAttp && foodSafetyDiff !== null && foodSafetyDiff >= 0 && foodSafetyDiff <= 30;
 
-  const canSubmit = profile?.allowedActions?.includes('Submit') || isFoodSafetyExpired || isFoodSafetyExpiringSoon;
+  const canSubmit = profile?.allowedActions?.includes('Submit') || isShopSuspendedForAttp || isFoodSafetyExpiringSoon;
   const staged = profile?.stagedDocuments || [];
   const ready = staged.filter((doc) => doc.uploadStatus === 'Ready');
   const enough = ['BusinessLicense', 'FoodSafetyCertificate'].every(
@@ -201,7 +207,7 @@ export default function SupplierVerificationPanel({ onNavigate }) {
             description="Bạn có thể xem lịch sử, hoàn tất nghĩa vụ giao dịch cũ trong phạm vi được phép và gửi hồ sơ tái thẩm định."
           />
         )}
-        {isFoodSafetyExpired && (
+        {isShopSuspendedForAttp && (
           <Alert
             className="mt-4"
             type="error"
