@@ -1,54 +1,74 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Card,
-  Table,
+  App,
   Button,
-  Tag,
   Space,
-  Typography,
-  Alert,
-  message,
+  Table,
+  Tag,
   Tooltip,
 } from 'antd';
 import {
-  CarOutlined,
-  PlusOutlined,
   CameraOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
-  MobileOutlined,
+  ExclamationCircleOutlined,
+  EyeOutlined,
+  InfoCircleOutlined,
+  PlusOutlined,
   ReloadOutlined,
   SendOutlined,
+  ShareAltOutlined,
+  TruckOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
+import DeliveryDetailDrawer from '../../components/delivery/DeliveryDetailDrawer';
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
-import deliveryService from '../../services/deliveryService';
-import contractService from '../../services/contractService';
-import usePagedList from '../../hooks/usePagedList';
+import SharePoDLinkModal from '../../components/delivery/SharePoDLinkModal';
 import FilterBar from '../../components/common/FilterBar';
-
-const { Text } = Typography;
+import usePagedList from '../../hooks/usePagedList';
+import contractService from '../../services/contractService';
+import deliveryService from '../../services/deliveryService';
+import { signalRManager } from '../../services/signalrService';
+import '../../styles/supplier-deliveries.css';
 
 const STATUS_TAG_MAP = {
   Pending: { text: 'Chờ xếp xe', color: 'default' },
   Confirmed: { text: 'Đã xác nhận', color: 'blue' },
   PickedUp: { text: 'Đã bốc lên xe', color: 'geekblue' },
   InTransit: { text: 'Đang vận chuyển', color: 'gold' },
+  AwaitingCustomerConfirmation: { text: 'Chờ khách xác nhận nhận hàng', color: 'cyan' },
   Delivered: { text: 'Đã giao hàng (PoD)', color: 'green' },
+  Disputed: { text: 'Đang khiếu nại PoD', color: 'red' },
   Failed: { text: 'Giao thất bại', color: 'red' },
   Returned: { text: 'Đã chuyển hoàn', color: 'volcano' },
-  in_transit: { text: 'Đang vận chuyển', color: 'gold' },
-  delivered: { text: 'Đã giao hàng (PoD)', color: 'green' },
 };
 
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('vi-VN');
+};
+
+/**
+ * Supplier dispatch and Proof-of-Delivery workspace with inline status actions,
+ * full delivery inspection drawer, and time-limited public driver PoD sharing.
+ */
 export default function DeliverManage({ onNavigate }) {
+  const { message } = App.useApp();
   const deliveryPage = usePagedList(deliveryService.listMinePaged);
   const deliveries = deliveryPage.items;
-  const [contracts, setContracts] = useState([]);
   const loading = deliveryPage.loading;
+
+  const [contracts, setContracts] = useState([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [detailDelivery, setDetailDelivery] = useState(null);
   const [podModalOpen, setPodModalOpen] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDelivery, setShareDelivery] = useState(null);
   const [currentProofs, setCurrentProofs] = useState([]);
 
   const fetchData = useCallback(async () => {
@@ -59,7 +79,7 @@ export default function DeliverManage({ onNavigate }) {
     } catch {
       message.error('Không thể tải dữ liệu giao vận.');
     }
-  }, [deliveryPage.refresh]);
+  }, [deliveryPage, message]);
 
   useEffect(() => {
     let ignore = false;
@@ -79,7 +99,31 @@ export default function DeliverManage({ onNavigate }) {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [message]);
+
+  useEffect(() => {
+    const refreshDeliveryStatus = (event) => {
+      if (event?.category === 'delivery' || event?.type?.startsWith('delivery.')) fetchData();
+    };
+    signalRManager.on('ReceiveNotification', refreshDeliveryStatus);
+    return () => signalRManager.off('ReceiveNotification', refreshDeliveryStatus);
+  }, [fetchData]);
+
+  const metrics = useMemo(() => {
+    const inFlight = new Set(['Pending', 'Confirmed', 'PickedUp', 'InTransit']);
+    const review = new Set(['AwaitingCustomerConfirmation', 'Disputed']);
+    return {
+      total: deliveryPage.totalCount || deliveries.length,
+      inFlight: deliveries.filter((d) => inFlight.has(d.status)).length,
+      awaitingReview: deliveries.filter((d) => review.has(d.status)).length,
+      delivered: deliveries.filter((d) => d.status === 'Delivered').length,
+    };
+  }, [deliveries, deliveryPage.totalCount]);
+
+  const handleOpenDetail = (record) => {
+    setDetailDelivery(record);
+    setDetailDrawerOpen(true);
+  };
 
   const handleOpenPod = async (record) => {
     setSelectedDelivery(record);
@@ -92,149 +136,198 @@ export default function DeliverManage({ onNavigate }) {
     setPodModalOpen(true);
   };
 
+  const handleOpenShare = (record) => {
+    setShareDelivery(record);
+    setShareModalOpen(true);
+  };
+
   const handleUpdateStatus = async (record, nextStatus, notes) => {
     try {
       await deliveryService.updateStatus(record.id || record.key, nextStatus, notes);
-      message.success(`Đã cập nhật trạng thái chuyến giao sang: ${STATUS_TAG_MAP[nextStatus]?.text || nextStatus}`);
+      message.success(
+        `Đã cập nhật trạng thái chuyến giao sang: ${STATUS_TAG_MAP[nextStatus]?.text || nextStatus}`
+      );
       fetchData();
     } catch (err) {
-      message.error(err.response?.data?.message || 'Lỗi khi cập nhật trạng thái chuyến giao.');
+      message.error(
+        err.response?.data?.message || err.message || 'Lỗi khi cập nhật trạng thái chuyến giao.'
+      );
     }
   };
 
   const columns = [
     {
-      title: 'Mã chuyến giao',
+      title: 'Chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
+      width: '17%',
       render: (text, r) => (
         <div>
-          <span className="font-bold text-[#8c1524]">{text || r.deliveryCode || 'DEL-N/A'}</span>
-          <div className="text-[11px] text-slate-400">
-            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị VC liên kết'}
+          <button
+            type="button"
+            className="dm-delivery-link"
+            onClick={() => handleOpenDetail(r)}
+          >
+            {text || r.deliveryCode || 'DEL-N/A'}
+          </button>
+          <div className="dm-cell-muted">
+            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị vận chuyển'}
           </div>
+          {r.createdAt && (
+            <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
+          )}
         </div>
       ),
     },
     {
-      title: 'Hợp đồng tham chiếu',
-      dataIndex: 'contractNumber',
-      key: 'contractNumber',
-      render: (text, r) => (
-        <div>
-          <strong className="text-slate-800">{text || r.contractNo || 'HĐ-B2B'}</strong>
-          <div className="text-xs text-slate-500">{r.customerName || 'Doanh nghiệp'}</div>
-        </div>
-      ),
-    },
-    {
-      title: 'Nơi nhận & đại diện',
-      key: 'destination',
+      title: 'Đơn hàng / Hợp đồng',
+      key: 'reference',
+      width: '18%',
       render: (_, r) => (
-        <div className="text-xs">
-          <div className="font-medium text-slate-800 truncate max-w-xs">{r.toAddress || 'Kho nhận'}</div>
-          <div className="text-slate-500">
-            👤 {r.recipientName || 'Thủ kho'} ({r.recipientPhone || 'N/A'})
+        <div>
+          <div className="dm-ref-code" title={r.orderNumber || r.contractNumber || ''}>
+            {r.orderNumber || r.contractNumber || r.contractNo || 'Chuyến giao B2B'}
+          </div>
+          <div className="dm-cell-muted truncate">
+            {r.customerName || 'Khách hàng doanh nghiệp'}
           </div>
         </div>
       ),
     },
     {
-      title: 'Mã tracking / xe',
-      dataIndex: 'trackingCode',
-      key: 'trackingCode',
-      render: (t) => (
-        <Tag color="cyan" className="font-mono">
-          {t || 'Xe xưởng'}
-        </Tag>
+      title: 'Điểm nhận & đại diện',
+      key: 'destination',
+      width: '21%',
+      render: (_, r) => (
+        <div>
+          <Tooltip title={r.toAddress}>
+            <div className="dm-address-main">
+              {r.toAddress || 'Kho nhận'}
+            </div>
+          </Tooltip>
+          <div className="dm-cell-muted flex items-center gap-1">
+            <UserOutlined className="shrink-0 text-[#9a6b16]" />
+            <span className="truncate">
+              {r.recipientName || 'Thủ kho'}
+              {r.recipientPhone ? ` (${r.recipientPhone})` : ''}
+            </span>
+          </div>
+        </div>
       ),
     },
     {
-      title: 'Ngày dự kiến',
+      title: 'Lịch giao & vận đơn',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
+      width: '15%',
       render: (d, r) => (
-        <span className="text-xs text-slate-600">
-          <ClockCircleOutlined className="mr-1 text-slate-400" />
-          {d || r.expectedDate || 'Đang cập nhật'}
-        </span>
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18]">
+            <ClockCircleOutlined className="text-[#9a6b16]" />
+            <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+          </div>
+          <div>
+            <span className="dm-tracking-pill" title={r.trackingCode || 'Xe xưởng'}>
+              {r.trackingCode || 'Xe xưởng'}
+            </span>
+          </div>
+        </div>
       ),
     },
     {
-      title: 'Trạng thái',
+      title: 'Trạng thái & PoD',
       dataIndex: 'status',
       key: 'status',
-      render: (status) => {
+      width: '13%',
+      render: (status, r) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
         return (
-          <Tag color={config.color} className="font-semibold text-xs px-2.5 py-0.5">
-            {config.text}
-          </Tag>
+          <div>
+            <Tag color={config.color}>{config.text}</Tag>
+            <div className="dm-cell-muted">{r.proofCount || 0} ảnh bằng chứng</div>
+          </div>
         );
       },
     },
     {
-      title: 'Điều phối & bằng chứng',
+      title: 'Điều phối & chi tiết',
       key: 'actions',
       align: 'right',
+      width: '16%',
       render: (_, record) => {
         const status = record.status;
         return (
-          <Space size="small">
-            {status === 'Pending' && (
+          <div className="dm-actions-cell">
+            <div className="dm-actions-row">
+              {status === 'Pending' && (
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() =>
+                    handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.')
+                  }
+                >
+                  Xác nhận xếp xe
+                </Button>
+              )}
+
+              {status === 'Confirmed' && (
+                <Button
+                  size="small"
+                  onClick={() =>
+                    handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.')
+                  }
+                >
+                  Bốc hàng lên xe
+                </Button>
+              )}
+
+              {status === 'PickedUp' && (
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={() =>
+                    handleUpdateStatus(
+                      record,
+                      'InTransit',
+                      'Xe xuất bến bắt đầu vận chuyển.'
+                    )
+                  }
+                >
+                  Xuất bến
+                </Button>
+              )}
+            </div>
+
+            <div className="dm-actions-row">
               <Button
                 size="small"
-                type="primary"
-                className="bg-blue-600 hover:bg-blue-500 text-xs"
-                onClick={() => handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.')}
+                icon={<EyeOutlined />}
+                onClick={() => handleOpenDetail(record)}
               >
-                Xác nhận xếp xe
+                Chi tiết
               </Button>
-            )}
 
-            {status === 'Confirmed' && (
               <Button
                 size="small"
-                className="border-geekblue-400 text-geekblue-600 hover:bg-geekblue-50 text-xs font-semibold"
-                onClick={() => handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.')}
+                icon={<CameraOutlined />}
+                onClick={() => handleOpenPod(record)}
               >
-                Bốc hàng lên xe
+                PoD ({record.proofCount || 0})
               </Button>
-            )}
 
-            {status === 'PickedUp' && (
-              <Button
-                size="small"
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={() => handleUpdateStatus(record, 'InTransit', 'Xe xuất bến bắt đầu vận chuyển.')}
-              >
-                Xuất bến
-              </Button>
-            )}
-
-            <Button
-              size="small"
-              icon={<CameraOutlined />}
-              onClick={() => handleOpenPod(record)}
-              className="border-amber-300 text-amber-800 hover:bg-amber-50 font-medium text-xs"
-            >
-              Xem PoD ({record.proofCount || 0})
-            </Button>
-
-            <Tooltip title="Mở Web Mobile View giả lập tài xế hiện trường chụp ảnh & lấy chữ ký">
-              <Button
-                size="small"
-                icon={<MobileOutlined />}
-                onClick={() => {
-                  onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`);
-                }}
-                className="text-xs border-slate-300"
-              >
-                Tài xế PoD
-              </Button>
-            </Tooltip>
-          </Space>
+              <Tooltip title="Chia sẻ liên kết công khai có thời hạn cho tài xế nộp PoD">
+                <Button
+                  size="small"
+                  icon={<ShareAltOutlined />}
+                  onClick={() => handleOpenShare(record)}
+                >
+                  Tài xế PoD
+                </Button>
+              </Tooltip>
+            </div>
+          </div>
         );
       },
     },
@@ -249,41 +342,111 @@ export default function DeliverManage({ onNavigate }) {
       subtitle="Điều phối xe nội bộ hoặc hãng vận chuyển, chia nhiều đợt giao và theo dõi bằng chứng giao hàng."
       extra={
         <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>Làm mới</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
+          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>
+            Làm mới
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalOpen(true)}
+          >
             Tạo chuyến giao
           </Button>
         </Space>
       }
     >
-      <div className="space-y-6">
-        <Alert
-          type="info"
-          showIcon
-          className="bg-amber-50/70 border-amber-200"
-          message={
-            <div className="text-xs text-slate-700">
-              <strong>Quy trình giao nhận tiêu chuẩn B2B:</strong> Tạo chuyến giao ➔ Tiếp nhận ➔ Bốc hàng tại xưởng (Pickup PoD) ➔ Vận chuyển trên đường ➔ Bàn giao tại kho khách (Delivery PoD + Chữ ký số) ➔ Tự động kích hoạt đối soát mốc Milestone nghiệm thu hợp đồng.
-            </div>
-          }
-        />
+      <div>
+        <div className="dm-notice">
+          <div className="dm-notice__content">
+            <InfoCircleOutlined className="text-[#9a6b16]" />
+            <span>
+              Bấm vào mã chuyến giao hoặc nút Chi tiết để xem lộ trình 2 đầu, cập nhật mã xe và chia sẻ link PoD cho tài xế.
+            </span>
+          </div>
+        </div>
 
-        <Card className="rounded-2xl shadow-sm border-slate-200 overflow-hidden">
-          <FilterBar search={deliveryPage.search} onSearchChange={deliveryPage.setSearch}
-            status={deliveryPage.query.status} onStatusChange={deliveryPage.setStatus}
-            onReset={deliveryPage.reset} placeholder="Tìm mã giao hàng"
-            statusOptions={Object.keys(STATUS_TAG_MAP).filter((value) => value[0] === value[0].toUpperCase())
-              .map((value) => ({ value, label: STATUS_TAG_MAP[value].text }))} />
-          <Table
-            columns={columns}
-            dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
-            loading={loading}
-            pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
-              total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
-              pageSizeOptions: [10, 20, 50, 100] }}
-            scroll={{ x: 1000 }}
-          />
-        </Card>
+        <section className="dm-ribbon" aria-label="Tổng quan vận chuyển">
+          <div className="dm-kpi">
+            <div className="dm-kpi__label">
+              <TruckOutlined className="text-[#8c1524]" />
+              <span>Tổng chuyến giao</span>
+            </div>
+            <div className="dm-kpi__value">{metrics.total}</div>
+            <div className="dm-kpi__caption">Theo dõi trên hệ thống</div>
+          </div>
+
+          <div className="dm-kpi">
+            <div className="dm-kpi__label">
+              <ClockCircleOutlined className="text-[#9a6b16]" />
+              <span>Đang điều phối</span>
+            </div>
+            <div className="dm-kpi__value">{metrics.inFlight}</div>
+            <div className="dm-kpi__caption">Chờ xếp xe đến đang giao</div>
+          </div>
+
+          <div className="dm-kpi">
+            <div className="dm-kpi__label">
+              <ExclamationCircleOutlined className="text-[#7d1322]" />
+              <span>Chờ đối soát / khiếu nại</span>
+            </div>
+            <div className="dm-kpi__value">{metrics.awaitingReview}</div>
+            <div className="dm-kpi__caption">Khách kiểm tra biên bản PoD</div>
+          </div>
+
+          <div className="dm-kpi">
+            <div className="dm-kpi__label">
+              <CheckCircleOutlined className="text-[#2d5a43]" />
+              <span>Đã giao hoàn tất</span>
+            </div>
+            <div className="dm-kpi__value">{metrics.delivered}</div>
+            <div className="dm-kpi__caption">Nghiệm thu thành công</div>
+          </div>
+        </section>
+
+        <section className="dm-ledger" aria-label="Danh sách chuyến giao hàng">
+          <div className="dm-ledger__header">
+            <div>
+              <h2 className="dm-ledger__title">Sổ điều phối vận chuyển</h2>
+              <p className="dm-ledger__subtitle">
+                Quản lý từng đợt giao hàng, thông tin tài xế và đối soát bằng chứng PoD
+              </p>
+            </div>
+          </div>
+
+          <div className="dm-filter-bar">
+            <FilterBar
+              search={deliveryPage.search}
+              onSearchChange={deliveryPage.setSearch}
+              status={deliveryPage.query.status}
+              onStatusChange={deliveryPage.setStatus}
+              onReset={deliveryPage.reset}
+              placeholder="Tìm mã giao hàng hoặc mã vận đơn"
+              statusOptions={Object.entries(STATUS_TAG_MAP).map(([value, meta]) => ({
+                value,
+                label: meta.text,
+              }))}
+            />
+          </div>
+
+          <div className="dm-table">
+            <Table
+              columns={columns}
+              dataSource={deliveries.map((d, i) => ({ ...d, key: d.id || d.key || i }))}
+              loading={loading}
+              size="middle"
+              tableLayout="fixed"
+              pagination={{
+                current: deliveryPage.query.page,
+                pageSize: deliveryPage.query.pageSize,
+                total: deliveryPage.totalCount,
+                onChange: deliveryPage.setPage,
+                showSizeChanger: true,
+                pageSizeOptions: [10, 20, 50, 100],
+              }}
+              scroll={{ x: 960 }}
+            />
+          </div>
+        </section>
 
         <CreateDeliveryModal
           open={createModalOpen}
@@ -292,11 +455,28 @@ export default function DeliverManage({ onNavigate }) {
           contracts={contracts}
         />
 
+        <DeliveryDetailDrawer
+          open={detailDrawerOpen}
+          delivery={detailDelivery}
+          onClose={() => setDetailDrawerOpen(false)}
+          onUpdated={fetchData}
+          onOpenShareModal={(record) => handleOpenShare(record)}
+        />
+
         <PoDViewerModal
           open={podModalOpen}
           onClose={() => setPodModalOpen(false)}
           delivery={selectedDelivery}
           proofs={currentProofs}
+        />
+
+        <SharePoDLinkModal
+          open={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            fetchData();
+          }}
+          delivery={shareDelivery}
         />
       </div>
     </ColonyAdminLayout>

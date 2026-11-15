@@ -36,7 +36,7 @@
 
 .chat-page-wrapper--workspace .chat-page-container {
   max-width: none;
-  height: min(740px, calc(100svh - 205px));
+  height: clamp(500px, calc(100svh - 220px), 740px);
 }
 
 /* Left Sidebar */
@@ -206,10 +206,12 @@
 .chat-main-area {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex: 1;
   height: 100%;
   background: #ffffff;
   flex-direction: column;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

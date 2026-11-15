@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Button, Card, Col, DatePicker, Descriptions, Drawer, Form, Input,
-  InputNumber, Modal, Pagination, Row, Select, Space, Spin, Table, Tag, Typography, message,
+  InputNumber, Modal, Pagination, Row, Select, Space, Spin, Table, Tag, Tooltip, Typography, message,
 } from 'antd';
-import { FileProtectOutlined, PlusOutlined, ReloadOutlined, SolutionOutlined, TeamOutlined } from '@ant-design/icons';
+import { FileProtectOutlined, PlusOutlined, QuestionCircleOutlined, ReloadOutlined, SolutionOutlined, TeamOutlined } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import rfqService from '../../services/rfqService';
+import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import dayjs from 'dayjs';
@@ -68,6 +69,18 @@ const bidStatusLabel = {
   Rejected: 'Không được chọn',
 };
 const formatDeadline = (value) => value ? dayjs(value).format('DD/MM/YYYY · HH:mm') : 'Chưa có hạn';
+const mooncakeSpecificationSuggestions = [
+  'Nhân thập cẩm truyền thống',
+  'Nhân đậu xanh',
+  'Nhân sen nhuyễn',
+  'Nhân trứng muối',
+  'Bánh nướng',
+  'Bánh dẻo',
+  'Kích thước 150 g/chiếc',
+  'Hộp 4 bánh',
+  'Hộp quà in logo doanh nghiệp',
+  'Đóng gói riêng từng chiếc, có hạn sử dụng và thành phần',
+];
 
 export default function BiddingAndQuoteComparison({ onNavigate }) {
   const rfqPage = usePagedList(rfqService.listMinePaged);
@@ -80,6 +93,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const [bids, setBids] = useState([]);
   const [supplierProfiles, setSupplierProfiles] = useState([]);
   const [detailBid, setDetailBid] = useState(null);
+  const [contracts, setContracts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [form] = Form.useForm();
@@ -90,10 +104,20 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   };
 
   const loadRfqs = rfqPage.refresh;
+  useEffect(() => {
+    contractService.listMine()
+      .then((data) => setContracts(Array.isArray(data) ? data : []))
+      .catch((error) => message.error(errorMessage(error)));
+  }, []);
   useEffect(() => { if (rfqPage.error) message.error(errorMessage(rfqPage.error)); }, [rfqPage.error]);
   useEffect(() => {
     const refreshRfqs = (notification) => {
       if (notification?.type?.startsWith('bid.') || notification?.type?.startsWith('rfq.')) loadRfqs();
+      if (notification?.category === 'contract' || notification?.type?.startsWith('contract.')) {
+        contractService.listMine()
+          .then((data) => setContracts(Array.isArray(data) ? data : []))
+          .catch((error) => message.error(errorMessage(error)));
+      }
     };
     signalRManager.on('ReceiveNotification', refreshRfqs);
     signalRManager.on('MarketplaceChanged', refreshRfqs);
@@ -120,7 +144,9 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
           quantity: item.quantity,
           unit: item.unit,
           targetPrice: item.targetPrice || null,
-          specifications: item.specifications || null,
+          specifications: Array.isArray(item.specifications)
+            ? item.specifications.join(' · ') || null
+            : item.specifications || null,
           packagingRequirements: item.packagingRequirements || null,
           needsCustomPackaging: Boolean(item.needsCustomPackaging),
         })),
@@ -216,6 +242,10 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const renderActions = (item) => <Space wrap className="rfq-page__row-actions">
     {item.status === 'Open' && <Button icon={<TeamOutlined />} onClick={() => openInvite(item)}>Mời xưởng</Button>}
     <Button type="primary" icon={<SolutionOutlined />} disabled={!item.bidCount} onClick={() => openCompare(item)}>So sánh</Button>
+    {contracts.some((contract) => contract.rfqId === item.id) && <Button
+      icon={<FileProtectOutlined />}
+      onClick={() => onNavigate?.('hop-dong-tien-do')}
+    >Xem hợp đồng</Button>}
   </Space>;
   const columns = [
     {
@@ -324,7 +354,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
         }} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
         <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 16 }}>Ngân sách nhập bằng đồng (VND), không phải nghìn hay triệu. Ví dụ: 1.000.000 = một triệu đồng.</Text>
         <Form.List name="items">{(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }}>
-          {fields.map(({ key, ...field }) => <Card key={key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label="Quy cách"><Input /></Form.Item></Card>)}
+          {fields.map(({ key, ...field }) => <Card key={key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label={<Space size={6}>Quy cách<Tooltip title="Quy cách là những đặc điểm cụ thể của sản phẩm và cách đóng gói mà bạn muốn đặt."><QuestionCircleOutlined style={{ color: '#8c8c8c', cursor: 'help' }} /></Tooltip></Space>}><Select mode="tags" showSearch options={mooncakeSpecificationSuggestions.map((value) => ({ label: value, value }))} placeholder="Chọn gợi ý hoặc tự nhập quy cách" tokenSeparators={[',']} /></Form.Item></Card>)}
           <Button onClick={() => add({ unit: 'Hộp', quantity: 1 })}>Thêm mặt hàng</Button>
         </Space>}</Form.List>
         <Space style={{ marginTop: 18 }}><Button onClick={() => setCreateOpen(false)}>Hủy</Button><Button type="primary" htmlType="submit" loading={actionLoading}>Phát hành RFQ</Button></Space>

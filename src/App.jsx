@@ -96,8 +96,9 @@ export default function App() {
       return;
     }
 
-    const targetRoute = target.split('?')[0];
-    if (isKnownRoute(targetRoute) && !isPublicRoute(targetRoute) &&
+    const [targetRoute, targetQuery = ''] = target.split('?');
+    const isDriverTokenNav = DRIVER_ROUTES.has(targetRoute) && Boolean(new URLSearchParams(targetQuery).get('token'));
+    if (isKnownRoute(targetRoute) && !isPublicRoute(targetRoute) && !isDriverTokenNav &&
       !isLoggedIn && !storage.get('auth_token')) {
       setPendingPage(target);
       setShowLogin(true);
@@ -183,12 +184,21 @@ export default function App() {
       case 'giao-hang-pod':
       case 'van-chuyen-pod':
         return <DeliveryPoD onNavigate={navigateTo} />;
+      case 'giao-hang-tai-xe':
       case 'driver-delivery-view':
       case 'driver-pod':
         return (
           <DriverMobileView
-            onBack={() => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')}
-            onComplete={() => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')}
+            onBack={
+              currentPage === 'giao-hang-tai-xe' || Boolean(new URLSearchParams(routeQuery).get('token'))
+                ? null
+                : () => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')
+            }
+            onComplete={
+              currentPage === 'giao-hang-tai-xe' || Boolean(new URLSearchParams(routeQuery).get('token'))
+                ? null
+                : () => navigateTo(isSupplierUser ? 'nha-cung-cap/quan-ly-giao-hang' : 'giao-hang-pod')
+            }
           />
         );
       case 'thanh-toan-danh-gia':
@@ -267,14 +277,19 @@ export default function App() {
     return <GoogleCallbackPage />;
   }
 
+  const isStandaloneDriverPage =
+    currentPage === 'giao-hang-tai-xe' || DRIVER_ROUTES.has(currentPage);
+
   // Quick Navigator Menu Items for testing & preview
   const renderAuthorizedPage = () => {
+    const hasDriverPublicToken =
+      DRIVER_ROUTES.has(currentPage) && Boolean(new URLSearchParams(routeQuery).get('token'));
     if (!isKnownRoute(currentPage)) return <NotFoundPage onNavigate={navigateTo} />;
     if (currentPage === 'trang-chu' && isLoggedIn &&
         (isRestoring || roleHomeRoute(user) !== 'trang-chu')) {
       return <Spin fullscreen description="Đang mở không gian làm việc…" />;
     }
-    if (isPublicRoute(currentPage)) return renderPage();
+    if (isPublicRoute(currentPage) || hasDriverPublicToken) return renderPage();
     if (isRestoring) return <Spin fullscreen description="Đang kiểm tra phiên đăng nhập…" />;
     if (!isLoggedIn) return <AccessDeniedPage onNavigate={navigateTo} onLogin={() => setShowLogin(true)} />;
     if (ADMIN_ROUTES.has(currentPage) && user?.role !== 'Admin') return <AccessDeniedPage onNavigate={navigateTo} />;
@@ -335,12 +350,14 @@ export default function App() {
         />
 
         {/* Global AI Chatbot Concierge Widget */}
-        {!currentPage.startsWith('shop/') && (!isLoggedIn || user?.role === 'Customer') &&
+        {!isStandaloneDriverPage && !currentPage.startsWith('shop/') && (!isLoggedIn || user?.role === 'Customer') &&
           (isPublicRoute(currentPage) || (isLoggedIn &&
-            (CUSTOMER_ROUTES.has(currentPage) || DRIVER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
+            (CUSTOMER_ROUTES.has(currentPage) || ONBOARDING_ROUTES.has(currentPage) || AUTHENTICATED_ROUTES.has(currentPage)))) &&
           <AiChatWidget onNavigate={navigateTo} />}
         {/* Real-time B2B Customer <-> Supplier Floating Messenger Dock */}
-        {isLoggedIn && <ChatDock onNavigate={navigateTo} />}
+        {isLoggedIn && !isStandaloneDriverPage &&
+          !['tin-nhan', 'nha-cung-cap/tin-nhan'].includes(currentPage) &&
+          <ChatDock onNavigate={navigateTo} />}
       </div>
       </ChatProvider>
       </WishlistProvider>

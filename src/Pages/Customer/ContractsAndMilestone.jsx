@@ -10,29 +10,38 @@ import {
   Image,
   Input,
   Modal,
+  Radio,
+  Select,
   Space,
   Steps,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
 import {
   AlertOutlined,
+  CarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   DollarOutlined,
   FileDoneOutlined,
+  MessageOutlined,
   OrderedListOutlined,
   ReloadOutlined,
+  SearchOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
 import contractService from '../../services/contractService';
 import paymentService from '../../services/paymentService';
+import deliveryService from '../../services/deliveryService';
 import { signalRManager } from '../../services/signalrService';
+import { useChat } from '../../hooks/useChat';
 import '../../styles/journey-pages.css';
 
 const { Paragraph, Text, Title } = Typography;
@@ -40,6 +49,11 @@ const { TextArea } = Input;
 
 const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
+const normalizeSearch = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[đĐ]/g, 'd')
+  .toLocaleLowerCase('vi');
 
 const parseContractTerms = (value) => {
   if (value && typeof value === 'object') return value;
@@ -133,6 +147,7 @@ const paymentStatusMap = {
 };
 
 export default function ContractsAndMilestone({ onNavigate }) {
+  const { openChatWithShop } = useChat();
   const [contracts, setContracts] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -141,13 +156,19 @@ export default function ContractsAndMilestone({ onNavigate }) {
 
   const [paymentReviewOpen, setPaymentReviewOpen] = useState(false);
   const [paymentTermsConfirmed, setPaymentTermsConfirmed] = useState(false);
+  const [paymentChoice, setPaymentChoice] = useState('deposit');
+  const [contractSearch, setContractSearch] = useState('');
+  const [contractStatusFilter, setContractStatusFilter] = useState('all');
 
 
   // Milestones Drawer
   const [milestonesDrawerOpen, setMilestonesDrawerOpen] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const [contractDetails, setContractDetails] = useState(null);
+  const [contractDeliveries, setContractDeliveries] = useState([]);
   const [milestoneRejectModalOpen, setMilestoneRejectModalOpen] = useState(false);
   const [selectedMilestone, setSelectedMilestone] = useState(null);
+  const [payingMilestoneId, setPayingMilestoneId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
   // Extension Modal
@@ -187,7 +208,18 @@ export default function ContractsAndMilestone({ onNavigate }) {
 
   useEffect(() => {
     const refreshContracts = (event) => {
-      if (!event || ['contract', 'payment'].includes(event.category) || /^(contract|payment)\./.test(event.type || '')) load();
+      const isDeliveryEvent = event?.category === 'delivery' || /^(delivery)\./.test(event?.type || '');
+      if (!event || ['contract', 'payment'].includes(event.category)
+        || /^(contract|payment)\./.test(event.type || '') || isDeliveryEvent) load();
+      if (isDeliveryEvent && milestonesDrawerOpen && selected?.id) {
+        Promise.all([
+          contractService.get(selected.id),
+          deliveryService.getByContract(selected.id),
+        ]).then(([details, deliveryData]) => {
+          setContractDetails(details);
+          setContractDeliveries(Array.isArray(deliveryData) ? deliveryData : deliveryData?.items || []);
+        }).catch((error) => message.error(errorMessage(error)));
+      }
     };
     signalRManager.on('MarketplaceChanged', refreshContracts);
     signalRManager.on('ReceiveNotification', refreshContracts);
@@ -195,12 +227,36 @@ export default function ContractsAndMilestone({ onNavigate }) {
       signalRManager.off('MarketplaceChanged', refreshContracts);
       signalRManager.off('ReceiveNotification', refreshContracts);
     };
-  }, [load]);
+  }, [load, milestonesDrawerOpen, selected?.id]);
 
   const paymentByContract = useMemo(
     () => new Map(payments.filter((payment) => payment.contractId).map((payment) => [payment.contractId, payment])),
     [payments]
   );
+
+  const filteredContracts = useMemo(() => {
+    const query = normalizeSearch(contractSearch.trim());
+    return contracts.filter((contract) => {
+      const matchesStatus = contractStatusFilter === 'all' || contract.status === contractStatusFilter;
+      const searchable = [
+        contract.contractNumber,
+        contract.title,
+        contract.status,
+        statusMap[contract.status]?.[1],
+      ].filter(Boolean).join(' ');
+      return matchesStatus && (!query || normalizeSearch(searchable).includes(query));
+    });
+  }, [contracts, contractSearch, contractStatusFilter]);
+
+  const allContractDeliveriesArrived = contractDeliveries.length > 0
+    && contractDeliveries.every((delivery) => delivery.status === 'Delivered');
+  const contractHasDeliveryInProgress = contractDeliveries.some((delivery) => (
+    !['Delivered', 'Failed', 'Returned'].includes(delivery.status)
+  ));
+  const milestone2IsPaid = contractDetails?.milestones?.some((milestone) => (
+    milestone.sequenceNumber === 2 && milestone.status === 'Paid'
+  )) || false;
+  const finalMilestoneReadyForSettlement = allContractDeliveriesArrived && milestone2IsPaid;
 
   const openPaymentReview = async (contract) => {
     setActionLoading(true);
@@ -208,6 +264,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
       const details = await contractService.get(contract.id);
       setSelected({ ...contract, ...details });
       setPaymentTermsConfirmed(false);
+      setPaymentChoice('deposit');
       setPaymentReviewOpen(true);
     } catch (error) {
       message.error(errorMessage(error));
@@ -223,7 +280,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
     }
     const contract = selected;
     const payment = paymentByContract.get(contract.id);
-    if (!payment?.milestoneId) {
+    if (paymentChoice === 'deposit' && !payment?.milestoneId) {
       message.warning('Chưa tìm thấy khoản cọc M1. Hãy tải lại danh sách hợp đồng để đồng bộ khoản thanh toán.');
       return;
     }
@@ -233,7 +290,8 @@ export default function ContractsAndMilestone({ onNavigate }) {
       const result = await paymentService.createVnPayUrl(
         contract.id,
         payment.milestoneId,
-        `${window.location.origin}/thanh-toan/ket-qua`
+        `${window.location.origin}/thanh-toan/ket-qua`,
+        paymentChoice === 'full'
       );
       setPaymentReviewOpen(false);
       window.location.assign(result.paymentUrl);
@@ -247,13 +305,41 @@ export default function ContractsAndMilestone({ onNavigate }) {
     setSelected(contract);
     setActionLoading(true);
     try {
-      const details = await contractService.get(contract.id);
+      const [details, deliveryData, paymentData] = await Promise.all([
+        contractService.get(contract.id),
+        deliveryService.getByContract(contract.id),
+        paymentService.listMine(),
+      ]);
       setContractDetails(details);
+      setContractDeliveries(Array.isArray(deliveryData) ? deliveryData : deliveryData?.items || []);
+      setPayments(paymentData || []);
       setMilestonesDrawerOpen(true);
     } catch (error) {
       message.error(errorMessage(error));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const chatWithSupplier = async () => {
+    const supplierId = contractDetails?.supplierId || selected?.supplierId;
+    if (!supplierId) {
+      message.error('Không tìm thấy thông tin supplier của hợp đồng để mở cuộc trò chuyện.');
+      return;
+    }
+    setChatLoading(true);
+    try {
+      const thread = await openChatWithShop({ supplierId });
+      if (!thread?.id) {
+        message.error('Không thể mở cuộc trò chuyện. Vui lòng thử lại khi kết nối tin nhắn sẵn sàng.');
+        return;
+      }
+      setMilestonesDrawerOpen(false);
+      onNavigate?.(`tin-nhan?threadId=${encodeURIComponent(thread.id)}`);
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -276,6 +362,28 @@ export default function ContractsAndMilestone({ onNavigate }) {
       message.error(errorMessage(error));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handlePayMilestone = async (milestone) => {
+    if (!selected || milestone.isDeposit) return;
+    if (milestone.sequenceNumber === 3) {
+      if (!finalMilestoneReadyForSettlement) {
+        message.warning('Mốc 3 có thể thanh toán sau khi mốc 2 đã thanh toán và tất cả chuyến giao được xác nhận đã giao.');
+        return;
+      }
+    }
+    setPayingMilestoneId(milestone.id);
+    try {
+      const result = await paymentService.createVnPayUrl(
+        selected.id,
+        milestone.id,
+        `${window.location.origin}/thanh-toan/ket-qua`,
+      );
+      window.location.assign(result.paymentUrl);
+    } catch (error) {
+      message.error(errorMessage(error));
+      setPayingMilestoneId(null);
     }
   };
 
@@ -345,11 +453,45 @@ export default function ContractsAndMilestone({ onNavigate }) {
     }
   };
 
-  const openFinalAcceptance = (contract) => {
-    setSelected(contract);
-    setConfirmedQuality(false);
-    setAcceptanceNotes('');
-    setAcceptanceModalOpen(true);
+  const openFinalAcceptance = async (contract) => {
+    setActionLoading(true);
+    try {
+      const [details, deliveryData, paymentData] = await Promise.all([
+        contractService.get(contract.id),
+        deliveryService.getByContract(contract.id),
+        paymentService.listMine(),
+      ]);
+      const deliveries = Array.isArray(deliveryData) ? deliveryData : deliveryData?.items || [];
+      setPayments(paymentData || []);
+      const hasDeliveredShipment = deliveries.length > 0
+        && deliveries.every((delivery) => delivery.status === 'Delivered');
+      const milestone2 = details.milestones?.find((item) => item.sequenceNumber === 2);
+      const milestone3 = details.milestones?.find((item) => item.sequenceNumber === 3);
+      const fullContractPaid = (paymentData || []).some((payment) => payment.contractId === contract.id
+        && !payment.milestoneId && payment.status === 'Completed');
+      if (!hasDeliveredShipment) {
+        message.warning('Bạn có thể nghiệm thu khi tất cả chuyến giao đã được xác nhận hoàn tất.');
+        return;
+      }
+      if (milestone2 && !['Paid', 'CompletedOnTime', 'CompletedLate'].includes(milestone2.status)) {
+        message.warning('Vui lòng xác nhận và thanh toán mốc 2 trước khi nghiệm thu toàn bộ.');
+        return;
+      }
+      if (milestone3 && milestone3.status !== 'Paid' && !fullContractPaid) {
+        message.warning('Vui lòng thanh toán mốc 3 trước khi nghiệm thu toàn bộ.');
+        return;
+      }
+      setSelected({ ...contract, ...details });
+      setContractDetails(details);
+      setContractDeliveries(deliveries);
+      setConfirmedQuality(false);
+      setAcceptanceNotes('');
+      setAcceptanceModalOpen(true);
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const submitFinalAcceptance = async () => {
@@ -514,26 +656,51 @@ export default function ContractsAndMilestone({ onNavigate }) {
 
         <section className="journey-section" aria-labelledby="contracts-list-title">
           <div className="journey-section__head">
-            <div><h2 id="contracts-list-title">Hợp đồng của bạn</h2><p>{loading ? 'Đang tải hợp đồng…' : `${contracts.length} hợp đồng`}</p></div>
+            <div><h2 id="contracts-list-title">Hợp đồng của bạn</h2><p>{loading ? 'Đang tải hợp đồng…' : `${filteredContracts.length}${filteredContracts.length !== contracts.length ? ` / ${contracts.length}` : ''} hợp đồng`}</p></div>
             <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>Tải lại</Button>
           </div>
+          <Space wrap size="middle" style={{ width: '100%', marginBottom: 16 }}>
+            <Input
+              allowClear
+              value={contractSearch}
+              onChange={(event) => setContractSearch(event.target.value)}
+              prefix={<SearchOutlined />}
+              placeholder="Tìm theo mã hoặc tên hợp đồng"
+              aria-label="Tìm hợp đồng theo mã hoặc tên"
+              style={{ flex: '1 1 280px', maxWidth: 420 }}
+            />
+            <Select
+              value={contractStatusFilter}
+              onChange={setContractStatusFilter}
+              aria-label="Lọc hợp đồng theo trạng thái"
+              style={{ width: 240, maxWidth: '100%' }}
+              options={[
+                { value: 'all', label: 'Tất cả trạng thái' },
+                ...Object.entries(statusMap).map(([value, [, label]]) => ({ value, label })),
+              ]}
+            />
+          </Space>
           <div className="journey-desktop-table">
             <Table
               rowKey="id"
               loading={loading}
-              dataSource={contracts}
+              dataSource={filteredContracts}
               columns={columns}
               scroll={{ x: 1100 }}
-              locale={{ emptyText: <div className="journey-empty"><FileDoneOutlined /><strong>Chưa có hợp đồng</strong><p>Khi bạn chọn một báo giá, hợp đồng sẽ xuất hiện tại đây để theo dõi.</p><Button onClick={() => onNavigate?.('so-sanh-bao-gia')}>Xem yêu cầu báo giá</Button></div> }}
+              locale={{ emptyText: filteredContracts.length === 0 && contracts.length > 0
+                ? 'Không tìm thấy hợp đồng phù hợp.'
+                : <div className="journey-empty"><FileDoneOutlined /><strong>Chưa có hợp đồng</strong><p>Khi bạn chọn một báo giá, hợp đồng sẽ xuất hiện tại đây để theo dõi.</p><Button onClick={() => onNavigate?.('so-sanh-bao-gia')}>Xem yêu cầu báo giá</Button></div> }}
             />
           </div>
           <div className="journey-mobile-list">
-            {loading ? <p className="journey-empty">Đang tải hợp đồng…</p> : contracts.length ? contracts.map((item) => <article className="journey-record" key={item.id}>
+            {loading ? <p className="journey-empty">Đang tải hợp đồng…</p> : filteredContracts.length ? filteredContracts.map((item) => <article className="journey-record" key={item.id}>
               <div className="journey-record__top"><strong>{item.contractNumber}</strong><Tag color={statusMap[item.status]?.[0] || 'default'}>{statusMap[item.status]?.[1] || item.status}</Tag></div>
               <h3>{item.title || 'Hợp đồng từ báo giá RFQ'}</h3>
               <dl><div><dt>Giá trị</dt><dd>{money(item.totalValue)}</dd></div><div><dt>Hạn giao</dt><dd>{item.deliveryDeadline || '—'}</dd></div><div><dt>Xác nhận</dt><dd>{item.signedBySupplierAt ? 'Xưởng đã ký' : 'Chờ xưởng ký'}</dd></div></dl>
               <div className="journey-record__actions">{columns[5].render(null, item)}</div>
-            </article>) : <div className="journey-empty"><FileDoneOutlined /><strong>Chưa có hợp đồng</strong><p>Khi bạn chọn một báo giá, hợp đồng sẽ xuất hiện tại đây.</p><Button onClick={() => onNavigate?.('so-sanh-bao-gia')}>Xem yêu cầu báo giá</Button></div>}
+            </article>) : contracts.length > 0
+              ? <div className="journey-empty">Không tìm thấy hợp đồng phù hợp.</div>
+              : <div className="journey-empty"><FileDoneOutlined /><strong>Chưa có hợp đồng</strong><p>Khi bạn chọn một báo giá, hợp đồng sẽ xuất hiện tại đây.</p><Button onClick={() => onNavigate?.('so-sanh-bao-gia')}>Xem yêu cầu báo giá</Button></div>}
           </div>
         </section>
 
@@ -591,13 +758,13 @@ export default function ContractsAndMilestone({ onNavigate }) {
         width={760}
       >
         {selected && <>
-          <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Xưởng đã xác nhận hợp đồng. Vui lòng kiểm tra toàn bộ nội dung trước khi thanh toán khoản cọc M1." />
+          <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Xưởng đã xác nhận hợp đồng. Bạn có thể chọn thanh toán cọc M1 hoặc nạp toàn bộ giá trị hợp đồng vào ký quỹ ngay từ đầu." />
           <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã hợp đồng">{selected.contractNumber}</Descriptions.Item>
             <Descriptions.Item label="Tên hợp đồng">{selected.title || 'Hợp đồng RFQ'}</Descriptions.Item>
             <Descriptions.Item label="Tổng giá trị">{money(selected.totalValue)}</Descriptions.Item>
             <Descriptions.Item label="Hạn giao hàng">{selected.deliveryDeadline || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Khoản thanh toán">Đặt cọc M1 · {paymentByContract.get(selected.id)?.amount ? money(paymentByContract.get(selected.id).amount) : '—'}</Descriptions.Item>
+            <Descriptions.Item label="Khoản đặt cọc M1">{paymentByContract.get(selected.id)?.amount ? money(paymentByContract.get(selected.id).amount) : '—'}</Descriptions.Item>
             <Descriptions.Item label="Xưởng xác nhận">{selected.signedBySupplierAt ? new Date(selected.signedBySupplierAt).toLocaleString('vi-VN') : 'Đã xác nhận'}</Descriptions.Item>
             <Descriptions.Item label="Chi tiết thỏa thuận" span={2}><ContractTerms value={selected.termsAndConditions} /></Descriptions.Item>
           </Descriptions>
@@ -610,8 +777,21 @@ export default function ContractsAndMilestone({ onNavigate }) {
               </Space>
             </Card>)}
           </div>}
+          <div style={{ marginTop: 18 }}>
+            <Space size={6}>
+              <Text strong>Chọn cách thanh toán</Text>
+              <Tooltip title="Đặt cọc M1: thanh toán khoản cọc ban đầu, các mốc còn lại thanh toán theo tiến độ. Thanh toán toàn bộ: trả tổng giá trị hợp đồng trong một lần. Cả hai khoản đều được giữ trong ký quỹ và chỉ giải ngân theo mốc sau khi nghiệm thu.">
+                <QuestionCircleOutlined aria-label="Giải thích các cách thanh toán" tabIndex={0} style={{ color: '#8c1524', cursor: 'help' }} />
+              </Tooltip>
+            </Space>
+            <Radio.Group value={paymentChoice} onChange={(event) => setPaymentChoice(event.target.value)} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              <Radio value="deposit">Thanh toán đặt cọc M1 · {money(paymentByContract.get(selected.id)?.amount)}</Radio>
+              <Radio value="full">Thanh toán toàn bộ một lần · {money(selected.totalValue)}</Radio>
+            </Radio.Group>
+            {paymentChoice === 'full' && <Alert type="info" showIcon style={{ marginTop: 12 }} message="Toàn bộ tiền được giữ trong ký quỹ. Supplier vẫn cần hoàn thành từng mốc và customer nghiệm thu trước khi tiền được giải ngân theo tiến độ." />}
+          </div>
           <Checkbox checked={paymentTermsConfirmed} onChange={(event) => setPaymentTermsConfirmed(event.target.checked)} style={{ marginTop: 18 }}>
-            Tôi đã đọc, hiểu và xác nhận các thông tin, điều khoản hợp đồng và khoản cọc M1 ở trên.
+            Tôi đã đọc, hiểu và xác nhận các thông tin, điều khoản hợp đồng và lựa chọn thanh toán ở trên.
           </Checkbox>
         </>}
       </Modal>
@@ -639,6 +819,12 @@ export default function ContractsAndMilestone({ onNavigate }) {
                 </Tag>
               </Descriptions.Item>
             </Descriptions>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <Button type="primary" size="small" icon={<MessageOutlined />} loading={chatLoading} onClick={chatWithSupplier}>
+                Nhắn tin với supplier
+              </Button>
+            </div>
 
             {/* Banner nếu có yêu cầu xin gia hạn đang chờ xử lý */}
             {contractDetails.pendingExtension && (
@@ -680,8 +866,14 @@ export default function ContractsAndMilestone({ onNavigate }) {
                 title: (
                   <Space>
                     <Text strong>{milestone.name}</Text>
-                    <Tag color={milestoneStatusMap[milestone.status]?.[0] || 'default'}>
-                      {milestoneStatusMap[milestone.status]?.[1] || milestone.status}
+                    <Tag color={milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
+                      ? 'processing'
+                      : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
+                        ? 'warning' : milestoneStatusMap[milestone.status]?.[0] || 'default'}>
+                      {milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
+                        ? 'Đang tiến hành giao hàng'
+                        : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
+                          ? 'Chờ thanh toán & nghiệm thu' : milestoneStatusMap[milestone.status]?.[1] || milestone.status}
                     </Tag>
                   </Space>
                 ),
@@ -726,28 +918,75 @@ export default function ContractsAndMilestone({ onNavigate }) {
                       </div>
                     )}
 
-                    {/* Customer Actions for Milestone */}
-                    {milestone.status === 'PendingReview' && (
+                    {/* Customer review and payment actions for production milestones */}
+                    {!milestone.isDeposit && (
                       <div style={{ marginTop: 12 }}>
                         <Divider style={{ margin: '8px 0' }} />
-                        <Space>
-                          <Button
-                            type="primary"
-                            size="small"
-                            icon={<CheckCircleOutlined />}
-                            onClick={() => handleVerifyMilestone(milestone, true)}
-                          >
-                            Phê duyệt nghiệm thu mốc
-                          </Button>
-                          <Button
-                            danger
-                            size="small"
-                            icon={<CloseCircleOutlined />}
-                            onClick={() => handleVerifyMilestone(milestone, false)}
-                          >
-                            Yêu cầu chỉnh sửa
-                          </Button>
-                        </Space>
+                        {(() => {
+                          const canConfirm = ['InProgress', 'PendingReview'].includes(milestone.status);
+                          const fullContractPaid = payments.some((payment) => (
+                            payment.contractId === selected.id && !payment.milestoneId && payment.status === 'Completed'
+                          ));
+                          const canPay = milestone.sequenceNumber === 3
+                            ? finalMilestoneReadyForSettlement
+                            : ['CompletedOnTime', 'CompletedLate'].includes(milestone.status);
+                          const alreadyPaid = milestone.status === 'Paid' || fullContractPaid || payments.some((payment) => (
+                            payment.contractId === selected.id &&
+                            payment.milestoneId === milestone.id &&
+                            payment.status === 'Completed'
+                          ));
+                          return (
+                            <Space wrap>
+                              {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
+                                <Button
+                                  size="small"
+                                  icon={<CarOutlined />}
+                                  onClick={() => {
+                                    setMilestonesDrawerOpen(false);
+                                    onNavigate?.('giao-hang-pod');
+                                  }}
+                                >
+                                  Xem giao nhận
+                                </Button>
+                              )}
+                              {canConfirm && (
+                                <>
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    icon={<CheckCircleOutlined />}
+                                    loading={actionLoading}
+                                    onClick={() => handleVerifyMilestone(milestone, true)}
+                                  >
+                                    Đã xem và xác nhận
+                                  </Button>
+                                  {milestone.status === 'PendingReview' && (
+                                    <Button
+                                      danger
+                                      size="small"
+                                      icon={<CloseCircleOutlined />}
+                                      onClick={() => handleVerifyMilestone(milestone, false)}
+                                    >
+                                      Yêu cầu chỉnh sửa
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                              {alreadyPaid ? (
+                                <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
+                              ) : canPay ? (
+                                <Button
+                                  size="small"
+                                  icon={<DollarOutlined />}
+                                  loading={payingMilestoneId === milestone.id}
+                                  onClick={() => handlePayMilestone(milestone)}
+                                >
+                                  Thanh toán mốc {money(milestone.amount)}
+                                </Button>
+                              ) : null}
+                            </Space>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

@@ -5,8 +5,8 @@ const unwrap = (response) => response?.data ?? response;
 
 export const paymentService = {
   // Legacy support for contract VNPay url
-  async createVnPayUrl(contractId, milestoneId, returnUrl) {
-    return this.createContractVnPayUrl(contractId, milestoneId, returnUrl);
+  async createVnPayUrl(contractId, milestoneId, returnUrl, payFullContract = false) {
+    return this.createContractVnPayUrl(contractId, milestoneId, returnUrl, payFullContract);
   },
 
   // 1. Tạo liên kết VNPay Sandbox cho Đơn hàng
@@ -19,10 +19,11 @@ export const paymentService = {
   },
 
   // 2. Tạo liên kết VNPay Sandbox cho Mốc Hợp đồng
-  async createContractVnPayUrl(contractId, milestoneId, returnUrl) {
+  async createContractVnPayUrl(contractId, milestoneId, returnUrl, payFullContract = false) {
     const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.VNPAY_CREATE_URL, {
       contractId,
       milestoneId,
+      payFullContract,
       returnUrl: returnUrl || `${window.location.origin}/thanh-toan/ket-qua`,
     });
     return unwrap(res);

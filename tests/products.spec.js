@@ -82,6 +82,8 @@ const supplierProductListFixture = {
     {
       productId: '77777777-7777-4777-8777-777777777777',
       name: 'Bánh Trung Thu Hoàng Kim B2B',
+      categoryId: '11111111-2222-3333-4444-555555555551',
+      skus: ['SKU-TC-200', 'SKU-HS-250'],
       primaryImageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100',
       minPrice: 150000,
       maxPrice: 250000,
@@ -89,11 +91,14 @@ const supplierProductListFixture = {
       totalStockQty: 350,
       effectiveStatus: 'Active',
       version: 1,
+      createdAtUtc: '2026-10-01T08:00:00Z',
       updatedAtUtc: new Date().toISOString(),
     },
     {
       productId: '88888888-7777-4777-8777-888888888888',
       name: 'Hộp Quà Thượng Uyển 4 Bánh',
+      categoryId: '11111111-2222-3333-4444-555555555553',
+      skus: ['SKU-TU-004'],
       primaryImageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100',
       minPrice: 650000,
       maxPrice: 850000,
@@ -101,13 +106,91 @@ const supplierProductListFixture = {
       totalStockQty: 50,
       effectiveStatus: 'Inactive',
       version: 2,
+      createdAtUtc: '2026-10-02T08:00:00Z',
       updatedAtUtc: new Date().toISOString(),
     },
   ],
   totalCount: 2,
 };
 
-async function setupSession(page, { role = 'Customer' } = {}) {
+function createPaginatedSupplierProducts() {
+  const baseTime = Date.UTC(2026, 9, 20, 12, 0, 0);
+  const items = [
+    {
+      productId: '10000000-0000-4000-8000-000000000001',
+      name: 'Set Quà Long Phụng Cát Tường VIP',
+      categoryId: '11111111-2222-3333-4444-555555555553',
+      skus: ['SKU-LP-VIP'],
+      primaryImageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100',
+      minPrice: 1250000,
+      maxPrice: 1650000,
+      variantCount: 2,
+      totalStockQty: 180,
+      effectiveStatus: 'Active',
+      version: 1,
+      createdAtUtc: new Date(baseTime + 13 * 3600_000).toISOString(),
+      updatedAtUtc: new Date(baseTime + 13 * 3600_000).toISOString(),
+    },
+    {
+      productId: '10000000-0000-4000-8000-000000000002',
+      name: 'Bánh Nướng Thập Cẩm Gà Quay Yến Sào',
+      categoryId: '11111111-2222-3333-4444-555555555551',
+      skus: ['SKU-TC-YS'],
+      primaryImageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100',
+      minPrice: 220000,
+      maxPrice: 340000,
+      variantCount: 3,
+      totalStockQty: 0,
+      effectiveStatus: 'OutOfStock',
+      version: 2,
+      createdAtUtc: new Date(baseTime + 12 * 3600_000).toISOString(),
+      updatedAtUtc: new Date(baseTime + 12 * 3600_000).toISOString(),
+    },
+    {
+      productId: '10000000-0000-4000-8000-000000000003',
+      name: 'Bánh Dẻo Hoa Nhài Trứng Chảy',
+      categoryId: '11111111-2222-3333-4444-555555555552',
+      skus: ['SKU-BD-HN03'],
+      primaryImageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100',
+      minPrice: 145000,
+      maxPrice: 195000,
+      variantCount: 2,
+      totalStockQty: 12,
+      effectiveStatus: 'Active',
+      version: 1,
+      createdAtUtc: new Date(baseTime + 11 * 3600_000).toISOString(),
+      updatedAtUtc: new Date(baseTime + 11 * 3600_000).toISOString(),
+    },
+  ];
+
+  for (let i = 4; i <= 13; i += 1) {
+    const padded = String(i).padStart(2, '0');
+    items.push({
+      productId: `10000000-0000-4000-8000-0000000000${padded}`,
+      name: `Hộp Bánh Nghệ Nhân Số ${padded}`,
+      categoryId:
+        i % 3 === 0
+          ? '11111111-2222-3333-4444-555555555553'
+          : i % 2 === 0
+            ? '11111111-2222-3333-4444-555555555552'
+            : '11111111-2222-3333-4444-555555555551',
+      skus: [`SKU-NN-${padded}`],
+      primaryImageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=100',
+      minPrice: 180000 + i * 10000,
+      maxPrice: 280000 + i * 10000,
+      variantCount: (i % 3) + 1,
+      totalStockQty: i * 15,
+      effectiveStatus: i === 12 ? 'Inactive' : 'Active',
+      version: 1,
+      createdAtUtc: new Date(baseTime + (14 - i) * 3600_000).toISOString(),
+      updatedAtUtc: new Date(baseTime + (14 - i) * 3600_000).toISOString(),
+    });
+  }
+
+  return items;
+}
+
+async function setupSession(page, { role = 'Customer', products } = {}) {
   const user = {
     id: '33333333-3333-4333-8333-333333333333',
     fullName: role === 'Supplier' ? 'Chủ Xưởng Hoàng Triều' : 'Công ty Thu Mua B2B',
@@ -142,7 +225,8 @@ async function setupSession(page, { role = 'Customer' } = {}) {
   );
 
   const state = {
-    products: [...supplierProductListFixture.items],
+    products: products ? [...products] : [...supplierProductListFixture.items],
+    supplierProductQueries: [],
     viewRecorded: false,
     publicationPayload: null,
     removedProductId: null,
@@ -199,7 +283,51 @@ async function setupSession(page, { role = 'Customer' } = {}) {
 
     // Supplier Mine Products
     if (path === '/suppliers/me/products' && req.method() === 'GET') {
-      return ok({ items: state.products, totalCount: state.products.length });
+      const q = (url.searchParams.get('q') || '').trim();
+      const categoryId = url.searchParams.get('categoryId') || '';
+      const status = url.searchParams.get('status') || '';
+      const sort = url.searchParams.get('sort') || 'updatedAtDesc';
+      const pageNum = Math.max(1, Number(url.searchParams.get('page') || 1));
+      const pageSize = Math.max(1, Number(url.searchParams.get('pageSize') || 10));
+
+      state.supplierProductQueries.push({
+        q,
+        categoryId,
+        status,
+        sort,
+        page: pageNum,
+        pageSize,
+      });
+
+      let filtered = [...state.products];
+      if (q) {
+        const needle = q.toLowerCase();
+        filtered = filtered.filter(
+          (item) =>
+            item.name.toLowerCase().includes(needle) ||
+            (Array.isArray(item.skus) &&
+              item.skus.some((sku) => sku.toLowerCase().includes(needle)))
+        );
+      }
+      if (categoryId) {
+        filtered = filtered.filter((item) => item.categoryId === categoryId);
+      }
+      if (status) {
+        filtered = filtered.filter((item) => item.effectiveStatus === status);
+      }
+
+      filtered.sort((a, b) => {
+        if (sort === 'nameAsc') return a.name.localeCompare(b.name, 'vi');
+        if (sort === 'stockAsc') return a.totalStockQty - b.totalStockQty;
+        if (sort === 'createdAtDesc') {
+          return new Date(b.createdAtUtc || 0) - new Date(a.createdAtUtc || 0);
+        }
+        return new Date(b.updatedAtUtc || 0) - new Date(a.updatedAtUtc || 0);
+      });
+
+      const startIndex = (pageNum - 1) * pageSize;
+      const sliced = filtered.slice(startIndex, startIndex + pageSize);
+      return ok({ items: sliced, totalCount: filtered.length });
     }
 
     if (path === `/suppliers/me/products/${productDetailFixture.id}` && req.method() === 'GET') {
@@ -318,6 +446,109 @@ test.describe('Module 3: Sản phẩm & Danh mục B2B (Features #5 & #6)', () =
 
     await expect(page.locator('text=Đã xoá sản phẩm.')).toBeVisible();
     expect(state.removedProductId).toBe('88888888-7777-4777-8777-888888888888');
+  });
+
+  test('Nhà cung cấp phân trang cố định 10 sản phẩm mỗi trang và không cho chỉnh pageSize', async ({
+    page,
+  }) => {
+    const paginatedProducts = createPaginatedSupplierProducts();
+    const state = await setupSession(page, { role: 'Supplier', products: paginatedProducts });
+    await page.goto('/nha-cung-cap/quan-ly-san-pham');
+
+    await expect(page.getByRole('heading', { name: 'Sản phẩm và biến thể' })).toBeVisible();
+    await expect(page.getByText('Hiển thị 1–10 trên tổng số 13 sản phẩm')).toBeVisible();
+    await expect(page.getByText('Cố định 10 sản phẩm / trang')).toBeVisible();
+
+    // Must render exactly 10 product rows on page 1 and forbid changing page size
+    const rows = page.locator('.ant-table-tbody > tr.ant-table-row');
+    await expect(rows).toHaveCount(10);
+    await expect(page.locator('.ant-pagination-options-size-changer')).toHaveCount(0);
+
+    // Navigate to page 2
+    await page.locator('.ant-pagination-item-2').click();
+    await expect(page.getByText('Hiển thị 11–13 trên tổng số 13 sản phẩm')).toBeVisible();
+    await expect(rows).toHaveCount(3);
+    await expect(page.getByText('Hộp Bánh Nghệ Nhân Số 13')).toBeVisible();
+
+    const lastQuery = state.supplierProductQueries.at(-1);
+    expect(lastQuery).toMatchObject({ page: 2, pageSize: 10 });
+  });
+
+  test('Nhà cung cấp tìm kiếm theo tên/SKU, lọc danh mục/trạng thái, sắp xếp và đặt lại bộ lọc', async ({
+    page,
+  }) => {
+    const paginatedProducts = createPaginatedSupplierProducts();
+    const state = await setupSession(page, { role: 'Supplier', products: paginatedProducts });
+    await page.goto('/nha-cung-cap/quan-ly-san-pham');
+
+    const rows = page.locator('.ant-table-tbody > tr.ant-table-row');
+    await expect(rows).toHaveCount(10);
+
+    // Move to page 2 first to verify filter resets page back to 1
+    await page.locator('.ant-pagination-item-2').click();
+    await expect(rows).toHaveCount(3);
+
+    // 1) Filter by Category -> resets to page 1
+    await page.locator('.ant-select', { hasText: 'Tất cả danh mục' }).click();
+    await page.locator('.ant-select-item-option-content', { hasText: 'Hộp quà doanh nghiệp VIP' }).click();
+
+    await expect(page.getByText('Set Quà Long Phụng Cát Tường VIP')).toBeVisible();
+    await expect(rows).toHaveCount(4);
+    expect(state.supplierProductQueries.at(-1)).toMatchObject({
+      categoryId: '11111111-2222-3333-4444-555555555553',
+      page: 1,
+      pageSize: 10,
+    });
+
+    // 2) Filter by Status = Inactive inside that category
+    await page.locator('.ant-select', { hasText: 'Tất cả trạng thái' }).click();
+    await page.locator('.ant-select-item-option-content', { hasText: 'Bản nháp / Đang ẩn' }).click();
+
+    await expect(rows).toHaveCount(1);
+    await expect(page.getByText('Hộp Bánh Nghệ Nhân Số 12')).toBeVisible();
+    expect(state.supplierProductQueries.at(-1)).toMatchObject({
+      categoryId: '11111111-2222-3333-4444-555555555553',
+      status: 'Inactive',
+      page: 1,
+      pageSize: 10,
+    });
+
+    // 3) Reset filters with Xóa lọc
+    await page.getByRole('button', { name: 'Xóa bộ lọc' }).click();
+    await expect(page.getByText('Hiển thị 1–10 trên tổng số 13 sản phẩm')).toBeVisible();
+    await expect(rows).toHaveCount(10);
+
+    // 4) Search by SKU (press Enter for immediate query)
+    const searchInput = page.locator('input[placeholder="Tìm theo tên sản phẩm hoặc mã SKU..."]');
+    await searchInput.fill('SKU-TC-YS');
+    await searchInput.press('Enter');
+
+    await expect(rows).toHaveCount(1);
+    await expect(page.getByText('Bánh Nướng Thập Cẩm Gà Quay Yến Sào')).toBeVisible();
+    expect(state.supplierProductQueries.at(-1)).toMatchObject({
+      q: 'SKU-TC-YS',
+      page: 1,
+      pageSize: 10,
+    });
+
+    // 5) Search no-match shows filtered empty state & reset button
+    await searchInput.fill('KHONG-TON-TAI-999');
+    await searchInput.press('Enter');
+    await expect(
+      page.getByText('Không tìm thấy sản phẩm khớp với từ khóa hoặc bộ lọc.')
+    ).toBeVisible();
+    await page.locator('.ant-empty button', { hasText: 'Xóa bộ lọc' }).click();
+    await expect(rows).toHaveCount(10);
+
+    // 6) Sort by Tồn kho thấp trước (stockAsc)
+    await page.locator('.ant-select', { hasText: 'Cập nhật gần nhất' }).click();
+    await page.locator('.ant-select-item-option-content', { hasText: 'Tồn kho thấp trước' }).click();
+    await expect(rows.first()).toContainText('Bánh Nướng Thập Cẩm Gà Quay Yến Sào');
+    expect(state.supplierProductQueries.at(-1)).toMatchObject({
+      sort: 'stockAsc',
+      page: 1,
+      pageSize: 10,
+    });
   });
 
   test('Hiển thị thông báo khi sản phẩm không tồn tại hoặc bị ẩn', async ({ page }) => {

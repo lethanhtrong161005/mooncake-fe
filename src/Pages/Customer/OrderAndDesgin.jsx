@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 import {
   Alert,
   Button,
   Col,
+  DatePicker,
   Descriptions,
   Divider,
   Form,
@@ -50,6 +53,18 @@ import '../../styles/order-page.css';
 
 const { TextArea } = Input;
 const { Text } = Typography;
+dayjs.extend(customParseFormat);
+
+const getMinDeliveryDate = () => dayjs().startOf('day').add(3, 'day');
+const getMaxDeliveryDate = () => dayjs().startOf('day').add(365, 'day');
+const disabledDeliveryDate = (current) => {
+  if (!current) return false;
+  return (
+    current.isBefore(getMinDeliveryDate(), 'day')
+    || current.isAfter(getMaxDeliveryDate(), 'day')
+  );
+};
+
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) =>
   error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
@@ -736,12 +751,52 @@ export default function OrderAndDesgin({ onNavigate }) {
                     }
                     extra={
                       <span className="text-[11px] text-stone-400">
-                        Tối thiểu 3 ngày làm việc kể từ hôm nay
+                        Chọn trên lịch hoặc nhập DD/MM/YYYY · Tối thiểu từ{' '}
+                        {getMinDeliveryDate().format('DD/MM/YYYY')} (3 ngày kể từ hôm nay)
                       </span>
                     }
-                    rules={[{ required: true, message: 'Vui lòng chọn ngày giao hàng dự kiến.' }]}
+                    getValueProps={(value) => ({
+                      value: value ? dayjs(value, 'YYYY-MM-DD', true) : undefined,
+                    })}
+                    getValueFromEvent={(date) => (date ? date.format('YYYY-MM-DD') : undefined)}
+                    rules={[
+                      { required: true, message: 'Vui lòng chọn hoặc nhập ngày giao hàng dự kiến.' },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          const parsed = dayjs(value, ['YYYY-MM-DD', 'DD/MM/YYYY'], true);
+                          if (!parsed.isValid()) {
+                            return Promise.reject(
+                              new Error('Ngày giao hàng không hợp lệ (định dạng DD/MM/YYYY).'),
+                            );
+                          }
+                          const minDate = getMinDeliveryDate();
+                          const maxDate = getMaxDeliveryDate();
+                          if (parsed.isBefore(minDate, 'day')) {
+                            return Promise.reject(
+                              new Error(
+                                `Ngày nhận hàng tối thiểu từ ${minDate.format('DD/MM/YYYY')} (ít nhất 3 ngày kể từ hôm nay).`,
+                              ),
+                            );
+                          }
+                          if (parsed.isAfter(maxDate, 'day')) {
+                            return Promise.reject(
+                              new Error('Ngày nhận hàng dự kiến không được vượt quá 1 năm.'),
+                            );
+                          }
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
                   >
-                    <Input type="date" size="large" style={{ borderRadius: 10 }} />
+                    <DatePicker
+                      size="large"
+                      format={['DD/MM/YYYY', 'YYYY-MM-DD']}
+                      placeholder="DD/MM/YYYY hoặc chọn lịch"
+                      disabledDate={disabledDeliveryDate}
+                      allowClear
+                      style={{ width: '100%', borderRadius: 10 }}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
@@ -1449,6 +1504,13 @@ export default function OrderAndDesgin({ onNavigate }) {
               }
             >
               <b className="text-amber-800">{money(depositAmount)}</b>
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày nhận hàng dự kiến">
+              <b>
+                {pendingValues?.deliveryDateExpected
+                  ? dayjs(pendingValues.deliveryDateExpected, 'YYYY-MM-DD').format('DD/MM/YYYY')
+                  : 'Chưa xác định'}
+              </b>
             </Descriptions.Item>
             <Descriptions.Item label="Thời hạn phản hồi của xưởng (SLA)">
               Tối đa <b>12 giờ</b> kể từ khi gửi đơn

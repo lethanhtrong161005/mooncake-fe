@@ -52,8 +52,22 @@ export const deliveryService = {
     );
   },
 
+  async confirmReceipt(id) {
+    return unwrap(await apiClient.post(API_ENDPOINTS.DELIVERIES.CONFIRM_RECEIPT(id)));
+  },
+
   async updateCarrierInfo(id, payload) {
     return unwrap(await apiClient.put(API_ENDPOINTS.DELIVERIES.CARRIER_INFO(id), payload));
+  },
+
+  async uploadProofImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap(
+      await apiClient.post(API_ENDPOINTS.ORDERS.CUSTOM_PACKAGING_UPLOAD_LOGO, formData, {
+        timeout: 60000,
+      })
+    );
   },
 
   async submitProof(deliveryId, payload) {
@@ -66,6 +80,49 @@ export const deliveryService = {
 
   async verifyProof(proofId) {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.VERIFY_PROOF(proofId)));
+  },
+
+  async getShareLink(deliveryId) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.SHARE_LINK(deliveryId)));
+  },
+
+  async createShareLink(deliveryId, payload = { expiresInHours: 24, reshare: false }) {
+    return unwrap(await apiClient.post(API_ENDPOINTS.DELIVERIES.SHARE_LINK(deliveryId), payload));
+  },
+
+  async revokeShareLink(deliveryId) {
+    return unwrap(await apiClient.delete(API_ENDPOINTS.DELIVERIES.SHARE_LINK(deliveryId)));
+  },
+
+  async getPublicByToken(token) {
+    return unwrap(
+      await apiClient.get(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER(token), {
+        skipAuthHeader: true,
+        skipAuthRefresh: true,
+      })
+    );
+  },
+
+  async uploadPublicProofPhoto(token, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap(
+      await apiClient.post(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER_UPLOAD_PHOTO(token), formData, {
+        skipAuthHeader: true,
+        skipAuthRefresh: true,
+        timeout: 60000,
+      })
+    );
+  },
+
+  async submitPublicProof(token, payload) {
+    return unwrap(
+      await apiClient.post(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER_PROOFS(token), payload, {
+        skipAuthHeader: true,
+        skipAuthRefresh: true,
+        timeout: 30000,
+      })
+    );
   },
 };
 

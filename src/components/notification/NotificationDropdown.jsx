@@ -8,6 +8,7 @@ import {
   ShoppingCartOutlined,
   SlidersOutlined,
   ThunderboltOutlined,
+  TruckOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 
@@ -17,6 +18,7 @@ const ACTIVITY_FILTERS = [
   { key: 'contract', label: 'Hợp đồng' },
   { key: 'rfq', label: 'Báo giá' },
   { key: 'payment', label: 'Thanh toán' },
+  { key: 'delivery', label: 'Giao hàng' },
 ];
 
 const NEWS_FILTERS = [
@@ -71,8 +73,9 @@ export default function NotificationDropdown({
       case 'contract':
         return <FileTextOutlined className="text-white text-base" />;
       case 'order':
-      case 'delivery':
         return <ShoppingCartOutlined className="text-white text-base" />;
+      case 'delivery':
+        return <TruckOutlined className="text-white text-base" />;
       case 'rfq':
       case 'bid':
         return <ThunderboltOutlined className="text-white text-base" />;

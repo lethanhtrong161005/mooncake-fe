@@ -1,14 +1,24 @@
 [
   {
-    "pathname": "/api/v1/notifications",
+    "pathname": "/api/v1/hubs/chat/negotiate",
     "query": {
-      "category": "SupplierVerification",
-      "page": "1",
-      "pageSize": "20"
+      "negotiateVersion": "1"
     }
   },
   {
-    "pathname": "/api/v1/auth/me",
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/wishlist",
+    "query": {
+      "pageSize": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
     "query": {}
   },
   {
@@ -22,16 +32,34 @@
   {
     "pathname": "/api/v1/auth/me",
     "query": {}
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
   },
   {
     "pathname": "/api/v1/notifications",
     "query": {
       "category": "all"
     }
-  },
-  {
-    "pathname": "/api/v1/suppliers/me/financial-overview",
-    "query": {}
   },
   {
     "pathname": "/api/v1/notifications",
@@ -45,16 +73,92 @@
       "page": "1",
       "pageSize": "10"
     }
-  },
-  {
-    "pathname": "/api/v1/suppliers/me/financial-overview",
-    "query": {}
   },
   {
     "pathname": "/api/v1/orders/supplier/paged",
     "query": {
       "page": "2",
       "pageSize": "10"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/wishlist",
+    "query": {
+      "pageSize": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
+    }
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "all"
     }
   },
   {
@@ -72,11 +176,23 @@
     }
   },
   {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
     "pathname": "/api/v1/orders/supplier/paged",
     "query": {
       "page": "1",
       "pageSize": "20",
       "status": "Pending"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
     }
   },
   {
@@ -95,15 +211,25 @@
     }
   },
   {
-    "pathname": "/api/v1/notifications",
+    "pathname": "/api/v1/hubs/notifications/negotiate",
     "query": {
-      "category": "SupplierVerification",
-      "page": "1",
-      "pageSize": "20"
+      "negotiateVersion": "1"
     }
   },
   {
-    "pathname": "/api/v1/auth/me",
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/wishlist",
+    "query": {
+      "pageSize": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
     "query": {}
   },
   {
@@ -117,16 +243,40 @@
   {
     "pathname": "/api/v1/auth/me",
     "query": {}
+  },
+  {
+    "pathname": "/api/v1/chat/unread-count",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/notifications",
+    "query": {
+      "category": "SupplierVerification",
+      "page": "1",
+      "pageSize": "20"
+    }
+  },
+  {
+    "pathname": "/api/v1/auth/me",
+    "query": {}
+  },
+  {
+    "pathname": "/api/v1/hubs/chat/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
+    }
   },
   {
     "pathname": "/api/v1/notifications",
     "query": {
       "category": "all"
     }
-  },
-  {
-    "pathname": "/api/v1/suppliers/me/financial-overview",
-    "query": {}
   },
   {
     "pathname": "/api/v1/notifications",
@@ -143,15 +293,17 @@
     }
   },
   {
-    "pathname": "/api/v1/suppliers/me/financial-overview",
-    "query": {}
-  },
-  {
     "pathname": "/api/v1/orders/supplier/paged",
     "query": {
       "page": "1",
       "pageSize": "10",
       "q": "no-matching-record-999"
+    }
+  },
+  {
+    "pathname": "/api/v1/hubs/notifications/negotiate",
+    "query": {
+      "negotiateVersion": "1"
     }
   },
   {

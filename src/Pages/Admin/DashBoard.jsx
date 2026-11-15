@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   Row,
   Col,
-  Card,
   Table,
   Tag,
   Button,
   Tabs,
-  Alert,
   Progress,
   Space,
   Badge,
@@ -21,12 +19,10 @@ import {
   SafetyCertificateOutlined,
   FileDoneOutlined,
   AlertOutlined,
-  ArrowUpOutlined,
   ThunderboltOutlined,
   FilePdfOutlined,
   EyeOutlined,
   RollbackOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import AiAnalyticsPanel from '../../components/ai/AiAnalyticsPanel';
@@ -34,7 +30,6 @@ import paymentService from '../../services/paymentService';
 import adminService from '../../services/adminService';
 import reportService from '../../services/reportService';
 import DisputeResolutionModal from '../../components/admin/DisputeResolutionModal';
-import NotificationBell from '../../components/notification/NotificationBell';
 
 const { Text } = Typography;
 
@@ -54,7 +49,7 @@ export default function DashBoard({ onNavigate }) {
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
 
   const [funnelData, setFunnelData] = useState(null);
-  const [loadingFunnel, setLoadingFunnel] = useState(false);
+
   const [exporting, setExporting] = useState(false);
 
   const [topSuppliers, setTopSuppliers] = useState([]);
@@ -96,13 +91,10 @@ export default function DashBoard({ onNavigate }) {
 
   const loadFunnel = async () => {
     try {
-      setLoadingFunnel(true);
       const data = await reportService.getConversionFunnel();
       setFunnelData(data);
     } catch (err) {
       console.warn('Funnel load error:', err);
-    } finally {
-      setLoadingFunnel(false);
     }
   };
 
@@ -146,6 +138,9 @@ export default function DashBoard({ onNavigate }) {
     loadDashboardMetrics();
   }, []);
 
+  const pendingCount = dashboardMetrics?.pendingSuppliersCount ?? 0;
+  const pendingDisputes = disputes.filter((d) => d.status === 'Pending').length;
+
   const handleRefund = async () => {
     if (!refundReason.trim()) {
       message.warning('Vui lòng nhập lý do hoàn tiền.');
@@ -181,7 +176,7 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Nhà Cung Cấp / Xưởng',
+      title: 'Nhà cung cấp / xưởng',
       dataIndex: 'shopName',
       key: 'shopName',
       render: (text, record) => (
@@ -192,14 +187,14 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Số Đơn HĐ',
+      title: 'Số hợp đồng',
       dataIndex: 'ordersCount',
       key: 'ordersCount',
       align: 'right',
       render: (val) => val ?? 0,
     },
     {
-      title: 'Doanh Số GMV',
+      title: 'Doanh số GMV',
       dataIndex: 'gmv',
       key: 'gmv',
       align: 'right',
@@ -210,7 +205,7 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Giao Đúng Hạn',
+      title: 'Giao đúng hạn',
       dataIndex: 'onTimeRate',
       key: 'onTimeRate',
       render: (rate) => (
@@ -220,7 +215,7 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Điểm Uy Tín',
+      title: 'Điểm uy tín',
       dataIndex: 'score',
       key: 'score',
       render: (score) => (
@@ -230,7 +225,7 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Hành Động',
+      title: 'Thao tác',
       key: 'action',
       render: () => (
         <Button
@@ -247,37 +242,37 @@ export default function DashBoard({ onNavigate }) {
 
   const escrowColumns = [
     {
-      title: 'Mã Hợp Đồng',
+      title: 'Mã hợp đồng',
       dataIndex: 'contractNo',
       key: 'contractNo',
-      render: (text) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{text}</span>,
+      render: (text) => <span style={{ fontWeight: 600, color: '#7d1322' }}>{text}</span>,
     },
     {
-      title: 'Bên Mua (Customer)',
+      title: 'Bên mua',
       dataIndex: 'buyer',
       key: 'buyer',
     },
     {
-      title: 'Bên Bán (Supplier)',
+      title: 'Bên bán',
       dataIndex: 'seller',
       key: 'seller',
     },
     {
-      title: 'Tổng Giá Trị HĐ',
+      title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       key: 'totalValue',
       align: 'right',
       render: (val) => <span style={{ fontWeight: 600 }}>{val}</span>,
     },
     {
-      title: 'Tiền Cọc M1 (Bắt buộc)',
+      title: 'Cọc M1',
       dataIndex: 'depositM1',
       key: 'depositM1',
       align: 'right',
-      render: (val) => <span style={{ color: '#8c1524', fontWeight: 600 }}>{val}</span>,
+      render: (val) => <span style={{ color: '#7d1322', fontWeight: 600 }}>{val}</span>,
     },
     {
-      title: 'Trạng Thái Ký Quỹ',
+      title: 'Ký quỹ',
       dataIndex: 'escrowStatus',
       key: 'escrowStatus',
       render: (status) => (
@@ -287,13 +282,13 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Tiến Độ Hiện Tại',
+      title: 'Tiến độ',
       dataIndex: 'milestone',
       key: 'milestone',
       render: (m) => <Tag color="blue">{m}</Tag>,
     },
     {
-      title: 'Hành Động',
+      title: 'Thao tác',
       key: 'actions',
       render: (_, record) => (
         <Button
@@ -305,7 +300,7 @@ export default function DashBoard({ onNavigate }) {
             setRefundModalOpen(true);
           }}
         >
-          Hoàn Tiền
+          Hoàn tiền
         </Button>
       ),
     },
@@ -313,40 +308,40 @@ export default function DashBoard({ onNavigate }) {
 
   const disputeColumns = [
     {
-      title: 'Mã Hợp Đồng',
+      title: 'Mã hợp đồng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
-      render: (text) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{text}</span>,
+      render: (text) => <span style={{ fontWeight: 600, color: '#7d1322' }}>{text}</span>,
     },
     {
-      title: 'Bên Khiếu Nại (Customer)',
+      title: 'Bên khiếu nại',
       dataIndex: 'customerName',
       key: 'customerName',
     },
     {
-      title: 'Nhà Cung Cấp (Supplier)',
+      title: 'Nhà cung cấp',
       dataIndex: 'supplierName',
       key: 'supplierName',
     },
     {
-      title: 'Lý Do Tranh Chấp',
+      title: 'Lý do tranh chấp',
       dataIndex: 'disputeReason',
       key: 'disputeReason',
       ellipsis: true,
     },
     {
-      title: 'Tiền Cọc Ký Quỹ',
+      title: 'Tiền ký quỹ',
       dataIndex: 'heldEscrowAmount',
       key: 'heldEscrowAmount',
       align: 'right',
       render: (val) => (
-        <span style={{ fontWeight: 600, color: '#d97706' }}>
+        <span style={{ fontWeight: 600, color: '#9a6b16' }}>
           {Number(val || 0).toLocaleString('vi-VN')} ₫
         </span>
       ),
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
@@ -356,7 +351,7 @@ export default function DashBoard({ onNavigate }) {
       ),
     },
     {
-      title: 'Hành Động',
+      title: 'Thao tác',
       key: 'actions',
       render: (_, record) => (
         record.status === 'Pending' ? (
@@ -384,191 +379,116 @@ export default function DashBoard({ onNavigate }) {
       activeKey="admin/dashboard"
       onNavigate={onNavigate}
       title="Dashboard Điều Hành Toàn Nền Tảng"
-      subtitle="Giám sát bảo chứng giao dịch Escrow, năng lực chuỗi cung ứng xưởng bánh và dòng chảy hợp đồng B2B Mùa Vụ Trung Thu 2025"
+      subtitle="Theo dõi ký quỹ escrow, năng lực xưởng bánh và dòng hợp đồng B2B mùa Trung Thu."
       extra={
         <Space>
-          <Button icon={<FilePdfOutlined />}>Xuất Báo Cáo PDF</Button>
+          <Button icon={<FilePdfOutlined />}>Xuất báo cáo PDF</Button>
           <Button
             type="primary"
             icon={<ThunderboltOutlined />}
-            style={{ background: '#8c1524', borderColor: '#8c1524' }}
+            style={{ background: '#7d1322', borderColor: '#7d1322' }}
             onClick={() => setActiveTab('ai-insights')}
           >
-            Tạo Báo Cáo AI Live
+            Tạo báo cáo AI
           </Button>
         </Space>
       }
     >
-      {/* Alert Banner for Operations */}
-      <Alert
-        message="Hệ thống vận hành an toàn 99.98% • Quỹ Escrow Pool bảo chứng 42.8 Tỷ VNĐ"
-        description="Có 04 hồ sơ nhà cung cấp mới cần thẩm định chứng nhận ISO/ATTP và 02 yêu cầu giải quyết tranh chấp mốc giao hàng."
-        type="info"
-        showIcon
-        closable
-        style={{ marginBottom: 20 }}
-      />
+      {/* Operations notice */}
+      <div
+        className="mb-6 flex items-start gap-3 rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-4 py-3"
+        role="status"
+      >
+        <SafetyCertificateOutlined className="mt-0.5 text-[#9a6b16]" />
+        <p className="m-0 text-sm text-[#231a18]">
+          <span className="font-medium">{pendingCount} hồ sơ nhà cung cấp</span> chờ thẩm định
+          và <span className="font-medium">{pendingDisputes} tranh chấp</span> chờ phân xử.
+        </p>
+      </div>
 
-      {/* Colony Stat Cards Grid */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-        {/* Card 1: GMV */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <Text type="secondary" style={{ fontSize: 13 }}>Tổng GMV Mùa Vụ</Text>
-                <div style={{ fontSize: 24, fontWeight: 700, color: '#8c1524', marginTop: 4 }}>
-                  {dashboardMetrics?.totalGmv ? `${(dashboardMetrics.totalGmv / 1e9).toFixed(1)} Tỷ ₫` : '0 ₫'}
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  background: '#fff1f0',
-                  color: '#8c1524',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 20,
-                }}
-              >
-                <DollarOutlined />
-              </div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <Tag color="success" style={{ margin: 0 }}>
-                <ArrowUpOutlined /> +18.4%
-              </Tag>
-              <Text type="secondary">so với tuần trước</Text>
-            </div>
-          </Card>
-        </Col>
+      {/* Summary ribbon */}
+      <section
+        aria-label="Chỉ số điều hành"
+        className="mb-6 grid grid-cols-1 divide-y divide-[#e4dcd3] overflow-hidden rounded-lg border border-[#e4dcd3] bg-white sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x"
+      >
+        <div className="p-5">
+          <div className="flex items-center gap-2 text-sm text-[#6c625e]">
+            <DollarOutlined className="text-[#7d1322]" />
+            Tổng GMV mùa vụ
+          </div>
+          <div className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#7d1322]">
+            {dashboardMetrics?.totalGmv ? `${(dashboardMetrics.totalGmv / 1e9).toFixed(1)} tỷ ₫` : '0 ₫'}
+          </div>
+        </div>
 
-        {/* Card 2: Pending Suppliers */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <Text type="secondary" style={{ fontSize: 13 }}>NCC Chờ Thẩm Định</Text>
-                <div style={{ fontSize: 24, fontWeight: 700, color: '#fa8c16', marginTop: 4 }}>
-                  {dashboardMetrics?.pendingSuppliersCount ?? 0} Hồ sơ
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  background: '#fff7e6',
-                  color: '#fa8c16',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 20,
-                }}
-              >
-                <SafetyCertificateOutlined />
-              </div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: '#cf1322', fontWeight: 600 }}>Cần xử lý trong 24h</span>
-              <Button type="link" size="small" style={{ padding: 0 }} onClick={() => onNavigate?.('admin/phe-duyet')}>
-                Thẩm định ngay →
-              </Button>
-            </div>
-          </Card>
-        </Col>
+        <div className="p-5">
+          <div className="flex items-center gap-2 text-sm text-[#6c625e]">
+            <SafetyCertificateOutlined className="text-[#9a6b16]" />
+            Nhà cung cấp chờ thẩm định
+          </div>
+          <div className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#9a6b16]">
+            {pendingCount}
+          </div>
+          <Button
+            type="link"
+            size="small"
+            className="!px-0"
+            onClick={() => onNavigate?.('admin/phe-duyet')}
+          >
+            Thẩm định ngay
+          </Button>
+        </div>
 
-        {/* Card 3: Active Contracts */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <Text type="secondary" style={{ fontSize: 13 }}>Hợp Đồng B2B Đang Chạy</Text>
-                <div style={{ fontSize: 24, fontWeight: 700, color: '#1677ff', marginTop: 4 }}>
-                  {dashboardMetrics?.activeContractsCount ?? 0} Hợp đồng
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  background: '#e6f4ff',
-                  color: '#1677ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 20,
-                }}
-              >
-                <FileDoneOutlined />
-              </div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <Tag color="blue" style={{ margin: 0 }}>
-                Ký số OTP
-              </Tag>
-              <Text type="secondary">
-                {dashboardMetrics?.totalContractsGmv ? `${(dashboardMetrics.totalContractsGmv / 1e9).toFixed(1)} tỷ ₫` : '0 ₫'}
-              </Text>
-            </div>
-          </Card>
-        </Col>
+        <div className="p-5">
+          <div className="flex items-center gap-2 text-sm text-[#6c625e]">
+            <FileDoneOutlined className="text-[#2d5a43]" />
+            Hợp đồng đang chạy
+          </div>
+          <div className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#2d5a43]">
+            {dashboardMetrics?.activeContractsCount ?? 0}
+          </div>
+          <div className="text-xs tabular-nums text-[#6c625e]">
+            {dashboardMetrics?.totalContractsGmv
+              ? `${(dashboardMetrics.totalContractsGmv / 1e9).toFixed(1)} tỷ ₫`
+              : '0 ₫'}
+          </div>
+        </div>
 
-        {/* Card 4: Disputes / Risk */}
-        <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <Text type="secondary" style={{ fontSize: 13 }}>Tranh Chấp & Khiếu Nại</Text>
-                <div style={{ fontSize: 24, fontWeight: 700, color: '#cf1322', marginTop: 4 }}>
-                  {disputes.filter((d) => d.status === 'Pending').length} Vụ việc
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 8,
-                  background: '#fff1f0',
-                  color: '#cf1322',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 20,
-                }}
-              >
-                <AlertOutlined />
-              </div>
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: '#cf1322' }}>Đóng băng 1.25 Tỷ Escrow</span>
-              <Button type="link" size="small" style={{ padding: 0 }} onClick={() => onNavigate?.('admin/van-hanh-giao-dich')}>
-                Phân xử →
-              </Button>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+        <div className="p-5">
+          <div className="flex items-center gap-2 text-sm text-[#6c625e]">
+            <AlertOutlined className="text-[#7d1322]" />
+            Tranh chấp đang mở
+          </div>
+          <div className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#7d1322]">
+            {pendingDisputes}
+          </div>
+          <Button
+            type="link"
+            size="small"
+            className="!px-0"
+            onClick={() => onNavigate?.('admin/van-hanh-giao-dich')}
+          >
+            Phân xử
+          </Button>
+        </div>
+      </section>
+
 
       {/* Main Tabs Area */}
-      <Card bordered={false} style={{ borderRadius: 10, boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+      <section className="rounded-lg border border-[#e4dcd3] bg-white px-5 pb-5 pt-2">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
             {
               key: 'campaign',
-              label: '🏆 Bảng Xếp Hạng Xưởng Bánh (Top Suppliers)',
+              label: 'Bảng xếp hạng xưởng bánh',
               children: (
                 <div>
                   <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                    <Text strong>Top 4 nhà cung cấp dẫn đầu doanh số & tỷ lệ giao đúng hạn</Text>
+                    <Text strong>Nhà cung cấp dẫn đầu doanh số và tỷ lệ giao đúng hạn</Text>
                     <Button type="primary" size="small" onClick={() => onNavigate?.('admin/dieu-khien')}>
-                      Xem toàn bộ 158 NCC
+                      Xem tất cả nhà cung cấp
                     </Button>
                   </div>
                   <Table
@@ -585,7 +505,7 @@ export default function DashBoard({ onNavigate }) {
               key: 'disputes',
               label: (
                 <span>
-                  ⚖️ Trọng Tài Tranh Chấp SafeTrade{' '}
+                  Trọng tài tranh chấp SafeTrade{' '}
                   {disputes.filter((d) => d.status === 'Pending').length > 0 && (
                     <Badge count={disputes.filter((d) => d.status === 'Pending').length} size="small" />
                   )}
@@ -595,8 +515,8 @@ export default function DashBoard({ onNavigate }) {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center mb-2">
                     <div>
-                      <h4 className="font-bold text-stone-800 m-0">Danh Sách Khiếu Nại & Tranh Chấp Hợp Đồng B2B</h4>
-                      <p className="text-xs text-stone-500 m-0">Cơ chế trọng tài công tâm SafeTrade bảo vệ an toàn cho cả bên mua và xưởng sản xuất bánh.</p>
+                      <h4 className="m-0 font-serif text-lg font-semibold text-[#231a18]">Khiếu nại và tranh chấp hợp đồng</h4>
+                      <p className="m-0 text-xs text-[#6c625e]">Trọng tài SafeTrade bảo vệ cả bên mua và xưởng sản xuất.</p>
                     </div>
                     <Button onClick={loadDisputes} size="small">Làm mới</Button>
                   </div>
@@ -612,20 +532,20 @@ export default function DashBoard({ onNavigate }) {
             },
             {
               key: 'funnel',
-              label: '📊 Phễu Chuyển Đổi RFQ & Báo Cáo',
+              label: 'Phễu chuyển đổi RFQ & báo cáo',
               children: (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="font-bold text-stone-800 m-0">Hiệu Suất Phễu Chuyển Đổi RFQ Sang Hợp Đồng Ký Số</h4>
-                      <p className="text-xs text-stone-500 m-0">Đo lường tỷ lệ thành công của các phiên chào thầu bánh Trung thu doanh nghiệp B2B.</p>
+                      <h4 className="m-0 font-serif text-lg font-semibold text-[#231a18]">Hiệu suất chuyển đổi từ RFQ sang hợp đồng</h4>
+                      <p className="m-0 text-xs text-[#6c625e]">Tỷ lệ thành công của các phiên chào thầu doanh nghiệp.</p>
                     </div>
                     <Space>
                       <Button
                         icon={<FileDoneOutlined />}
                         loading={exporting}
                         onClick={handleExportCsv}
-                        className="bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                        className="border-[#e4dcd3] bg-[#faf7f2] text-[#231a18]"
                       >
                         Xuất Báo Cáo CSV
                       </Button>
@@ -633,7 +553,7 @@ export default function DashBoard({ onNavigate }) {
                   </div>
 
                   {/* Funnel Steps Visualizer */}
-                  <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                  <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] p-5">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                       {(funnelData?.stages || [
                         { stageName: '1. RFQ Đăng Tải', count: 150, conversionRatePercentage: 100 },
@@ -642,9 +562,9 @@ export default function DashBoard({ onNavigate }) {
                         { stageName: '4. HĐ Ký Số OTP', count: 128, conversionRatePercentage: 85.3 },
                         { stageName: '5. Nghiệm Thu Xong', count: 115, conversionRatePercentage: 76.7 },
                       ]).map((st, idx) => (
-                        <div key={idx} className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs relative">
-                          <div className="text-xs text-stone-400 font-medium">{st.stageName}</div>
-                          <div className="text-2xl font-bold text-stone-800 mt-1">{st.count}</div>
+                        <div key={idx} className="rounded-lg border border-[#e4dcd3] bg-white p-4">
+                          <div className="text-xs text-[#6c625e]">{st.stageName}</div>
+                          <div className="mt-1 font-serif text-2xl font-semibold tabular-nums text-[#231a18]">{st.count}</div>
                           <div className="mt-3">
                             <Progress
                               percent={Math.min(100, Math.round(st.conversionRatePercentage))}
@@ -664,67 +584,63 @@ export default function DashBoard({ onNavigate }) {
             },
             {
               key: 'escrow',
-              label: '🛡️ Sổ Giám Sát Ký Quỹ Escrow & Milestone',
+              label: 'Sổ giám sát ký quỹ escrow & milestone',
               children: (
                 <div className="space-y-4">
                   {/* Escrow KPI Cards */}
                   <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12} lg={6}>
-                      <Card size="small" className="bg-amber-50/60 border-amber-200 rounded-xl">
-                        <Text type="secondary" className="text-xs">Số Dư Ký Quỹ Đang Giữ</Text>
-                        <div className="text-lg font-bold text-amber-800 mt-1">
+                      <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] p-4">
+                        <Text type="secondary" className="text-xs">Số dư ký quỹ đang giữ</Text>
+                        <div className="mt-1 font-serif text-lg font-semibold tabular-nums text-[#9a6b16]">
                           {(escrowSummary?.totalEscrowBalance ?? 1285000000).toLocaleString('vi-VN')} ₫
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                      <Card size="small" className="bg-blue-50/60 border-blue-200 rounded-xl">
-                        <Text type="secondary" className="text-xs">Hợp Đồng Bảo Chứng</Text>
-                        <div className="text-lg font-bold text-blue-700 mt-1">
+                      <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] p-4">
+                        <Text type="secondary" className="text-xs">Hợp đồng bảo chứng</Text>
+                        <div className="mt-1 font-serif text-lg font-semibold tabular-nums text-[#231a18]">
                           {escrowSummary?.totalActiveContracts ?? 24} HĐ
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                      <Card size="small" className="bg-emerald-50/60 border-emerald-200 rounded-xl">
-                        <Text type="secondary" className="text-xs">Chờ Nghiệm Thu / Giải Ngân</Text>
-                        <div className="text-lg font-bold text-emerald-700 mt-1">
+                      <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] p-4">
+                        <Text type="secondary" className="text-xs">Chờ nghiệm thu / giải ngân</Text>
+                        <div className="mt-1 font-serif text-lg font-semibold tabular-nums text-[#2d5a43]">
                           {(escrowSummary?.pendingDisbursementAmount ?? 340000000).toLocaleString('vi-VN')} ₫
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                      <Card size="small" className="bg-rose-50/60 border-rose-200 rounded-xl">
-                        <Text type="secondary" className="text-xs">Đang Khiếu Nại / Đóng Băng</Text>
-                        <div className="text-lg font-bold text-rose-700 mt-1">
+                      <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] p-4">
+                        <Text type="secondary" className="text-xs">Đang khiếu nại / đóng băng</Text>
+                        <div className="mt-1 font-serif text-lg font-semibold tabular-nums text-[#7d1322]">
                           {(escrowSummary?.disputedEscrowAmount ?? 45000000).toLocaleString('vi-VN')} ₫
                         </div>
-                      </Card>
+                      </div>
                     </Col>
                   </Row>
 
-                  <Alert
-                    message="Quy tắc bảo chứng hợp đồng (Milestone Deposit Rule)"
-                    description="Khách hàng bắt buộc thanh toán đặt cọc mốc M1 (30%) vào tài khoản Escrow sàn trước khi Hợp đồng chuyển sang trạng thái Active và NCC bắt đầu sản xuất."
-                    type="success"
-                    showIcon
-                    style={{ marginBottom: 16 }}
-                  />
+                  <p className="m-0 rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-4 py-3 text-sm text-[#231a18]">
+                    Khách hàng đặt cọc mốc M1 (30%) vào escrow trước khi hợp đồng chuyển sang Active.
+                  </p>
                   <Table
                     columns={escrowColumns}
                     dataSource={
                       escrowSummary?.escrowLedgerItems?.length
                         ? escrowSummary.escrowLedgerItems.map((item) => ({
-                            key: item.contractId,
-                            contractId: item.contractId,
-                            contractNo: item.contractNumber,
-                            buyer: item.customerName,
-                            seller: item.supplierName,
-                            totalValue: `${Number(item.contractTotalValue).toLocaleString('vi-VN')} ₫`,
-                            depositM1: `${Number(item.heldEscrowAmount).toLocaleString('vi-VN')} ₫`,
-                            escrowStatus: item.escrowStatus === 'Active' ? 'Đã nhận cọc' : item.escrowStatus,
-                            milestone: `Mốc ${item.paidMilestonesCount}/${item.totalMilestonesCount}`,
-                          }))
+                          key: item.contractId,
+                          contractId: item.contractId,
+                          contractNo: item.contractNumber,
+                          buyer: item.customerName,
+                          seller: item.supplierName,
+                          totalValue: `${Number(item.contractTotalValue).toLocaleString('vi-VN')} ₫`,
+                          depositM1: `${Number(item.heldEscrowAmount).toLocaleString('vi-VN')} ₫`,
+                          escrowStatus: item.escrowStatus === 'Active' ? 'Đã nhận cọc' : item.escrowStatus,
+                          milestone: `Mốc ${item.paidMilestonesCount}/${item.totalMilestonesCount}`,
+                        }))
                         : []
                     }
                     pagination={false}
@@ -736,7 +652,7 @@ export default function DashBoard({ onNavigate }) {
             },
             {
               key: 'ai-insights',
-              label: '✨ Báo Cáo AI Analytics (Natural Language Insights)',
+              label: 'Báo cáo AI Analytics',
               children: (
                 <div style={{ padding: '8px 0' }}>
                   <AiAnalyticsPanel role="Admin" />
@@ -745,7 +661,7 @@ export default function DashBoard({ onNavigate }) {
             },
           ]}
         />
-      </Card>
+      </section>
 
       <Modal
         title="Xác nhận hoàn tiền ký quỹ (Admin Escrow Refund)"

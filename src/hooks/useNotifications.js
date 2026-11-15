@@ -66,9 +66,19 @@ export const useNotifications = () => {
     }
 
     const handleReceive = (newNotif) => {
-      setNotifications((prev) => [newNotif, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-      playLuxuryChime();
+      if (!newNotif) return;
+      let added = false;
+      setNotifications((prev) => {
+        if (newNotif.id && prev.some((item) => item.id === newNotif.id)) {
+          return prev;
+        }
+        added = true;
+        return [newNotif, ...prev];
+      });
+      if (added) {
+        setUnreadCount((prev) => prev + 1);
+        playLuxuryChime();
+      }
     };
 
     const handleCountUpdate = ({ unreadCount: count }) => {

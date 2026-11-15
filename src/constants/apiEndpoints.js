@@ -95,6 +95,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_LIST: `/${API_VERSION}/orders/mine`,
     CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
+    SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
     PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
@@ -136,6 +137,7 @@ export const API_ENDPOINTS = {
     BY_SHOP: (shopId) => `/${API_VERSION}/shops/${shopId}/packaging-templates`,
     MINE: `/${API_VERSION}/suppliers/me/packaging-templates`,
     DETAIL: (id) => `/${API_VERSION}/suppliers/me/packaging-templates/${id}`,
+    UPLOAD_IMAGE: `/${API_VERSION}/suppliers/me/packaging-templates/upload-image`,
   },
 
   // e-Contract & Escrow Payments
@@ -164,12 +166,17 @@ export const API_ENDPOINTS = {
     DETAILS: (id) => `/${API_VERSION}/deliveries/${id}`,
     CREATE: `/${API_VERSION}/deliveries`,
     STATUS: (id) => `/${API_VERSION}/deliveries/${id}/status`,
+    CONFIRM_RECEIPT: (id) => `/${API_VERSION}/deliveries/${id}/confirm-receipt`,
     CARRIER_INFO: (id) => `/${API_VERSION}/deliveries/${id}/carrier-info`,
     BY_CONTRACT: (contractId) => `/${API_VERSION}/deliveries/contract/${contractId}`,
     BY_ORDER: (orderId) => `/${API_VERSION}/deliveries/order/${orderId}`,
     PROOFS: (deliveryId) => `/${API_VERSION}/deliveries/${deliveryId}/proofs`,
     PROOF_DETAILS: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}`,
     VERIFY_PROOF: (proofId) => `/${API_VERSION}/deliveries/proofs/${proofId}/verify`,
+    SHARE_LINK: (id) => `/${API_VERSION}/deliveries/${id}/share-link`,
+    PUBLIC_DRIVER: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}`,
+    PUBLIC_DRIVER_UPLOAD_PHOTO: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}/proofs/upload-photo`,
+    PUBLIC_DRIVER_PROOFS: (token) => `/${API_VERSION}/deliveries/public/${encodeURIComponent(token)}/proofs`,
   },
 
   PAYMENTS: {
