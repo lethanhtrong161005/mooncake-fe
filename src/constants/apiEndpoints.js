@@ -96,6 +96,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
     SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
+    SUPPLIER_DASHBOARD_SUMMARY: `/${API_VERSION}/orders/supplier/dashboard-summary`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
     PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
@@ -112,6 +113,7 @@ export const API_ENDPOINTS = {
     CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
     CONFIRM_DELIVERY_RECEIPT: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm-receipt`,
     DELIVERY_DISPUTE: (id) => `/${API_VERSION}/orders/${id}/delivery/dispute`,
+    DISPUTE_UPLOAD_EVIDENCE: `/${API_VERSION}/orders/disputes/upload-evidence`,
     REFUND_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/refund-requests`,
     PAYOUT_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/payout-requests`,
     CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
@@ -130,6 +132,8 @@ export const API_ENDPOINTS = {
     PROCESS_REFUND_CASE: (refundCaseId) => `/${API_VERSION}/admin/orders/refund-cases/${refundCaseId}/process`,
     PROCESS_PAYOUT_REQUEST: (payoutRequestId) => `/${API_VERSION}/admin/orders/payout-requests/${payoutRequestId}/process`,
     RESOLVE_DELIVERY_DISPUTE: (disputeId) => `/${API_VERSION}/admin/orders/delivery-disputes/${disputeId}/resolve`,
+    UPLOAD_REFUND_PROOF: `/${API_VERSION}/admin/orders/refund-proof/upload`,
+    UPLOAD_PAYOUT_PROOF: `/${API_VERSION}/admin/orders/payout-proof/upload`,
   },
 
   // Packaging Templates

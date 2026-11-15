@@ -18,6 +18,7 @@ import {
   message,
 } from 'antd';
 import {
+  CheckCircleOutlined,
   CloseOutlined,
   InfoCircleOutlined,
   QuestionCircleOutlined,
@@ -25,6 +26,8 @@ import {
   SendOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import rfqService from '../../services/rfqService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -224,10 +227,13 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Mã RFQ',
       dataIndex: 'rfqNumber',
-      width: 170,
+      width: 175,
       render: (value, item) => (
-        <div>
-          <div className="font-semibold tabular-nums text-[#7d1322]">{value}</div>
+        <div className="max-w-[160px]">
+          <TruncatedTooltip
+            text={value}
+            className="font-semibold tabular-nums text-[#7d1322]"
+          />
           <div className="mt-0.5 text-xs text-[#6c625e]">
             {item.isInvited ? 'Được mời riêng' : 'Công khai trên sàn'}
           </div>
@@ -237,10 +243,14 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Gói thầu',
       dataIndex: 'title',
-      width: 240,
+      width: 300,
       render: (value, item) => (
-        <div className="max-w-sm break-words">
-          <div className="font-medium text-[#231a18]">{value}</div>
+        <div className="max-w-[285px]">
+          <TruncatedTooltip
+            text={value}
+            tooltipContent={item.description ? `${value} — ${item.description}` : value}
+            className="font-medium text-[#231a18]"
+          />
           <div className="mt-0.5 text-xs text-[#6c625e] tabular-nums">
             Giao trước: {item.deliveryDateRequired || 'Chưa chốt'}
           </div>
@@ -252,8 +262,11 @@ export default function BiddingPage({ onNavigate }) {
       key: 'customerName',
       width: 185,
       render: (_, item) => (
-        <div>
-          <div className="text-sm text-[#231a18]">{item.customerName || 'Doanh nghiệp B2B'}</div>
+        <div className="max-w-[170px]">
+          <TruncatedTooltip
+            text={item.customerName || 'Doanh nghiệp B2B'}
+            className="text-sm text-[#231a18]"
+          />
           <div className="text-xs text-[#8a7f7a] tabular-nums">
             {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'Chưa rõ'}
           </div>
@@ -263,9 +276,9 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Hạn nộp báo giá',
       dataIndex: 'bidDeadline',
-      width: 155,
+      width: 140,
       render: (value) => (
-        <span className="text-xs tabular-nums text-[#231a18]">
+        <span className="text-xs tabular-nums text-[#231a18] whitespace-nowrap">
           {new Date(value).toLocaleString('vi-VN')}
         </span>
       ),
@@ -273,49 +286,53 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      width: 120,
+      width: 115,
       render: (value) => {
         const meta = STATUS_META[value] || { label: value, color: 'default' };
-        return <Tag color={meta.color}>{meta.label}</Tag>;
+        return <Tag color={meta.color} className="m-0 whitespace-nowrap">{meta.label}</Tag>;
       },
     },
     {
       title: 'Thao tác',
-      align: 'right',
-      width: 220,
+      align: 'center',
+      width: 90,
       render: (_, item) => (
-        item.awaitingSupplierConfirmation ? (
-          <Space size="small" wrap>
-            <Button
-              type="primary"
-              size="small"
-              loading={submitting}
-              onClick={() => respondToSelection(item, true)}
-            >
-              Xác nhận
-            </Button>
-            <Button size="small" danger loading={submitting} onClick={() => respondToSelection(item, false)}>
-              Từ chối
-            </Button>
-          </Space>
-        ) : (
-          <Space size="small" wrap>
-            <Button
-              type="primary"
-              size="small"
-              icon={<SendOutlined />}
-              disabled={item.status !== 'Open' || new Date(item.bidDeadline) <= new Date()}
-              onClick={() => openBid(item)}
-            >
-              {item.myBid ? 'Sửa báo giá' : 'Nộp báo giá'}
-            </Button>
-            {item.canDecline && item.status === 'Open' && (
-              <Button size="small" danger icon={<CloseOutlined />} onClick={() => decline(item)}>
-                Từ chối
-              </Button>
-            )}
-          </Space>
-        )
+        <RowActionMenu
+          ariaLabel={`Thao tác RFQ ${item.rfqNumber}`}
+          actions={item.awaitingSupplierConfirmation ? [
+            {
+              key: 'acceptSelection',
+              label: 'Xác nhận thắng thầu',
+              icon: <CheckCircleOutlined />,
+              disabled: submitting,
+              onClick: () => respondToSelection(item, true),
+            },
+            {
+              key: 'rejectSelection',
+              label: 'Từ chối',
+              icon: <CloseOutlined />,
+              danger: true,
+              disabled: submitting,
+              onClick: () => respondToSelection(item, false),
+            },
+          ] : [
+            {
+              key: 'bid',
+              label: item.myBid ? 'Sửa báo giá' : 'Nộp báo giá',
+              icon: <SendOutlined />,
+              disabled: item.status !== 'Open' || new Date(item.bidDeadline) <= new Date(),
+              onClick: () => openBid(item),
+            },
+            {
+              key: 'decline',
+              label: 'Từ chối mời thầu',
+              icon: <CloseOutlined />,
+              danger: true,
+              show: Boolean(item.canDecline && item.status === 'Open'),
+              onClick: () => decline(item),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -368,7 +385,7 @@ export default function BiddingPage({ onNavigate }) {
               dataSource={rfqs}
               size="middle"
               tableLayout="fixed"
-              scroll={{ x: 960 }}
+              scroll={{ x: 1005 }}
               pagination={{
                 current: rfqPage.query.page,
                 pageSize: rfqPage.query.pageSize,

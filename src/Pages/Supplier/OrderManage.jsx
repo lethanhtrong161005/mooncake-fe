@@ -18,6 +18,7 @@ import {
   Switch,
   Table,
   Tag,
+  Tooltip,
   Typography,
   Upload,
   message,
@@ -25,10 +26,11 @@ import {
 import {
   BankOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
+  CloseCircleOutlined,
   CrownOutlined,
   DollarCircleOutlined,
-  EyeOutlined,
   FileTextOutlined,
   PictureOutlined,
   PlusOutlined,
@@ -39,6 +41,8 @@ import {
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
+import PackagingImageUpload from '../../components/packaging/PackagingImageUpload';
+import RowActionMenu from '../../components/common/RowActionMenu';
 import customPackagingService from '../../services/customPackagingService';
 import deliveryService from '../../services/deliveryService';
 import orderService from '../../services/orderService';
@@ -63,6 +67,13 @@ const STATUS_META = {
   CancellationRequested: { label: 'Yêu cầu hủy', color: 'volcano' },
   Cancelled: { label: 'Đã hủy', color: 'red' },
   Expired: { label: 'Hết hạn SLA', color: 'default' },
+};
+
+const PACKAGING_STATUS_LABEL = {
+  Pending: 'Chờ thiết kế',
+  DesignReview: 'Chờ duyệt mẫu',
+  RevisionRequested: 'Cần sửa mẫu',
+  Approved: 'Đã duyệt mẫu',
 };
 
 function formatCountdown(targetDateStr) {
@@ -144,6 +155,8 @@ export default function OrderManage({ onNavigate }) {
   const [payoutAccountSaving, setPayoutAccountSaving] = useState(false);
 
   const [payoutRequestModalOpen, setPayoutRequestModalOpen] = useState(false);
+  const [payoutRequestForm] = Form.useForm();
+  const [payoutRequestLoadingAccount, setPayoutRequestLoadingAccount] = useState(false);
   const [payoutRequestSubmitting, setPayoutRequestSubmitting] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
 
@@ -430,17 +443,49 @@ export default function OrderManage({ onNavigate }) {
     });
   };
 
+  const openPayoutRequestModal = async (order) => {
+    setSelectedOrder(order);
+    setPayoutRequestModalOpen(true);
+    payoutRequestForm.resetFields();
+    payoutRequestForm.setFieldsValue({
+      notes: 'Yêu cầu quyết toán số dư khả dụng đơn hàng',
+    });
+    setPayoutRequestLoadingAccount(true);
+    try {
+      const account = await orderService.getMyPayoutAccount();
+      if (account) {
+        payoutRequestForm.setFieldsValue({
+          bankCode: account.bankCode || '',
+          bankName: account.bankName || '',
+          accountNumber: account.accountNumber || '',
+          accountHolderName: account.accountHolderName || '',
+          branchName: account.branchName || '',
+        });
+      }
+    } catch {
+      // Allow manual entry even when no payout account was configured beforehand
+    } finally {
+      setPayoutRequestLoadingAccount(false);
+    }
+  };
+
   const submitPayoutRequest = async () => {
     setPayoutRequestSubmitting(true);
     try {
+      const values = await payoutRequestForm.validateFields();
       await orderService.createPayoutRequest(selectedOrder?.id, {
-        notes: 'Yêu cầu quyết toán số dư khả dụng đơn hàng',
+        bankCode: values.bankCode?.trim() || undefined,
+        bankName: values.bankName.trim(),
+        accountNumber: values.accountNumber.trim(),
+        accountHolderName: values.accountHolderName.trim(),
+        branchName: values.branchName?.trim() || undefined,
+        notes: values.notes?.trim() || 'Yêu cầu quyết toán số dư khả dụng đơn hàng',
       });
-      message.success('Đã gửi yêu cầu giải ngân thành công.');
+      message.success('Đã gửi yêu cầu giải ngân thành công. Admin sẽ chuyển khoản và đính kèm chứng từ.');
       setPayoutRequestModalOpen(false);
       await loadOrders();
     } catch (error) {
-      message.error(errorMessage(error));
+      if (!error?.errorFields) message.error(errorMessage(error));
     } finally {
       setPayoutRequestSubmitting(false);
     }
@@ -451,7 +496,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Đơn hàng & SLA',
       dataIndex: 'orderNumber',
       key: 'orderNumber',
-      width: 180,
+      width: 175,
       render: (value, order) => {
         const sla = order.status === 'Pending'
           ? { date: order.responseDeadlineAtUtc || order.responseDeadlineAt, label: 'SLA phản hồi' }
@@ -460,10 +505,12 @@ export default function OrderManage({ onNavigate }) {
             : null;
 
         return (
-          <div className="max-w-[175px] space-y-1">
-            <div className="font-mono text-sm font-semibold text-[#7d1322] break-all leading-snug">
-              #{value}
-            </div>
+          <div className="max-w-[160px] space-y-1">
+            <Tooltip title={`#${value}`}>
+              <div className="truncate font-mono text-[13px] font-semibold text-[#7d1322] leading-snug cursor-default">
+                #{value}
+              </div>
+            </Tooltip>
             <div className="text-[11px] tabular-nums text-[#8a7f7a]">
               {new Date(order.createdAtUtc || order.createdAt).toLocaleString('vi-VN')}
             </div>
@@ -475,45 +522,106 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Doanh nghiệp / người nhận',
       key: 'customer',
-      width: 170,
-      render: (_, order) => (
-        <div className="max-w-[160px] space-y-0.5">
-          <div className="truncate font-medium text-sm text-[#231a18]">
-            {order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}
+      width: 175,
+      render: (_, order) => {
+        const companyOrName = order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B';
+
+        return (
+          <div className="max-w-[160px] space-y-0.5">
+            <Tooltip title={companyOrName}>
+              <div className="truncate font-medium text-sm text-[#231a18] cursor-default">
+                {companyOrName}
+              </div>
+            </Tooltip>
+            <div className="text-xs tabular-nums text-[#6c625e]">{order.recipientPhone}</div>
+            {order.deliveryAddress && (
+              <Tooltip title={order.deliveryAddress}>
+                <div className="truncate text-[11px] text-[#8a7f7a] cursor-default">
+                  {order.deliveryAddress}
+                </div>
+              </Tooltip>
+            )}
           </div>
-          <div className="text-xs tabular-nums text-[#6c625e]">{order.recipientPhone}</div>
-          <div className="truncate text-[11px] text-[#8a7f7a]">{order.deliveryAddress}</div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Hạng mục & bao bì',
       key: 'items',
-      width: 185,
-      render: (_, order) => (
-        <div className="max-w-[175px] space-y-1 text-xs text-[#231a18]">
-          {order.items?.map((item) => (
-            <div key={item.variantId} className="tabular-nums leading-snug">
-              {item.productName || 'Bánh Trung Thu'} ({item.variantName || 'Chuẩn'}) ×{' '}
-              <span className="font-semibold">{item.quantity}</span>
+      width: 235,
+      render: (_, order) => {
+        const items = order.items || [];
+        const firstItem = items[0];
+        const extraCount = Math.max(0, items.length - 1);
+        const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        const packagingStatusText = order.customPackaging
+          ? (PACKAGING_STATUS_LABEL[order.customPackaging.status] || order.customPackaging.status)
+          : null;
+
+        const hoverContent = (
+          <div className="max-w-[320px] space-y-1.5 text-xs">
+            <div className="border-b border-white/15 pb-1 font-semibold text-amber-200">
+              Chi tiết đơn ({items.length} hạng mục · {totalUnits.toLocaleString('vi-VN')} hộp)
             </div>
-          ))}
-          <div>
-            {order.customPackaging ? (
-              <Tag color="geekblue" icon={<CrownOutlined />} className="m-0 text-[11px]">
-                Bao bì: {order.customPackaging.status}
-              </Tag>
-            ) : (
-              <Tag className="m-0 text-[11px]">Bao bì tiêu chuẩn</Tag>
+            <div className="space-y-1">
+              {items.map((item) => (
+                <div key={item.variantId} className="flex items-start justify-between gap-3">
+                  <span className="leading-snug text-stone-100">
+                    {item.productName || 'Bánh Trung Thu'} ({item.variantName || 'Chuẩn'})
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums text-amber-300">
+                    ×{item.quantity}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {order.customPackaging && (
+              <div className="border-t border-white/15 pt-1 text-[11px] text-stone-300">
+                Bao bì: {order.customPackaging.packagingType || 'Thiết kế riêng'} · {packagingStatusText}
+              </div>
             )}
           </div>
-        </div>
-      ),
+        );
+
+        return (
+          <Tooltip title={hoverContent} color="#231a18" placement="topLeft">
+            <div className="max-w-[198px] space-y-1.5 text-xs text-[#231a18] cursor-help">
+              {firstItem ? (
+                <div className="flex items-center justify-between gap-1.5 leading-snug">
+                  <span className="min-w-0 flex-1 truncate font-medium text-[#231a18]">
+                    {firstItem.productName || 'Bánh Trung Thu'}
+                    {firstItem.variantName ? ` · ${firstItem.variantName}` : ''}
+                  </span>
+                  <span className="shrink-0 font-semibold tabular-nums text-[#7d1322]">
+                    ×{firstItem.quantity}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[#8a7f7a]">Chưa có hạng mục</span>
+              )}
+              <div className="flex flex-wrap items-center gap-1">
+                {extraCount > 0 && (
+                  <Tag className="m-0 border-[#e4dcd3] bg-[#faf7f2] text-[11px] tabular-nums text-[#6c625e]">
+                    +{extraCount} dòng ({totalUnits} hộp)
+                  </Tag>
+                )}
+                {order.customPackaging ? (
+                  <Tag color="geekblue" icon={<CrownOutlined />} className="m-0 text-[11px]">
+                    Bao bì: {packagingStatusText}
+                  </Tag>
+                ) : (
+                  <Tag className="m-0 text-[11px] text-[#6c625e]">Bao bì tiêu chuẩn</Tag>
+                )}
+              </div>
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       title: 'Ngày giao',
       key: 'deliveryDate',
-      width: 130,
+      width: 100,
       render: (_, order) => (
         <div className="space-y-0.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
           {order.confirmedDeliveryDate ? (
@@ -541,7 +649,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Tổng tiền & cọc',
       key: 'totalAmount',
       align: 'right',
-      width: 145,
+      width: 130,
       render: (_, order) => (
         <div className="space-y-1 text-right whitespace-nowrap">
           <div className="font-semibold tabular-nums text-sm text-[#7d1322]">
@@ -562,116 +670,101 @@ export default function OrderManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 135,
+      width: 110,
       render: (value) => {
         const meta = STATUS_META[value] || { label: value, color: 'default' };
         return <Tag color={meta.color} className="m-0 whitespace-nowrap">{meta.label}</Tag>;
       },
     },
     {
-      title: 'Thao tác xưởng',
+      title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: 195,
+      align: 'center',
+      width: 90,
       render: (_, order) => {
         const allowedActions = order.allowedActions || [];
+        const podLabel = (order.latestDelivery?.proofCount || 0) > 0
+          ? `Thêm ảnh PoD (${order.latestDelivery.proofCount})`
+          : 'Tải ảnh PoD';
 
         return (
-          <div className="flex flex-wrap justify-end gap-1.5">
-            <Button
-              size="small"
-              icon={<FileTextOutlined />}
-              onClick={() => setDetailOrder(order)}
-            >
-              Chi tiết &amp; GD
-            </Button>
-            {order.status === 'Pending' && (
-              <>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => runAction(orderService.confirm, order, 'Đã xác nhận đơn hàng và tạo lịch thu cọc.')}
-                  style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-                >
-                  Xác nhận đơn
-                </Button>
-                <Button
-                  size="small"
-                  onClick={() => handleOpenProposeModal(order)}
-                  style={{ borderColor: '#9a6b16', color: '#9a6b16' }}
-                >
-                  Đề xuất ngày
-                </Button>
-                <Button size="small" danger onClick={() => rejectOrder(order)}>
-                  Từ chối
-                </Button>
-              </>
-            )}
-
-            {allowedActions.includes('StartProduction') && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => runAction(
+          <RowActionMenu
+            ariaLabel={`Thao tác đơn ${order.orderNumber}`}
+            actions={[
+              {
+                key: 'detail',
+                label: 'Chi tiết & GD',
+                icon: <FileTextOutlined />,
+                onClick: () => setDetailOrder(order),
+              },
+              {
+                key: 'packaging',
+                label: 'Bao bì',
+                icon: <PictureOutlined />,
+                show: Boolean(order.customPackaging),
+                onClick: () => openPackaging(order),
+              },
+              {
+                key: 'confirm',
+                label: 'Xác nhận đơn',
+                icon: <CheckCircleOutlined />,
+                show: order.status === 'Pending',
+                onClick: () => runAction(orderService.confirm, order, 'Đã xác nhận đơn hàng và tạo lịch thu cọc.'),
+              },
+              {
+                key: 'propose',
+                label: 'Đề xuất ngày',
+                icon: <CalendarOutlined />,
+                show: order.status === 'Pending',
+                onClick: () => handleOpenProposeModal(order),
+              },
+              {
+                key: 'startProduction',
+                label: 'Bắt đầu sản xuất',
+                icon: <ClockCircleOutlined />,
+                show: allowedActions.includes('StartProduction'),
+                onClick: () => runAction(
                   orderService.startProcessing,
                   order,
                   'Đơn hàng đã chuyển sang giai đoạn sản xuất.',
-                )}
-                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-              >
-                Bắt đầu sản xuất
-              </Button>
-            )}
-
-            {allowedActions.includes('MarkShipped') && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => runAction(
+                ),
+              },
+              {
+                key: 'ship',
+                label: 'Xuất kho giao',
+                icon: <TruckOutlined />,
+                show: allowedActions.includes('MarkShipped'),
+                onClick: () => runAction(
                   orderService.ship,
                   order,
                   'Đơn đã xuất kho, vui lòng tải ảnh biên bản PoD.',
-                )}
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-              >
-                Xuất kho giao
-              </Button>
-            )}
-
-            {order.status === 'Shipped' && (
-              <Button
-                type="primary"
-                size="small"
-                icon={<UploadOutlined />}
-                onClick={() => handleOpenPodModal(order)}
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-              >
-                {(order.latestDelivery?.proofCount || 0) > 0
-                  ? `Thêm ảnh PoD (${order.latestDelivery.proofCount})`
-                  : 'Tải ảnh PoD'}
-              </Button>
-            )}
-
-            {order.customPackaging && (
-              <Button size="small" icon={<PictureOutlined />} onClick={() => openPackaging(order)}>
-                Bao bì
-              </Button>
-            )}
-
-            {allowedActions.includes('RequestSimulatedPayout') && (
-              <Button
-                size="small"
-                icon={<DollarCircleOutlined />}
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setPayoutRequestModalOpen(true);
-                }}
-                style={{ borderColor: '#2d5a43', color: '#2d5a43' }}
-              >
-                Giải ngân
-              </Button>
-            )}
-          </div>
+                ),
+              },
+              {
+                key: 'pod',
+                label: podLabel,
+                icon: <UploadOutlined />,
+                show: order.status === 'Shipped',
+                onClick: () => handleOpenPodModal(order),
+              },
+              {
+                key: 'payout',
+                label: 'Giải ngân',
+                icon: <DollarCircleOutlined />,
+                show: allowedActions.includes('RequestSimulatedPayout'),
+                onClick: () => openPayoutRequestModal(order),
+              },
+              { type: 'divider', show: order.status === 'Pending' },
+              {
+                key: 'reject',
+                label: 'Từ chối',
+                icon: <CloseCircleOutlined />,
+                danger: true,
+                show: order.status === 'Pending',
+                onClick: () => rejectOrder(order),
+              },
+            ]}
+          />
         );
       },
     },
@@ -725,7 +818,7 @@ export default function OrderManage({ onNavigate }) {
             dataSource={orders}
             size="middle"
             tableLayout="fixed"
-            scroll={{ x: 1135 }}
+            scroll={{ x: 1020 }}
             pagination={{
               current: orderQuery.page,
               pageSize: orderQuery.pageSize,
@@ -1067,9 +1160,22 @@ export default function OrderManage({ onNavigate }) {
               </Descriptions.Item>
               <Descriptions.Item label="Quy cách">{packaging.packagingType}</Descriptions.Item>
               <Descriptions.Item label="Logo">
-                <a href={packaging.companyLogoUrl} target="_blank" rel="noreferrer">
-                  <EyeOutlined /> Xem logo doanh nghiệp
-                </a>
+                {packaging.companyLogoUrl ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white p-1">
+                      <Image
+                        src={packaging.companyLogoUrl}
+                        alt={`Logo ${packaging.companyName || 'doanh nghiệp'}`}
+                        width={64}
+                        height={64}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </div>
+                    <span className="text-xs text-stone-500">Nhấp ảnh để phóng to</span>
+                  </div>
+                ) : (
+                  'Chưa tải lên'
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="Thông điệp" span={{ xs: 1, sm: 2 }}>
                 {packaging.specialMessage || '—'}
@@ -1088,9 +1194,19 @@ export default function OrderManage({ onNavigate }) {
                   <Tag>{revision.status}</Tag>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
-                  <a href={revision.mockupUrl} target="_blank" rel="noreferrer" className="text-[#7d1322]">
-                    Mở tệp mockup
-                  </a>
+                  {revision.mockupUrl ? (
+                    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white p-1">
+                      <Image
+                        src={revision.mockupUrl}
+                        alt={`Mockup phiên bản ${revision.revisionNumber}`}
+                        width={120}
+                        height={80}
+                        style={{ objectFit: 'cover', borderRadius: 6 }}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-stone-400">Chưa có ảnh mockup</span>
+                  )}
                   <Text className="tabular-nums text-[#6c625e]">
                     Phí thiết kế: {money(revision.designFee)}
                   </Text>
@@ -1109,10 +1225,19 @@ export default function OrderManage({ onNavigate }) {
                 <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
                   <Form.Item
                     name="mockupUrl"
-                    label="URL mockup HTTPS"
-                    rules={[{ required: true }, { type: 'url' }]}
+                    label="Ảnh thiết kế mockup 3D/2D"
+                    rules={[{ required: true, message: 'Vui lòng tải lên ảnh thiết kế mockup.' }]}
                   >
-                    <Input placeholder="https://..." />
+                    <PackagingImageUpload
+                      uploader={(file) => customPackagingService.uploadMockup(file)}
+                      dragTitle="Kéo thả hoặc nhấp để tải ảnh mockup lên"
+                      dragHint="PNG, JPG, WEBP, SVG · Tối đa 10MB"
+                      previewAlt="Bản vẽ mockup đã tải lên"
+                      successText="Đã tải lên bản vẽ mockup"
+                      removeText="Xóa"
+                      previewWidth={96}
+                      previewHeight={64}
+                    />
                   </Form.Item>
                   <Form.Item
                     name="designFee"
@@ -1153,23 +1278,65 @@ export default function OrderManage({ onNavigate }) {
         okText="Gửi yêu cầu giải ngân"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#2d5a43', borderColor: '#2d5a43' } }}
+        width={560}
         destroyOnHidden
       >
         <div className="my-3 space-y-3 text-xs sm:text-sm text-[#231a18]">
           <p className="text-[#6c625e]">
             Đơn hàng <strong className="text-[#231a18]">#{selectedOrder?.orderNumber}</strong> đã hoàn tất đối soát.
-            Khoản ký quỹ sẵn sàng giải ngân về tài khoản xưởng:
+            Nhập thông tin tài khoản ngân hàng nhận tiền để Admin chuyển khoản thủ công và tải lên chứng từ PoD:
           </p>
           <Descriptions bordered size="small" column={1}>
             <Descriptions.Item label="Số tiền đề xuất giải ngân">
               <span className="text-base font-semibold tabular-nums text-[#2d5a43]">
-                {money(selectedOrder?.totalAmount || 0)}
+                {money(selectedOrder?.financialSummary?.eligibleAmount ?? selectedOrder?.totalAmount ?? 0)}
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="Tài khoản thụ hưởng">
-              Chuyển về tài khoản ngân hàng đã cấu hình của xưởng
-            </Descriptions.Item>
           </Descriptions>
+          <Form form={payoutRequestForm} layout="vertical" disabled={payoutRequestLoadingAccount}>
+            <Row gutter={12}>
+              <Col xs={24} sm={14}>
+                <Form.Item
+                  label="Tên ngân hàng"
+                  name="bankName"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên ngân hàng' }]}
+                >
+                  <Input placeholder="VD: Vietcombank, Techcombank..." />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={10}>
+                <Form.Item label="Mã NH (tùy chọn)" name="bankCode">
+                  <Input placeholder="VD: VCB, TCB..." />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={12}>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="Số tài khoản nhận tiền"
+                  name="accountNumber"
+                  rules={[{ required: true, message: 'Vui lòng nhập số tài khoản' }]}
+                >
+                  <Input placeholder="Nhập chính xác STK thụ hưởng" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="Tên chủ tài khoản"
+                  name="accountHolderName"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên chủ tài khoản' }]}
+                >
+                  <Input placeholder="Viết hoa không dấu" />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="Chi nhánh (tùy chọn)" name="branchName">
+              <Input placeholder="VD: Sở Giao Dịch TP.HCM" />
+            </Form.Item>
+            <Form.Item label="Ghi chú quyết toán" name="notes" className="mb-0">
+              <Input.TextArea rows={2} placeholder="Nội dung đề nghị giải ngân..." />
+            </Form.Item>
+          </Form>
         </div>
       </Modal>
 

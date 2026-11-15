@@ -65,9 +65,32 @@ export function truncateText(text, maxLength = 60) {
   return `${text.slice(0, maxLength)}...`;
 }
 
+/**
+ * Parse a bank account snapshot JSON string safely for display.
+ * @param {string|object|null|undefined} raw
+ * @returns {{ bankName: string, bankCode: string, accountNumber: string, accountHolderName: string, branchName: string }|null}
+ */
+export function parseBankSnapshot(raw) {
+  if (!raw) return null;
+  try {
+    const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!obj || typeof obj !== 'object') return null;
+    const bankName = String(obj.BankName ?? obj.bankName ?? '').trim();
+    const bankCode = String(obj.BankCode ?? obj.bankCode ?? '').trim();
+    const accountNumber = String(obj.AccountNumber ?? obj.accountNumber ?? '').trim();
+    const accountHolderName = String(obj.AccountHolderName ?? obj.accountHolderName ?? '').trim();
+    const branchName = String(obj.BranchName ?? obj.branchName ?? '').trim();
+    if (!bankName && !accountNumber && !accountHolderName) return null;
+    return { bankName, bankCode, accountNumber, accountHolderName, branchName };
+  } catch {
+    return null;
+  }
+}
+
 export default {
   formatCurrency,
   formatDate,
   formatPhoneNumber,
   truncateText,
+  parseBankSnapshot,
 };

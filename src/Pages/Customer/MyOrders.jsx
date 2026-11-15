@@ -16,21 +16,26 @@ import {
   Space,
   Spin,
   Tag,
+  Upload,
   message,
 } from 'antd';
 import {
   AlertOutlined,
+  BankOutlined,
   CalendarOutlined,
   CheckCircleFilled,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CreditCardOutlined,
   CrownOutlined,
+  DeleteOutlined,
+  DollarCircleOutlined,
   EyeOutlined,
   FileTextOutlined,
   PictureOutlined,
   ReloadOutlined,
   TruckOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerFooter from '../../components/layout/CustomerFooter';
@@ -42,6 +47,7 @@ import orderService from '../../services/orderService';
 import { signalRManager } from '../../services/signalrService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import { OrderItemsHoverCell, TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const { TextArea } = Input;
@@ -156,9 +162,19 @@ export default function MyOrders({ onNavigate }) {
 
   // Delivery Dispute Modal
   const [disputeModalOrder, setDisputeModalOrder] = useState(null);
-  const [disputeReason, setDisputeReason] = useState('BrokenCakes');
+  const [disputeReason, setDisputeReason] = useState('DamagedGoods');
   const [disputeDescription, setDisputeDescription] = useState('');
+  const [disputeEvidenceUrls, setDisputeEvidenceUrls] = useState([]);
+  const [disputeEvidenceUploading, setDisputeEvidenceUploading] = useState(false);
+  const [refundBankName, setRefundBankName] = useState('');
+  const [refundAccountNumber, setRefundAccountNumber] = useState('');
+  const [refundAccountHolderName, setRefundAccountHolderName] = useState('');
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+
+  // Direct Refund Request Modal (Cancelled / Expired orders)
+  const [refundModalOrder, setRefundModalOrder] = useState(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundSubmitting, setRefundSubmitting] = useState(false);
 
   // Proposal Respond Modal
   const [proposalModalOrder, setProposalModalOrder] = useState(null);
@@ -318,6 +334,14 @@ export default function MyOrders({ onNavigate }) {
     }
   };
 
+  const validateRefundBank = () => {
+    if (!refundBankName.trim() || !refundAccountNumber.trim() || !refundAccountHolderName.trim()) {
+      message.warning('Vui lòng nhập đầy đủ Tên ngân hàng, Số tài khoản và Tên chủ tài khoản để nhận hoàn tiền.');
+      return false;
+    }
+    return true;
+  };
+
   // Report delivery dispute
   const handleReportDispute = async () => {
     if (!disputeModalOrder) return;
@@ -325,19 +349,25 @@ export default function MyOrders({ onNavigate }) {
       message.warning('Vui lòng mô tả chi tiết vấn đề ít nhất 10 ký tự.');
       return;
     }
+    if (!validateRefundBank()) return;
+
     setDisputeSubmitting(true);
     try {
       await orderService.reportDeliveryDispute(disputeModalOrder.id, {
-        disputeReason,
+        issueType: disputeReason,
         description: disputeDescription.trim(),
-        evidencePhotoUrls: [],
+        evidenceUrls: disputeEvidenceUrls,
+        refundBankName: refundBankName.trim(),
+        refundAccountNumber: refundAccountNumber.trim(),
+        refundAccountHolderName: refundAccountHolderName.trim().toUpperCase(),
       });
       message.success(
-        'Đã ghi nhận khiếu nại giao nhận. Tiền ký quỹ đã được khóa bảo chứng để Ban Quản Trị đối soát.'
+        'Đã ghi nhận khiếu nại giao nhận và thông tin tài khoản hoàn tiền. Tiền ký quỹ đã được khóa để Ban Quản Trị đối soát.'
       );
       setDisputeModalOrder(null);
       setPodModalOrder(null);
       setDisputeDescription('');
+      setDisputeEvidenceUrls([]);
       await loadOrders();
     } catch (error) {
       message.error(errorMessage(error));
@@ -346,19 +376,69 @@ export default function MyOrders({ onNavigate }) {
     }
   };
 
-  // Cancellation request
+  const handleUploadDisputeEvidence = async ({ file, onSuccess, onError }) => {
+    setDisputeEvidenceUploading(true);
+    try {
+      const res = await orderService.uploadDisputeEvidence(file);
+      if (res?.url) {
+        setDisputeEvidenceUrls((prev) => [...prev, res.url].slice(0, 10));
+        message.success('Đã tải ảnh minh chứng lên hệ thống.');
+      }
+      onSuccess?.(res);
+    } catch (error) {
+      message.error(errorMessage(error));
+      onError?.(error);
+    } finally {
+      setDisputeEvidenceUploading(false);
+    }
+  };
+
+  const handleRequestRefund = async () => {
+    if (!refundModalOrder) return;
+    if (refundReason.trim().length < 5) {
+      message.warning('Vui lòng nhập lý do hoàn tiền tối thiểu 5 ký tự.');
+      return;
+    }
+    if (!validateRefundBank()) return;
+
+    setRefundSubmitting(true);
+    try {
+      await orderService.requestRefund(refundModalOrder.id, {
+        reason: refundReason.trim(),
+        refundBankName: refundBankName.trim(),
+        refundAccountNumber: refundAccountNumber.trim(),
+        refundAccountHolderName: refundAccountHolderName.trim().toUpperCase(),
+      });
+      message.success('Đã gửi yêu cầu hoàn tiền kèm tài khoản ngân hàng đến Quản trị viên.');
+      setRefundModalOrder(null);
+      setRefundReason('');
+      await loadOrders();
+    } catch (error) {
+      message.error(errorMessage(error));
+    } finally {
+      setRefundSubmitting(false);
+    }
+  };
+
+  // Cancel unpaid order immediately or send cancellation request after payment
   const handleRequestCancellation = async () => {
     if (!cancelModalOrder) return;
     if (cancelReason.trim().length < 5) {
       message.warning('Vui lòng nhập lý do hủy ít nhất 5 ký tự.');
       return;
     }
+    const isDirectCancel = (cancelModalOrder.allowedActions || []).includes('CancelOrder');
     setCancelSubmitting(true);
     try {
-      await orderService.requestCancellation(cancelModalOrder.id, {
-        reason: cancelReason.trim(),
-      });
-      message.success('Đã gửi yêu cầu hủy đơn hàng đến xưởng.');
+      if (isDirectCancel) {
+        await orderService.cancel(cancelModalOrder.id, cancelReason.trim());
+        message.success('Đã hủy đơn hàng và hoàn lại tồn kho cho xưởng.');
+      } else {
+        await orderService.requestCancellation(cancelModalOrder.id, {
+          reason: cancelReason.trim(),
+        });
+        message.success('Đã gửi yêu cầu hủy đơn hàng đến xưởng.');
+      }
       setCancelModalOrder(null);
       setCancelReason('');
       await loadOrders();
@@ -586,29 +666,33 @@ export default function MyOrders({ onNavigate }) {
 
                 {/* Items & Delivery Body */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  <div>
-                    <span className="text-stone-400 block mb-0.5 font-medium">
+                  <div className="min-w-0">
+                    <span className="text-stone-400 block mb-1 font-medium">
                       Sản phẩm &amp; số lượng:
                     </span>
-                    <b className="text-stone-900 block text-sm">
-                      {order.items?.[0]?.productName || 'Bánh Trung Thu Doanh Nghiệp'}
-                    </b>
-                    <span className="text-stone-600 block mt-0.5">
-                      Quy mô: {totalQty} hộp{' '}
-                      {order.items?.length > 1 ? `(${order.items.length} hạng mục vị bánh)` : ''}
+                    <OrderItemsHoverCell
+                      items={order.items || []}
+                      customPackaging={order.customPackaging}
+                      showPackagingTag={false}
+                      maxWidthClass="max-w-full"
+                    />
+                    <span className="text-stone-500 block mt-1 text-[11px]">
+                      Quy mô: {totalQty.toLocaleString('vi-VN')} hộp
                     </span>
                   </div>
 
-                  <div>
-                    <span className="text-stone-400 block mb-0.5 font-medium">
+                  <div className="min-w-0">
+                    <span className="text-stone-400 block mb-1 font-medium">
                       Thông tin giao nhận (1 chuyến v1):
                     </span>
-                    <span className="text-stone-900 font-semibold block">
-                      {order.recipientName} ({order.recipientPhone})
-                    </span>
-                    <span className="text-stone-600 block mt-0.5 truncate max-w-xs">
-                      {order.deliveryAddress}
-                    </span>
+                    <TruncatedTooltip
+                      text={`${order.recipientName || ''} (${order.recipientPhone || ''})`}
+                      className="text-stone-900 font-semibold"
+                    />
+                    <TruncatedTooltip
+                      text={order.deliveryAddress}
+                      className="text-stone-600 mt-0.5 max-w-xs"
+                    />
                     <span className="text-stone-500 block mt-0.5">
                       Vùng: {order.shippingZoneCode || 'Nội thành TP.HCM'}
                     </span>
@@ -731,14 +815,30 @@ export default function MyOrders({ onNavigate }) {
                       </Button>
                     )}
 
-                    {/* Request Cancellation */}
-                    {allowedActions.includes('RequestCancellation') && (
+                    {/* Cancel Order or Request Cancellation */}
+                    {(allowedActions.includes('CancelOrder') || allowedActions.includes('RequestCancellation')) && (
                       <Button
                         danger
                         onClick={() => setCancelModalOrder(order)}
                         style={{ borderRadius: 8 }}
                       >
-                        Yêu cầu hủy đơn
+                        {allowedActions.includes('CancelOrder') ? 'Hủy đơn hàng' : 'Yêu cầu hủy đơn'}
+                      </Button>
+                    )}
+
+                    {/* Request Refund */}
+                    {allowedActions.includes('RequestRefund') && (
+                      <Button
+                        type="primary"
+                        icon={<DollarCircleOutlined />}
+                        onClick={() => setRefundModalOrder(order)}
+                        style={{
+                          background: '#8c1524',
+                          borderColor: '#8c1524',
+                          borderRadius: 8,
+                        }}
+                      >
+                        Yêu cầu hoàn tiền
                       </Button>
                     )}
                   </div>
@@ -1072,15 +1172,16 @@ export default function MyOrders({ onNavigate }) {
         confirmLoading={disputeSubmitting}
         onOk={handleReportDispute}
         okText="Gửi Khiếu Nại & Khóa Ký Quỹ"
-        okButtonProps={{ danger: true, style: { fontWeight: 700 } }}
-        width={560}
+        okButtonProps={{ danger: true, style: { fontWeight: 700 }, disabled: disputeEvidenceUploading }}
+        width={620}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
       >
         <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
           <Alert
             type="warning"
             showIcon
             message="Khoản thanh toán của đơn hàng sẽ lập tức bị khóa bảo chứng"
-            description="Ban Quản Trị sàn sẽ làm việc với xưởng sản xuất để đối soát biên bản và hoàn tiền theo mức độ thiệt hại."
+            description="Ban Quản Trị sàn sẽ đối soát biên bản. Nếu chấp thuận hoàn tiền, Admin sẽ chuyển khoản trực tiếp vào số tài khoản Quý khách cung cấp bên dưới."
           />
 
           <div>
@@ -1092,11 +1193,10 @@ export default function MyOrders({ onNavigate }) {
               onChange={setDisputeReason}
               style={{ width: '100%' }}
               options={[
-                { value: 'BrokenCakes', label: 'Bánh bị vỡ / móp méo trong quá trình vận chuyển' },
-                { value: 'WrongQuantity', label: 'Thiếu số lượng hộp so với hợp đồng' },
-                { value: 'DefectivePackaging', label: 'Bao bì in sai màu sắc / logo bị lem mờ' },
-                { value: 'LateDelivery', label: 'Giao hàng trễ nghiêm trọng ảnh hưởng kế hoạch' },
-                { value: 'Other', label: 'Lý do khác' },
+                { value: 'DamagedGoods', label: 'Hàng hư hỏng / Bánh bị vỡ, móp méo khi vận chuyển' },
+                { value: 'MissingItems', label: 'Thiếu số lượng hộp so với đơn hàng' },
+                { value: 'WrongItems', label: 'Sai quy cách / Bao bì in sai mẫu mã' },
+                { value: 'LateDelivery', label: 'Giao hàng trễ hạn nghiêm trọng' },
               ]}
             />
           </div>
@@ -1112,6 +1212,150 @@ export default function MyOrders({ onNavigate }) {
               placeholder="Mô tả cụ thể số lượng hộp bị ảnh hưởng, tình trạng thực tế..."
               style={{ borderRadius: 8 }}
             />
+          </div>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2.5">
+            <div className="flex items-center gap-1.5 font-semibold text-xs text-stone-900">
+              <BankOutlined className="text-[#8c1524]" />
+              <span>Tài khoản ngân hàng nhận hoàn tiền (bắt buộc nếu yêu cầu hoàn tiền)</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <span className="text-[11px] text-stone-600 block mb-1">Tên ngân hàng *</span>
+                <Input
+                  value={refundBankName}
+                  onChange={(e) => setRefundBankName(e.target.value)}
+                  placeholder="VD: Vietcombank, MB Bank, ACB..."
+                />
+              </div>
+              <div>
+                <span className="text-[11px] text-stone-600 block mb-1">Số tài khoản nhận tiền *</span>
+                <Input
+                  value={refundAccountNumber}
+                  onChange={(e) => setRefundAccountNumber(e.target.value)}
+                  placeholder="VD: 0123456789"
+                />
+              </div>
+            </div>
+            <div>
+              <span className="text-[11px] text-stone-600 block mb-1">Tên chủ tài khoản (không dấu) *</span>
+              <Input
+                value={refundAccountHolderName}
+                onChange={(e) => setRefundAccountHolderName(e.target.value)}
+                placeholder="VD: CONG TY CO PHAN ALPHA / NGUYEN VAN A"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <span className="font-semibold text-xs text-stone-800">
+                Ảnh bằng chứng hiện trạng hàng (khuyến khích):
+              </span>
+              <Upload
+                showUploadList={false}
+                accept="image/*"
+                customRequest={handleUploadDisputeEvidence}
+              >
+                <Button size="small" icon={<UploadOutlined />} loading={disputeEvidenceUploading}>
+                  Tải ảnh bằng chứng
+                </Button>
+              </Upload>
+            </div>
+            {disputeEvidenceUrls.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1.5">
+                {disputeEvidenceUrls.map((url, idx) => (
+                  <div key={`${url}-${idx}`} className="relative group">
+                    <Image
+                      src={url}
+                      alt={`Bằng chứng ${idx + 1}`}
+                      width={68}
+                      height={68}
+                      className="rounded-lg object-cover border border-stone-200"
+                    />
+                    <Button
+                      size="small"
+                      danger
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      aria-label={`Xóa ảnh bằng chứng ${idx + 1}`}
+                      onClick={() => setDisputeEvidenceUrls((prev) => prev.filter((_, i) => i !== idx))}
+                      className="absolute -top-2 -right-2 bg-white shadow-sm rounded-full"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal 3b: Refund Request Modal (Cancelled / Expired paid orders) */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-[#8c1524] font-bold">
+            <DollarCircleOutlined />
+            <span>Gửi Yêu Cầu Hoàn Tiền · #{refundModalOrder?.orderNumber || ''}</span>
+          </div>
+        }
+        open={Boolean(refundModalOrder)}
+        onCancel={() => setRefundModalOrder(null)}
+        confirmLoading={refundSubmitting}
+        onOk={handleRequestRefund}
+        okText="Gửi Yêu Cầu Hoàn Tiền"
+        okButtonProps={{ style: { background: '#8c1524', borderColor: '#8c1524', fontWeight: 700 } }}
+        width={580}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
+      >
+        <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
+          <Alert
+            type="info"
+            showIcon
+            message="Cung cấp tài khoản ngân hàng nhận tiền hoàn"
+            description="Quản trị viên sẽ chuyển khoản trả lại số tiền đã thanh toán vào tài khoản dưới đây và đính kèm biên lai xác nhận."
+          />
+          <div>
+            <span className="font-semibold text-xs text-stone-800 block mb-1">
+              Lý do yêu cầu hoàn tiền (tối thiểu 5 ký tự) *
+            </span>
+            <TextArea
+              rows={3}
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              placeholder="VD: Đơn hàng đã hủy sau khi thanh toán, đề nghị hoàn lại tiền cọc..."
+            />
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2.5">
+            <div className="flex items-center gap-1.5 font-semibold text-xs text-stone-900">
+              <BankOutlined className="text-[#8c1524]" />
+              <span>Thông tin tài khoản nhận hoàn tiền</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <span className="text-[11px] text-stone-600 block mb-1">Tên ngân hàng *</span>
+                <Input
+                  value={refundBankName}
+                  onChange={(e) => setRefundBankName(e.target.value)}
+                  placeholder="VD: Vietcombank, MB Bank, ACB..."
+                />
+              </div>
+              <div>
+                <span className="text-[11px] text-stone-600 block mb-1">Số tài khoản nhận tiền *</span>
+                <Input
+                  value={refundAccountNumber}
+                  onChange={(e) => setRefundAccountNumber(e.target.value)}
+                  placeholder="VD: 0123456789"
+                />
+              </div>
+            </div>
+            <div>
+              <span className="text-[11px] text-stone-600 block mb-1">Tên chủ tài khoản (không dấu) *</span>
+              <Input
+                value={refundAccountHolderName}
+                onChange={(e) => setRefundAccountHolderName(e.target.value)}
+                placeholder="VD: CONG TY CO PHAN ALPHA / NGUYEN VAN A"
+              />
+            </div>
           </div>
         </div>
       </Modal>
@@ -1235,15 +1479,25 @@ export default function MyOrders({ onNavigate }) {
                       className="rounded-xl border-stone-200"
                     >
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <a
-                            href={revision.mockupUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-bold text-[#8c1524] underline flex items-center gap-1"
-                          >
-                            <PictureOutlined /> Mở tệp thiết kế độ phân giải cao
-                          </a>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {revision.mockupUrl ? (
+                            <div className="flex items-center gap-3">
+                              <div className="overflow-hidden rounded-lg border border-stone-200 bg-white p-1">
+                                <Image
+                                  src={revision.mockupUrl}
+                                  alt={`Bản vẽ mockup phiên bản ${revision.revisionNumber}`}
+                                  width={160}
+                                  height={110}
+                                  style={{ objectFit: 'cover', borderRadius: 6 }}
+                                />
+                              </div>
+                              <span className="text-xs text-stone-500">
+                                Nhấp vào ảnh để xem bản vẽ kích thước lớn
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-stone-400">Chưa có ảnh mockup</span>
+                          )}
                           <span className="text-xs font-semibold text-stone-800">
                             Phí gia công thiết kế: {money(revision.designFee)}
                           </span>

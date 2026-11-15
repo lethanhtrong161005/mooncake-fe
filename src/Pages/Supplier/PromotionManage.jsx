@@ -8,13 +8,13 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Radio,
   Row,
   Select,
   Space,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -27,6 +27,8 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import supplierService from '../../services/supplierService';
 import productService from '../../services/productService';
 
@@ -196,22 +198,34 @@ export default function PromotionManage({ onNavigate }) {
       title: 'Chương trình chiết khấu',
       dataIndex: 'name',
       key: 'name',
-      width: 280,
+      width: 365,
       render: (text, record) => {
         const prod = products.find(
           (p) => p.productId === record.productId || p.id === record.productId,
         );
         return (
-          <div className="space-y-1">
-            <div className="font-semibold text-sm text-[#7d1322]">{text}</div>
+          <div className="max-w-[345px] space-y-1">
+            <TruncatedTooltip
+              text={text}
+              className="font-semibold text-sm text-[#7d1322]"
+            />
             {record.description && (
-              <div className="max-w-md text-xs text-[#6c625e]">{record.description}</div>
+              <TruncatedTooltip
+                text={record.description}
+                className="text-xs text-[#6c625e]"
+              />
             )}
             <div className="pt-0.5">
               {prod ? (
-                <Tag color="gold">Sản phẩm: {prod.name}</Tag>
+                <Tooltip title={`Sản phẩm: ${prod.name}`} color="#231a18" placement="topLeft">
+                  <Tag color="gold" className="m-0 max-w-full">
+                    <span className="inline-block max-w-[300px] truncate align-bottom">
+                      Sản phẩm: {prod.name}
+                    </span>
+                  </Tag>
+                </Tooltip>
               ) : (
-                <Tag>Áp dụng toàn bộ gian hàng</Tag>
+                <Tag className="m-0">Áp dụng toàn bộ gian hàng</Tag>
               )}
             </div>
           </div>
@@ -221,7 +235,7 @@ export default function PromotionManage({ onNavigate }) {
     {
       title: 'Mức giảm giá B2B',
       key: 'discount',
-      width: 170,
+      width: 185,
       render: (_, record) => {
         const isPercent = record.discountType === 0 || record.discountType === 'Percentage';
         return (
@@ -242,7 +256,7 @@ export default function PromotionManage({ onNavigate }) {
     {
       title: 'Thời gian áp dụng',
       key: 'duration',
-      width: 140,
+      width: 150,
       render: (_, record) => {
         if (!record.startAtUtc && !record.endAtUtc) {
           return <Tag>Vô thời hạn</Tag>;
@@ -261,34 +275,37 @@ export default function PromotionManage({ onNavigate }) {
       width: 120,
       render: (_, record) => {
         const st = getPromoStatus(record);
-        return <Tag color={st.color}>{st.text}</Tag>;
+        return <Tag color={st.color} className="m-0 whitespace-nowrap">{st.text}</Tag>;
       },
     },
     {
       title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: 150,
+      align: 'center',
+      width: 90,
       render: (_, record) => (
-        <Space size="small">
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleOpenEdit(record)}
-          >
-            Sửa
-          </Button>
-          <Popconfirm
-            title="Ngừng kích hoạt khuyến mãi?"
-            description={`Hủy áp dụng chương trình "${record.name}"?`}
-            onConfirm={() => handleDelete(record.id, record.name)}
-            okText="Đồng ý"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} aria-label={`Hủy ${record.name}`} />
-          </Popconfirm>
-        </Space>
+        <RowActionMenu
+          ariaLabel={`Thao tác khuyến mãi ${record.name}`}
+          actions={[
+            {
+              key: 'edit',
+              label: 'Chỉnh sửa khuyến mãi',
+              icon: <EditOutlined />,
+              onClick: () => handleOpenEdit(record),
+            },
+            { type: 'divider' },
+            {
+              key: 'delete',
+              label: 'Ngừng kích hoạt',
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirmTitle: 'Ngừng kích hoạt khuyến mãi?',
+              confirmContent: `Hủy áp dụng chương trình "${record.name}"?`,
+              confirmOkText: 'Đồng ý',
+              onClick: () => handleDelete(record.id, record.name),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -377,9 +394,10 @@ export default function PromotionManage({ onNavigate }) {
               rowKey="id"
               loading={loading}
               size="middle"
+              tableLayout="fixed"
               locale={{ emptyText: 'Chưa có chương trình khuyến mãi nào được tạo.' }}
               pagination={{ pageSize: 10, showSizeChanger: false }}
-              scroll={{ x: 860 }}
+              scroll={{ x: 910 }}
             />
           </div>
         </section>

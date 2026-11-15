@@ -7,7 +7,6 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Select,
   Space,
   Switch,
@@ -29,6 +28,8 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import productService from '../../services/productService';
 
 const PAGE_SIZE = 10;
@@ -362,11 +363,11 @@ export default function ProductManage({ onNavigate }) {
       title: 'Sản phẩm',
       dataIndex: 'name',
       key: 'name',
-      width: 320,
+      width: 395,
       render: (name, row) => {
         const categoryName = categoryMap.get(row.categoryId);
         return (
-          <div className="flex items-start gap-3.5">
+          <div className="flex items-start gap-3.5 max-w-[375px]">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e4dcd3] bg-[#faf7f2]">
               {row.primaryImageUrl ? (
                 <Image
@@ -381,12 +382,16 @@ export default function ProductManage({ onNavigate }) {
                 <PictureOutlined className="text-lg text-[#b3a69e]" />
               )}
             </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-[#231a18] text-sm leading-snug">
-                {name}
-              </div>
+            <div className="min-w-0 flex-1">
+              <TruncatedTooltip
+                text={name}
+                className="font-semibold text-[#231a18] text-sm leading-snug"
+              />
               {categoryName && (
-                <div className="mt-0.5 text-xs text-[#9a6b16]">{categoryName}</div>
+                <TruncatedTooltip
+                  text={categoryName}
+                  className="mt-0.5 text-xs text-[#9a6b16]"
+                />
               )}
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] tabular-nums text-[#6c625e]">
                 <span>{row.variantCount} biến thể</span>
@@ -402,9 +407,9 @@ export default function ProductManage({ onNavigate }) {
     {
       title: 'Giá B2B',
       key: 'price',
-      width: 165,
+      width: 185,
       render: (_, row) => (
-        <span className="font-semibold tabular-nums text-sm text-[#7d1322]">
+        <span className="font-semibold tabular-nums text-sm text-[#7d1322] whitespace-nowrap">
           {row.minPrice === row.maxPrice
             ? `${money(row.minPrice)} đ`
             : `${money(row.minPrice)} – ${money(row.maxPrice)} đ`}
@@ -432,29 +437,36 @@ export default function ProductManage({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: 185,
+      align: 'center',
+      width: 90,
       render: (_, row) => (
-        <Space size={[6, 6]} wrap>
-          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>
-            Sửa
-          </Button>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => publish(row, row.effectiveStatus === 'Inactive')}
-          >
-            {row.effectiveStatus === 'Inactive' ? 'Đăng bán' : 'Ẩn'}
-          </Button>
-          <Popconfirm title="Xoá sản phẩm này?" onConfirm={() => remove(row)}>
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              aria-label={`Xoá ${row.name}`}
-            />
-          </Popconfirm>
-        </Space>
+        <RowActionMenu
+          ariaLabel={`Thao tác sản phẩm ${row.name}`}
+          actions={[
+            {
+              key: 'edit',
+              label: 'Chỉnh sửa sản phẩm',
+              icon: <EditOutlined />,
+              onClick: () => openEdit(row),
+            },
+            {
+              key: 'toggle',
+              label: row.effectiveStatus === 'Inactive' ? 'Đăng bán sản phẩm' : 'Ẩn sản phẩm',
+              icon: <EyeOutlined />,
+              onClick: () => publish(row, row.effectiveStatus === 'Inactive'),
+            },
+            { type: 'divider' },
+            {
+              key: 'delete',
+              label: 'Xoá sản phẩm',
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirmTitle: `Xoá sản phẩm "${row.name}"?`,
+              confirmOkText: 'Xoá',
+              onClick: () => remove(row),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -587,6 +599,7 @@ export default function ProductManage({ onNavigate }) {
               columns={columns}
               dataSource={items}
               size="middle"
+              tableLayout="fixed"
               scroll={{ x: 900 }}
               locale={{
                 emptyText: (

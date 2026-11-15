@@ -27,6 +27,8 @@ import DeliveryDetailDrawer from '../../components/delivery/DeliveryDetailDrawer
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import SharePoDLinkModal from '../../components/delivery/SharePoDLinkModal';
 import FilterBar from '../../components/common/FilterBar';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import usePagedList from '../../hooks/usePagedList';
 import contractService from '../../services/contractService';
 import deliveryService from '../../services/deliveryService';
@@ -160,85 +162,92 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
-      width: '17%',
-      render: (text, r) => (
-        <div>
-          <button
-            type="button"
-            className="dm-delivery-link"
-            onClick={() => handleOpenDetail(r)}
-          >
-            {text || r.deliveryCode || 'DEL-N/A'}
-          </button>
-          <div className="dm-cell-muted">
-            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị vận chuyển'}
+      width: 175,
+      render: (text, r) => {
+        const code = text || r.deliveryCode || 'DEL-N/A';
+        return (
+          <div className="max-w-[160px]">
+            <Tooltip title={code} color="#231a18" placement="topLeft">
+              <button
+                type="button"
+                className="dm-delivery-link"
+                onClick={() => handleOpenDetail(r)}
+              >
+                {code}
+              </button>
+            </Tooltip>
+            <div className="dm-cell-muted">
+              {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị vận chuyển'}
+            </div>
+            {r.createdAt && (
+              <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
+            )}
           </div>
-          {r.createdAt && (
-            <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
-          )}
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Đơn hàng / Hợp đồng',
       key: 'reference',
-      width: '18%',
-      render: (_, r) => (
-        <div>
-          <div className="dm-ref-code" title={r.orderNumber || r.contractNumber || ''}>
-            {r.orderNumber || r.contractNumber || r.contractNo || 'Chuyến giao B2B'}
+      width: 190,
+      render: (_, r) => {
+        const refCode = r.orderNumber || r.contractNumber || r.contractNo || 'Chuyến giao B2B';
+        const customerName = r.customerName || 'Khách hàng doanh nghiệp';
+        return (
+          <div className="max-w-[175px]">
+            <TruncatedTooltip text={refCode} className="dm-ref-code" />
+            <TruncatedTooltip text={customerName} className="dm-cell-muted" />
           </div>
-          <div className="dm-cell-muted truncate">
-            {r.customerName || 'Khách hàng doanh nghiệp'}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Điểm nhận & đại diện',
       key: 'destination',
-      width: '21%',
-      render: (_, r) => (
-        <div>
-          <Tooltip title={r.toAddress}>
-            <div className="dm-address-main">
-              {r.toAddress || 'Kho nhận'}
+      width: 250,
+      render: (_, r) => {
+        const addressText = r.toAddress || 'Kho nhận';
+        const contactText = `${r.recipientName || 'Thủ kho'}${r.recipientPhone ? ` (${r.recipientPhone})` : ''}`;
+        return (
+          <div className="max-w-[235px]">
+            <TruncatedTooltip text={addressText} className="dm-address-main" />
+            <div className="dm-cell-muted flex items-center gap-1 min-w-0">
+              <UserOutlined className="shrink-0 text-[#9a6b16]" />
+              <div className="min-w-0 flex-1">
+                <TruncatedTooltip text={contactText} />
+              </div>
             </div>
-          </Tooltip>
-          <div className="dm-cell-muted flex items-center gap-1">
-            <UserOutlined className="shrink-0 text-[#9a6b16]" />
-            <span className="truncate">
-              {r.recipientName || 'Thủ kho'}
-              {r.recipientPhone ? ` (${r.recipientPhone})` : ''}
-            </span>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Lịch giao & vận đơn',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
-      width: '15%',
-      render: (d, r) => (
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18]">
-            <ClockCircleOutlined className="text-[#9a6b16]" />
-            <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+      width: 160,
+      render: (d, r) => {
+        const tracking = r.trackingCode || 'Xe xưởng';
+        return (
+          <div className="max-w-[145px]">
+            <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
+              <ClockCircleOutlined className="text-[#9a6b16]" />
+              <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+            </div>
+            <div>
+              <Tooltip title={tracking} color="#231a18" placement="topLeft">
+                <span className="dm-tracking-pill">{tracking}</span>
+              </Tooltip>
+            </div>
           </div>
-          <div>
-            <span className="dm-tracking-pill" title={r.trackingCode || 'Xe xưởng'}>
-              {r.trackingCode || 'Xe xưởng'}
-            </span>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Trạng thái & PoD',
       dataIndex: 'status',
       key: 'status',
-      width: '13%',
+      width: 145,
       render: (status, r) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
         return (
@@ -250,84 +259,64 @@ export default function DeliverManage({ onNavigate }) {
       },
     },
     {
-      title: 'Điều phối & chi tiết',
+      title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: '21%',
+      align: 'center',
+      width: 90,
       render: (_, record) => {
         const status = record.status;
         return (
-          <div className="dm-actions-cell">
-            <div className="dm-actions-row">
-              {status === 'Pending' && (
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() =>
-                    handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.')
-                  }
-                >
-                  Xác nhận xếp xe
-                </Button>
-              )}
-
-              {status === 'Confirmed' && (
-                <Button
-                  size="small"
-                  onClick={() =>
-                    handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.')
-                  }
-                >
-                  Bốc hàng lên xe
-                </Button>
-              )}
-
-              {status === 'PickedUp' && (
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() =>
-                    handleUpdateStatus(
-                      record,
-                      'InTransit',
-                      'Xe xuất bến bắt đầu vận chuyển.'
-                    )
-                  }
-                >
-                  Xuất bến
-                </Button>
-              )}
-            </div>
-
-            <div className="dm-actions-row">
-              <Button
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={() => handleOpenDetail(record)}
-              >
-                Chi tiết
-              </Button>
-
-              <Button
-                size="small"
-                icon={<CameraOutlined />}
-                onClick={() => handleOpenPod(record)}
-              >
-                PoD ({record.proofCount || 0})
-              </Button>
-
-              <Tooltip title="Chia sẻ liên kết công khai có thời hạn cho tài xế nộp PoD">
-                <Button
-                  size="small"
-                  icon={<ShareAltOutlined />}
-                  onClick={() => handleOpenShare(record)}
-                >
-                  Tài xế PoD
-                </Button>
-              </Tooltip>
-            </div>
-          </div>
+          <RowActionMenu
+            ariaLabel={`Thao tác chuyến giao ${record.deliveryNumber || record.deliveryCode || ''}`}
+            actions={[
+              {
+                key: 'confirm',
+                label: 'Xác nhận xếp xe',
+                icon: <CheckCircleOutlined />,
+                show: status === 'Pending',
+                onClick: () =>
+                  handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.'),
+              },
+              {
+                key: 'pickup',
+                label: 'Bốc hàng lên xe',
+                icon: <TruckOutlined />,
+                show: status === 'Confirmed',
+                onClick: () =>
+                  handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.'),
+              },
+              {
+                key: 'transit',
+                label: 'Xuất bến',
+                icon: <SendOutlined />,
+                show: status === 'PickedUp',
+                onClick: () =>
+                  handleUpdateStatus(record, 'InTransit', 'Xe xuất bến bắt đầu vận chuyển.'),
+              },
+              {
+                type: 'divider',
+                show: ['Pending', 'Confirmed', 'PickedUp'].includes(status),
+              },
+              {
+                key: 'detail',
+                label: 'Chi tiết chuyến giao',
+                icon: <EyeOutlined />,
+                onClick: () => handleOpenDetail(record),
+              },
+              {
+                key: 'pod',
+                label: `Biên bản PoD (${record.proofCount || 0})`,
+                icon: <CameraOutlined />,
+                onClick: () => handleOpenPod(record),
+              },
+              {
+                key: 'share',
+                label: 'Chia sẻ link PoD cho tài xế',
+                icon: <ShareAltOutlined />,
+                onClick: () => handleOpenShare(record),
+              },
+            ]}
+          />
         );
       },
     },
@@ -443,7 +432,7 @@ export default function DeliverManage({ onNavigate }) {
                 showSizeChanger: true,
                 pageSizeOptions: [10, 20, 50, 100],
               }}
-              scroll={{ x: 1060 }}
+              scroll={{ x: 1010 }}
             />
           </div>
         </section>
