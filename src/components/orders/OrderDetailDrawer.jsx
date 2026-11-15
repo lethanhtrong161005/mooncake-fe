@@ -16,8 +16,10 @@ import {
   CreditCardOutlined,
   FileTextOutlined,
   HistoryOutlined,
+  PhoneOutlined,
   PictureOutlined,
   ReloadOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import orderService from '../../services/orderService';
 
@@ -545,6 +547,39 @@ export default function OrderDetailDrawer({
             {current?.notes && (
               <Descriptions.Item label="Ghi chú đơn" span={2}>
                 {current.notes}
+              </Descriptions.Item>
+            )}
+            {current?.latestDelivery?.driverName && (
+              <Descriptions.Item label="Tài xế giao hàng" span={2}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserOutlined className="text-[#8c1524]" />
+                    <span className="font-semibold text-stone-900">{current.latestDelivery.driverName}</span>
+                    <span className="text-stone-500 font-mono text-xs">
+                      ({current.latestDelivery.vehiclePlate ? `BS: ${current.latestDelivery.vehiclePlate}` : 'Xe xưởng'})
+                    </span>
+                    {current.latestDelivery.driverClaimedAt ? (
+                      <Tag color="green" className="m-0 text-[11px]">
+                        Đã nhận lúc {formatDateTime(current.latestDelivery.driverClaimedAt)}
+                      </Tag>
+                    ) : (
+                      <Tag color="orange" className="m-0 text-[11px]">
+                        Chưa có tài xế nhận
+                      </Tag>
+                    )}
+                  </div>
+                  {current.latestDelivery.driverPhone && (
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<PhoneOutlined />}
+                      href={`tel:${current.latestDelivery.driverPhone}`}
+                      className="bg-[#2d5a43] border-[#2d5a43]"
+                    >
+                      Gọi tài xế ({current.latestDelivery.driverPhone})
+                    </Button>
+                  )}
+                </div>
               </Descriptions.Item>
             )}
           </Descriptions>

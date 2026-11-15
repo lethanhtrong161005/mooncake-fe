@@ -16,6 +16,7 @@ import {
 import {
   CameraOutlined,
   CheckCircleOutlined,
+  PhoneOutlined,
   ReloadOutlined,
   TruckOutlined,
 } from '@ant-design/icons';
@@ -419,6 +420,52 @@ export default function ContractFulfillmentTable({
                   </Text>
                 </div>
               ),
+            },
+            {
+              title: 'Tài xế giao hàng',
+              key: 'driver',
+              width: 170,
+              render: (_, record) => {
+                if (!record.driverName) {
+                  return <Text type="secondary" style={{ fontSize: 12 }}>Chưa có tài xế nhận</Text>;
+                }
+                return (
+                  <div style={{ fontSize: 12 }}>
+                    <div>
+                      <Text strong>{record.driverName}</Text>
+                      <span style={{ color: '#888', marginLeft: 4, fontFamily: 'monospace' }}>
+                        ({record.vehiclePlate ? `BS: ${record.vehiclePlate}` : 'Xe xưởng'})
+                      </span>
+                    </div>
+                    {record.driverClaimedAt ? (
+                      <div style={{ marginTop: 2 }}>
+                        <Tag color="green" style={{ fontSize: 10, padding: '0 4px', margin: 0 }}>
+                          Đã nhận lúc {formatDateTime(record.driverClaimedAt)}
+                        </Tag>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 2 }}>
+                        <Tag color="orange" style={{ fontSize: 10, padding: '0 4px', margin: 0 }}>
+                          Chưa có tài xế nhận
+                        </Tag>
+                      </div>
+                    )}
+                    {record.driverPhone && (
+                      <div style={{ marginTop: 4 }}>
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<PhoneOutlined />}
+                          href={`tel:${record.driverPhone}`}
+                          style={{ fontSize: 11, height: 22, padding: '0 6px', background: '#2d5a43', borderColor: '#2d5a43' }}
+                        >
+                          Gọi {record.driverPhone}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              },
             },
             {
               title: 'Trạng thái',

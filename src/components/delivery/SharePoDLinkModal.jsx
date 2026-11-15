@@ -193,13 +193,15 @@ export default function SharePoDLinkModal({ open, onClose, delivery }) {
 
   const handleCopyDriverMessage = () => {
     if (!shareUrl) return;
+    const tripCode = shareInfo?.shareCode || delivery?.shareCode;
     const lines = [
-      `Chuyến giao: ${delivery?.deliveryNumber || 'N/A'}`,
+      `Chuyến giao: ${delivery?.deliveryNumber || 'N/A'}${tripCode ? ` (Mã chuyến: ${tripCode})` : ''}`,
       `Người nhận: ${delivery?.recipientName || 'Thủ kho'} (${delivery?.recipientPhone || 'N/A'})`,
       `Địa chỉ giao: ${delivery?.toAddress || 'Xem chi tiết trong link'}`,
       `Hạn hoàn tất PoD: ${formatDateTime(shareInfo?.expiresAtUtc)}`,
+      tripCode ? `Mã chuyến: ${tripCode}` : '',
       `Link chụp ảnh & ký nhận PoD (không cần đăng nhập): ${shareUrl}`,
-    ];
+    ].filter(Boolean);
     handleCopy('message', lines.join('\n'), 'Đã sao chép tin nhắn mẫu kèm link gửi tài xế.');
   };
 
@@ -239,6 +241,16 @@ export default function SharePoDLinkModal({ open, onClose, delivery }) {
                 <Tag>Chưa cấp link</Tag>
               )}
             </div>
+            {(shareInfo?.shareCode || delivery.shareCode) && (
+              <div className="rounded-lg border border-[#d48806]/40 bg-[#fffdf9] p-2 text-center my-2">
+                <span className="text-[11px] uppercase tracking-wider text-[#9a6b16] font-semibold block">
+                  Mã chuyến giao hàng (Trip Code)
+                </span>
+                <span className="text-xl font-bold font-mono tracking-widest text-[#8c1524] select-all">
+                  {shareInfo?.shareCode || delivery.shareCode}
+                </span>
+              </div>
+            )}
             <div className="share-pod-card__meta">
               <div>
                 <span className="font-medium text-[#231a18]">Người nhận:</span>{' '}

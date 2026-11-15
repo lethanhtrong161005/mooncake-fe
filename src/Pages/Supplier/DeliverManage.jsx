@@ -22,6 +22,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import AssignDriverModal from '../../components/delivery/AssignDriverModal';
 import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
 import DeliveryDetailDrawer from '../../components/delivery/DeliveryDetailDrawer';
 import PoDViewerModal from '../../components/delivery/PoDViewerModal';
@@ -30,6 +31,7 @@ import FilterBar from '../../components/common/FilterBar';
 import usePagedList from '../../hooks/usePagedList';
 import contractService from '../../services/contractService';
 import deliveryService from '../../services/deliveryService';
+import orderService from '../../services/orderService';
 import { signalRManager } from '../../services/signalrService';
 import '../../styles/supplier-deliveries.css';
 
@@ -62,9 +64,12 @@ export default function DeliverManage({ onNavigate }) {
   const loading = deliveryPage.loading;
 
   const [contracts, setContracts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [detailDelivery, setDetailDelivery] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignDelivery, setAssignDelivery] = useState(null);
   const [podModalOpen, setPodModalOpen] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -74,8 +79,12 @@ export default function DeliverManage({ onNavigate }) {
   const fetchData = useCallback(async () => {
     try {
       deliveryPage.refresh();
-      const contractData = await contractService.listMine().catch(() => []);
+      const [contractData, orderData] = await Promise.all([
+        contractService.listMine().catch(() => []),
+        orderService.listSupplierOrders().catch(() => []),
+      ]);
       setContracts(Array.isArray(contractData) ? contractData : []);
+      setOrders(Array.isArray(orderData) ? orderData : orderData?.items || []);
     } catch {
       message.error('Không thể tải dữ liệu giao vận.');
     }
@@ -85,9 +94,13 @@ export default function DeliverManage({ onNavigate }) {
     let ignore = false;
     const run = async () => {
       try {
-        const contractData = await contractService.listMine().catch(() => []);
+        const [contractData, orderData] = await Promise.all([
+          contractService.listMine().catch(() => []),
+          orderService.listSupplierOrders().catch(() => []),
+        ]);
         if (!ignore) {
           setContracts(Array.isArray(contractData) ? contractData : []);
+          setOrders(Array.isArray(orderData) ? orderData : orderData?.items || []);
         }
       } catch {
         if (!ignore) {
@@ -125,6 +138,11 @@ export default function DeliverManage({ onNavigate }) {
     setDetailDrawerOpen(true);
   };
 
+  const handleOpenAssign = (record) => {
+    setAssignDelivery(record);
+    setAssignModalOpen(true);
+  };
+
   const handleOpenPod = async (record) => {
     setSelectedDelivery(record);
     try {
@@ -157,10 +175,10 @@ export default function DeliverManage({ onNavigate }) {
 
   const columns = [
     {
-      title: 'Chuyến giao',
+      title: 'Chuyến giao & Đợt',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
-      width: '17%',
+      width: '15%',
       render: (text, r) => (
         <div>
           <button
@@ -170,8 +188,13 @@ export default function DeliverManage({ onNavigate }) {
           >
             {text || r.deliveryCode || 'DEL-N/A'}
           </button>
-          <div className="dm-cell-muted">
-            {r.deliveryType === 'SelfArranged' ? 'Xe xưởng tự chở' : 'Đơn vị vận chuyển'}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <Tag color="purple" className="m-0 text-[11px]">
+              {r.batchNumber ? `Đợt ${r.batchNumber}${r.totalBatches ? `/${r.totalBatches}` : ''}` : 'Đợt 1'}
+            </Tag>
+            <span className="dm-cell-muted">
+              {r.deliveryType === 'SelfArranged' ? 'Xe xưởng' : 'Đơn vị VC'}
+            </span>
           </div>
           {r.createdAt && (
             <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
@@ -182,7 +205,7 @@ export default function DeliverManage({ onNavigate }) {
     {
       title: 'Đơn hàng / Hợp đồng',
       key: 'reference',
-      width: '18%',
+      width: '16%',
       render: (_, r) => (
         <div>
           <div className="dm-ref-code" title={r.orderNumber || r.contractNumber || ''}>
@@ -195,9 +218,44 @@ export default function DeliverManage({ onNavigate }) {
       ),
     },
     {
+      title: 'Tài xế & Nhận chuyến',
+      key: 'driver',
+      width: '18%',
+      render: (_, r) => (
+        <div className="space-y-1">
+          {r.driverName ? (
+            <div>
+              <div className="font-semibold text-stone-800 text-xs">
+                {r.driverName} {r.driverPhone ? `· ${r.driverPhone}` : ''}
+              </div>
+              <div className="text-[11px] text-stone-500 font-mono">
+                {r.vehiclePlate ? `BS: ${r.vehiclePlate}` : 'Xe xưởng'}
+                {r.shareCode ? ` · Mã: ${r.shareCode}` : ''}
+              </div>
+              <div className="mt-0.5">
+                {r.driverClaimedAt ? (
+                  <Tag color="green" className="m-0 text-[10px]">
+                    Đã nhận lúc {formatDateTime(r.driverClaimedAt)}
+                  </Tag>
+                ) : (
+                  <Tag color="orange" className="m-0 text-[10px]">
+                    Chưa có tài xế nhận
+                  </Tag>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Tag color="default" className="text-xs">
+              Chưa có tài xế nhận
+            </Tag>
+          )}
+        </div>
+      ),
+    },
+    {
       title: 'Điểm nhận & đại diện',
       key: 'destination',
-      width: '21%',
+      width: '18%',
       render: (_, r) => (
         <div>
           <Tooltip title={r.toAddress}>
@@ -219,7 +277,7 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Lịch giao & vận đơn',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
-      width: '15%',
+      width: '13%',
       render: (d, r) => (
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18]">
@@ -238,13 +296,13 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Trạng thái & PoD',
       dataIndex: 'status',
       key: 'status',
-      width: '13%',
+      width: '10%',
       render: (status, r) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
         return (
           <div>
             <Tag color={config.color}>{config.text}</Tag>
-            <div className="dm-cell-muted">{r.proofCount || 0} ảnh bằng chứng</div>
+            <div className="dm-cell-muted">{r.proofCount || 0} ảnh PoD</div>
           </div>
         );
       },
@@ -253,7 +311,7 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Điều phối & chi tiết',
       key: 'actions',
       align: 'right',
-      width: '16%',
+      width: '18%',
       render: (_, record) => {
         const status = record.status;
         return (
@@ -301,6 +359,16 @@ export default function DeliverManage({ onNavigate }) {
             </div>
 
             <div className="dm-actions-row">
+              <Tooltip title="Gán hoặc đổi tài xế, tạo mã chuyến & mã QR nhận hàng">
+                <Button
+                  size="small"
+                  icon={<UserOutlined />}
+                  onClick={() => handleOpenAssign(record)}
+                >
+                  {record.driverName ? 'Tài xế' : 'Gán tài xế'}
+                </Button>
+              </Tooltip>
+
               <Button
                 size="small"
                 icon={<EyeOutlined />}
@@ -323,7 +391,7 @@ export default function DeliverManage({ onNavigate }) {
                   icon={<ShareAltOutlined />}
                   onClick={() => handleOpenShare(record)}
                 >
-                  Tài xế PoD
+                  Link PoD
                 </Button>
               </Tooltip>
             </div>
@@ -453,6 +521,7 @@ export default function DeliverManage({ onNavigate }) {
           onClose={() => setCreateModalOpen(false)}
           onSuccess={fetchData}
           contracts={contracts}
+          orders={orders}
         />
 
         <DeliveryDetailDrawer
@@ -461,6 +530,17 @@ export default function DeliverManage({ onNavigate }) {
           onClose={() => setDetailDrawerOpen(false)}
           onUpdated={fetchData}
           onOpenShareModal={(record) => handleOpenShare(record)}
+          onOpenAssignDriver={(record) => handleOpenAssign(record)}
+        />
+
+        <AssignDriverModal
+          open={assignModalOpen}
+          onClose={() => {
+            setAssignModalOpen(false);
+            fetchData();
+          }}
+          delivery={assignDelivery}
+          onSuccess={fetchData}
         />
 
         <PoDViewerModal
