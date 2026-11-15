@@ -311,16 +311,3 @@
   white-space: normal;
   line-height: 1.35;
 }
-
-.driver-pod-hash {
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px solid #e4dcd3;
-  background: #faf7f2;
-  padding: 8px 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px;
-  color: #6c625e;
-  word-break: break-all;
-  overflow-wrap: anywhere;
-}

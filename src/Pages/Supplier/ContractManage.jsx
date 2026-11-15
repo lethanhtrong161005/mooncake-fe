@@ -434,11 +434,6 @@ export default function ContractManage({ onNavigate }) {
                 <Descriptions.Item label="Hạn chót giao hàng">
                   <span className="tabular-nums">{contractDetails.deliveryDeadline || '—'}</span>
                 </Descriptions.Item>
-                <Descriptions.Item label="Mã băm SHA-256">
-                  <span className="font-mono text-xs text-[#6c625e]">
-                    {contractDetails.signedDocumentSha256?.substring(0, 16) || '—'}...
-                  </span>
-                </Descriptions.Item>
               </Descriptions>
 
               <Tabs

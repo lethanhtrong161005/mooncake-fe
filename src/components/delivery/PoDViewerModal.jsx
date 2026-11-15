@@ -1,4 +1,4 @@
-import { Modal, Tag, Descriptions, Image, Typography, Space, Empty, Alert, Tooltip, Button } from 'antd';
+import { Modal, Tag, Descriptions, Image, Typography, Space, Empty, Alert, Button } from 'antd';
 import {
   SafetyCertificateOutlined,
   EnvironmentOutlined,
@@ -7,7 +7,7 @@ import {
   CompassOutlined,
 } from '@ant-design/icons';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 const PROOF_TYPE_MAP = {
   Pickup: { text: 'Bốc hàng tại xưởng', color: 'blue' },
@@ -147,14 +147,6 @@ export default function PoDViewerModal({ open, onClose, delivery, proofs = [] })
                       <Text className="text-xs italic text-slate-700">{proof.notes}</Text>
                     </Descriptions.Item>
                   )}
-
-                  {proof.tamperProofHash && <Descriptions.Item label={<span className="text-xs text-slate-500">Mã băm SHA-256</span>}>
-                    <Tooltip title="Dùng mã này để đối chiếu tính toàn vẹn của bằng chứng">
-                      <Paragraph copyable className="text-[10px] font-mono text-slate-500 mb-0 bg-white p-1 rounded border">
-                        {proof.tamperProofHash}
-                      </Paragraph>
-                    </Tooltip>
-                  </Descriptions.Item>}
                 </Descriptions>
               </div>
             );
