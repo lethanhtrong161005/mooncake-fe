@@ -20,11 +20,13 @@ import {
   Typography,
   Upload,
 } from 'antd';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import dayjs from 'dayjs';
 import { DOCUMENT_TYPES, verificationError } from '../../constants/supplierVerification';
 import { useAuth } from '../../hooks/useAuth';
 import { useVerificationNotifications } from '../../hooks/useVerificationNotifications';
 import { useVerificationMutation, useVerificationResource } from '../../hooks/useVerificationResource';
+import shopService from '../../services/shopService';
 import { supplierDocumentService } from '../../services/supplierDocumentService';
 import supplierService from '../../services/supplierService';
 import {
@@ -48,7 +50,16 @@ export default function SupplierVerificationPanel({ onNavigate }) {
   const [uploading, setUploading] = useState(0);
   const [review, setReview] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [shop, setShop] = useState(null);
   const uploadKeys = useRef(new Map());
+
+  useEffect(() => {
+    let active = true;
+    shopService.mine().then((data) => {
+      if (active) setShop(data);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [version]);
 
   const profile = resource.data;
   const canRead = user?.capabilities?.canReadSupplierVerification
@@ -69,12 +80,29 @@ export default function SupplierVerificationPanel({ onNavigate }) {
   }
 
   const status = profile?.onboardingState || 'NotSubmitted';
-  const canSubmit = profile?.allowedActions?.includes('Submit');
+  const foodSafetyDoc = profile?.currentSubmission?.documents?.find(
+    (doc) => doc.documentType === 'FoodSafetyCertificate',
+  );
+  const foodSafetyExpiresOn = foodSafetyDoc?.expiresOn;
+  const foodSafetyDiff = foodSafetyExpiresOn && dayjs(foodSafetyExpiresOn).isValid()
+    ? dayjs(foodSafetyExpiresOn).startOf('day').diff(dayjs().startOf('day'), 'day')
+    : null;
+  const isShopSuspendedForAttp = shop?.status === 'Suspended' && shop?.suspensionReason === 'Giấy ATTP hết hạn';
+  const isFoodSafetyExpiringSoon = !isShopSuspendedForAttp && foodSafetyDiff !== null && foodSafetyDiff >= 0 && foodSafetyDiff <= 30;
+
+  const canSubmit = profile?.allowedActions?.includes('Submit') || isShopSuspendedForAttp || isFoodSafetyExpiringSoon;
   const staged = profile?.stagedDocuments || [];
   const ready = staged.filter((doc) => doc.uploadStatus === 'Ready');
   const enough = ['BusinessLicense', 'FoodSafetyCertificate'].every(
     (type) => ready.some((doc) => doc.documentType === type),
   );
+
+  const scrollToDossier = () => {
+    const el = document.getElementById('verification-form-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const upload = async ({ file, onSuccess, onError }) => {
     setUploading((count) => count + 1);
@@ -179,6 +207,34 @@ export default function SupplierVerificationPanel({ onNavigate }) {
             description="Bạn có thể xem lịch sử, hoàn tất nghĩa vụ giao dịch cũ trong phạm vi được phép và gửi hồ sơ tái thẩm định."
           />
         )}
+        {isShopSuspendedForAttp && (
+          <Alert
+            className="mt-4"
+            type="error"
+            showIcon
+            message="Shop tạm ngưng do giấy ATTP hết hạn"
+            description="Giấy chứng nhận an toàn thực phẩm đã hết hạn. Vui lòng nộp giấy tờ mới để được xét duyệt khôi phục hoạt động gian hàng."
+            action={
+              <Button type="primary" danger onClick={scrollToDossier}>
+                Nộp giấy mới
+              </Button>
+            }
+          />
+        )}
+        {isFoodSafetyExpiringSoon && (
+          <Alert
+            className="mt-4"
+            type="warning"
+            showIcon
+            message="Chứng nhận an toàn thực phẩm (ATTP) sắp hết hạn"
+            description={`Giấy chứng nhận ATTP của bạn còn ${foodSafetyDiff} ngày nữa sẽ hết hạn. Vui lòng nộp giấy chứng nhận mới trước khi hết hạn để tránh việc shop bị tạm ngưng.`}
+            action={
+              <Button onClick={scrollToDossier}>
+                Nộp giấy mới
+              </Button>
+            }
+          />
+        )}
         {resource.error && <Alert className="mt-4" type="error" title={resource.error} />}
       </section>
 
@@ -200,6 +256,7 @@ export default function SupplierVerificationPanel({ onNavigate }) {
       {/* Editable Application Dossier */}
       {canSubmit && (
         <section
+          id="verification-form-section"
           aria-label="Biểu mẫu hồ sơ doanh nghiệp"
           className="rounded-2xl border border-[#e4dcd3] bg-white p-5 sm:p-6"
         >

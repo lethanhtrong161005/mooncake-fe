@@ -1,6 +1,10 @@
 import { VERIFICATION_LABELS } from '../../constants/supplierVerification';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import shopService from '../../services/shopService';
+import supplierService from '../../services/supplierService';
 import {
+  Alert,
   Layout,
   Menu,
   Badge,
@@ -66,6 +70,46 @@ export default function ColonyAdminLayout({
   const isAdmin = user?.role === 'Admin';
   const canCreateShop = user?.capabilities?.canCreateShop === true;
   const canFulfill = user?.capabilities?.canFulfillExistingOrders === true;
+
+  const [shop, setShop] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (isAdmin || !user) return;
+    let active = true;
+    Promise.allSettled([
+      shopService.mine(),
+      supplierService.getMyProfile(),
+    ]).then(([shopRes, profileRes]) => {
+      if (!active) return;
+      if (shopRes.status === 'fulfilled') setShop(shopRes.value);
+      if (profileRes.status === 'fulfilled') setProfile(profileRes.value);
+    });
+    return () => { active = false; };
+  }, [isAdmin, user, verification?.workflowVersion]);
+
+  const attpStatus = useMemo(() => {
+    if (isAdmin) return null;
+    const isSuspended = shop?.status === 'Suspended' && shop?.suspensionReason === 'Giấy ATTP hết hạn';
+
+    const foodSafetyDoc = profile?.currentSubmission?.documents?.find(
+      (doc) => doc.documentType === 'FoodSafetyCertificate',
+    );
+    const expiresOn = foodSafetyDoc?.expiresOn;
+
+    let diff = null;
+    if (expiresOn && dayjs(expiresOn).isValid()) {
+      diff = dayjs(expiresOn).startOf('day').diff(dayjs().startOf('day'), 'day');
+    }
+
+    if (isSuspended) {
+      return { type: 'suspended', diff };
+    }
+    if (diff !== null && diff <= 30 && diff >= 0) {
+      return { type: 'expiring', diff };
+    }
+    return null;
+  }, [isAdmin, shop, profile]);
 
   const adminMenuItems = [
     {
@@ -319,6 +363,34 @@ export default function ColonyAdminLayout({
 
           {/* Child Page Views */}
           <div className="workspace-content__body">
+            {!isAdmin && attpStatus?.type === 'suspended' && (
+              <Alert
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="Shop tạm ngưng do giấy ATTP hết hạn"
+                description="Giấy chứng nhận ATTP đã hết hạn khiến gian hàng bị tạm ngưng. Vui lòng nộp giấy chứng nhận mới để khôi phục hoạt động."
+                action={
+                  <Button type="primary" danger onClick={() => onNavigate?.('nha-cung-cap/xac-minh')}>
+                    Nộp giấy mới
+                  </Button>
+                }
+              />
+            )}
+            {!isAdmin && attpStatus?.type === 'expiring' && (
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="Chứng nhận an toàn thực phẩm (ATTP) sắp hết hạn"
+                description={`Giấy chứng nhận ATTP còn ${attpStatus.diff} ngày nữa sẽ hết hạn. Vui lòng nộp giấy chứng nhận mới để tránh bị gián đoạn hoạt động.`}
+                action={
+                  <Button onClick={() => onNavigate?.('nha-cung-cap/xac-minh')}>
+                    Nộp giấy mới
+                  </Button>
+                }
+              />
+            )}
             <WorkspaceErrorBoundary resetKey={activeKey}>{children}</WorkspaceErrorBoundary>
           </div>
         </Content>
