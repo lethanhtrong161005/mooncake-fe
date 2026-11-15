@@ -29,8 +29,10 @@ import {
   EyeOutlined,
   FileTextOutlined,
   PictureOutlined,
+  PhoneOutlined,
   ReloadOutlined,
   TruckOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerFooter from '../../components/layout/CustomerFooter';
@@ -833,6 +835,38 @@ export default function MyOrders({ onNavigate }) {
                         Quy cách hộp tiêu chuẩn xưởng
                       </span>
                     )}
+
+                    {order.latestDelivery?.driverName && (
+                      <div className="mt-2 pt-2 border-t border-stone-100 flex flex-wrap items-center justify-between gap-1.5 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <UserOutlined className="text-[#8c1524]" />
+                          <span>Tài xế: <strong>{order.latestDelivery.driverName}</strong></span>
+                          <span className="text-stone-500 font-mono text-[11px]">
+                            ({order.latestDelivery.vehiclePlate ? `BS: ${order.latestDelivery.vehiclePlate}` : 'Xe xưởng'})
+                          </span>
+                          {order.latestDelivery.driverClaimedAt ? (
+                            <Tag color="green" className="m-0 text-[10px]">
+                              Đã nhận {formatDateTime(order.latestDelivery.driverClaimedAt)}
+                            </Tag>
+                          ) : (
+                            <Tag color="orange" className="m-0 text-[10px]">
+                              Chưa có tài xế nhận
+                            </Tag>
+                          )}
+                        </div>
+                        {order.latestDelivery.driverPhone && (
+                          <Button
+                            size="small"
+                            type="link"
+                            href={`tel:${order.latestDelivery.driverPhone}`}
+                            icon={<PhoneOutlined />}
+                            className="p-0 text-emerald-700 font-medium"
+                          >
+                            Gọi {order.latestDelivery.driverPhone}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1191,6 +1225,39 @@ export default function MyOrders({ onNavigate }) {
                   {podModalOrder?.recipientName} ({podModalOrder?.recipientPhone})
                 </Descriptions.Item>
                 <Descriptions.Item label="Địa chỉ">{podModalOrder?.deliveryAddress}</Descriptions.Item>
+                {podModalOrder?.latestDelivery?.driverName && (
+                  <Descriptions.Item label="Tài xế giao hàng" span={2}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <UserOutlined className="text-[#8c1524]" />
+                        <span><strong>{podModalOrder.latestDelivery.driverName}</strong></span>
+                        <span className="text-stone-500 font-mono text-xs">
+                          ({podModalOrder.latestDelivery.vehiclePlate ? `BS: ${podModalOrder.latestDelivery.vehiclePlate}` : 'Xe xưởng'})
+                        </span>
+                        {podModalOrder.latestDelivery.driverClaimedAt ? (
+                          <Tag color="green" className="m-0 text-[11px]">
+                            Đã nhận lúc {formatDateTime(podModalOrder.latestDelivery.driverClaimedAt)}
+                          </Tag>
+                        ) : (
+                          <Tag color="orange" className="m-0 text-[11px]">
+                            Chưa có tài xế nhận
+                          </Tag>
+                        )}
+                      </div>
+                      {podModalOrder.latestDelivery.driverPhone && (
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<PhoneOutlined />}
+                          href={`tel:${podModalOrder.latestDelivery.driverPhone}`}
+                          className="bg-[#2d5a43] border-[#2d5a43]"
+                        >
+                          Gọi tài xế ({podModalOrder.latestDelivery.driverPhone})
+                        </Button>
+                      )}
+                    </div>
+                  </Descriptions.Item>
+                )}
               </Descriptions>
 
               {/* PoD Photo viewer */}

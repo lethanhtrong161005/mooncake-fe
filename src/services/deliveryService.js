@@ -34,6 +34,10 @@ export const deliveryService = {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.BY_CONTRACT(contractId)));
   },
 
+  async getContractFulfillment(contractId) {
+    return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.CONTRACT_FULFILLMENT(contractId)));
+  },
+
   async getByOrder(orderId) {
     return unwrap(await apiClient.get(API_ENDPOINTS.DELIVERIES.BY_ORDER(orderId)));
   },
@@ -94,9 +98,35 @@ export const deliveryService = {
     return unwrap(await apiClient.delete(API_ENDPOINTS.DELIVERIES.SHARE_LINK(deliveryId)));
   },
 
+  async assignDriver(deliveryId, payload) {
+    return unwrap(await apiClient.put(API_ENDPOINTS.DELIVERIES.DRIVER(deliveryId), payload));
+  },
+
+  async revokeDriver(deliveryId) {
+    return unwrap(await apiClient.delete(API_ENDPOINTS.DELIVERIES.DRIVER(deliveryId)));
+  },
+
   async getPublicByToken(token) {
     return unwrap(
       await apiClient.get(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER(token), {
+        skipAuthHeader: true,
+        skipAuthRefresh: true,
+      })
+    );
+  },
+
+  async getPublicByShareCode(shareCode) {
+    return unwrap(
+      await apiClient.get(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER_BY_CODE(shareCode), {
+        skipAuthHeader: true,
+        skipAuthRefresh: true,
+      })
+    );
+  },
+
+  async claimPublicTrip(token, payload) {
+    return unwrap(
+      await apiClient.post(API_ENDPOINTS.DELIVERIES.PUBLIC_DRIVER_CLAIM(token), payload, {
         skipAuthHeader: true,
         skipAuthRefresh: true,
       })

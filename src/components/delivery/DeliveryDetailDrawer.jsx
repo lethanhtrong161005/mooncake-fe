@@ -94,6 +94,7 @@ export default function DeliveryDetailDrawer({
   onClose,
   onUpdated,
   onOpenShareModal,
+  onOpenAssignDriver,
 }) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
@@ -304,8 +305,18 @@ export default function DeliveryDetailDrawer({
               </span>
               {current?.orderNumber && <Tag>Đơn trực tiếp</Tag>}
               {current?.contractNumber && <Tag color="gold">Hợp đồng</Tag>}
+              <Tag color="purple">
+                {current?.batchNumber ? `Đợt ${current.batchNumber}${current.totalBatches ? `/${current.totalBatches}` : ''}` : 'Đợt 1'}
+              </Tag>
             </Space>
           </Descriptions.Item>
+          {current?.shareCode && (
+            <Descriptions.Item label="Mã chuyến (Trip Code)">
+              <span className="font-mono text-sm font-bold text-[#8c1524]">
+                {current.shareCode}
+              </span>
+            </Descriptions.Item>
+          )}
           <Descriptions.Item label="Khách hàng / Doanh nghiệp">
             {current?.customerName || 'Khách hàng B2B'}
           </Descriptions.Item>
@@ -338,6 +349,118 @@ export default function DeliveryDetailDrawer({
             {current?.notes || 'Không có ghi chú thêm'}
           </Descriptions.Item>
         </Descriptions>
+      )}
+
+      {/* Driver Information Card */}
+      <div className="rounded-xl border border-[#e4dcd3] bg-[#faf8f6] p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e4dcd3] pb-2.5">
+          <div className="flex items-center gap-2">
+            <UserOutlined className="text-[#8c1524]" />
+            <span className="text-sm font-semibold text-[#231a18]">
+              Thông tin tài xế &amp; Tiếp nhận chuyến
+            </span>
+          </div>
+          <div>
+            {current?.driverClaimedAt ? (
+              <Tag color="green" icon={<CheckCircleOutlined />}>
+                Đã nhận lúc {formatDateTime(current.driverClaimedAt)}
+              </Tag>
+            ) : current?.driverName ? (
+              <Tag color="orange">Chưa có tài xế nhận</Tag>
+            ) : (
+              <Tag color="default">Chưa gán tài xế</Tag>
+            )}
+          </div>
+        </div>
+
+        {current?.driverName ? (
+          <div className="space-y-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[#6c625e]">
+              <div>
+                Họ tên tài xế:{' '}
+                <strong className="text-[#231a18] text-sm">{current.driverName}</strong>
+              </div>
+              <div>
+                Biển số xe:{' '}
+                <strong className="text-[#231a18]">{current.vehiclePlate || 'Xe xưởng'}</strong>
+              </div>
+              {current.shareCode && (
+                <div>
+                  Mã chuyến:{' '}
+                  <strong className="font-mono text-[#8c1524]">{current.shareCode}</strong>
+                </div>
+              )}
+              {current.driverClaimedAt && (
+                <div>
+                  Thời điểm nhận:{' '}
+                  <strong className="text-[#231a18]">
+                    {formatDateTime(current.driverClaimedAt)}
+                  </strong>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {current.driverPhone && (
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<PhoneOutlined />}
+                  href={`tel:${current.driverPhone}`}
+                  className="bg-[#2d5a43] border-[#2d5a43]"
+                >
+                  Gọi tài xế ({current.driverPhone})
+                </Button>
+              )}
+              <Button
+                size="small"
+                icon={<UserOutlined />}
+                onClick={() => onOpenAssignDriver?.(current)}
+              >
+                Đổi / Xem mã &amp; QR tài xế
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-xs text-[#6c625e]">
+            <span>Chuyến giao này chưa được phân công tài xế đảm nhiệm.</span>
+            <Button
+              size="small"
+              type="primary"
+              icon={<UserOutlined />}
+              onClick={() => onOpenAssignDriver?.(current)}
+              className="bg-[#8c1524]"
+            >
+              Gán tài xế ngay
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Items list in this delivery */}
+      {current?.items && current.items.length > 0 && (
+        <div className="rounded-xl border border-[#e4dcd3] bg-white p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-[#231a18]">
+              Danh sách hàng hóa trong chuyến (
+              {current.batchNumber ? `Đợt ${current.batchNumber}` : 'Đợt 1'})
+            </span>
+            <Tag color="purple">{current.items.length} món hàng</Tag>
+          </div>
+          <div className="divide-y divide-[#f0eae1] border border-[#f0eae1] rounded-lg">
+            {current.items.map((it, idx) => (
+              <div key={it.id || idx} className="flex items-center justify-between p-2.5 text-xs">
+                <div>
+                  <span className="font-semibold text-[#231a18]">{it.productName}</span>
+                  {it.unit && <span className="text-[#6c625e]"> ({it.unit})</span>}
+                </div>
+                <div className="font-mono font-bold text-[#8c1524] text-sm">
+                  {it.quantity?.toLocaleString('vi-VN')} {it.unit || 'hộp'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="rounded-xl border border-[#e4dcd3] bg-[#faf7f2] p-4">
@@ -596,6 +719,13 @@ export default function DeliveryDetailDrawer({
                   Sửa vận đơn &amp; người nhận
                 </Button>
               )}
+
+              <Button
+                icon={<UserOutlined />}
+                onClick={() => onOpenAssignDriver?.(current)}
+              >
+                {current?.driverName ? 'Tài xế & Mã chuyến' : 'Gán tài xế'}
+              </Button>
 
               <Button
                 icon={<ShareAltOutlined />}

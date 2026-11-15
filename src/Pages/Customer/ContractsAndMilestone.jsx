@@ -31,6 +31,7 @@ import {
   FileDoneOutlined,
   MessageOutlined,
   OrderedListOutlined,
+  PhoneOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
   SearchOutlined,
@@ -982,55 +983,93 @@ export default function ContractsAndMilestone({ onNavigate }) {
                                       payment.status === 'Completed'
                                     ));
                                     return (
-                                      <Space wrap>
-                                        {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
-                                          <Button
-                                            size="small"
-                                            icon={<CarOutlined />}
-                                            onClick={() => {
-                                              setMilestonesDrawerOpen(false);
-                                              onNavigate?.('giao-hang-pod');
-                                            }}
-                                          >
-                                            Xem giao nhận
-                                          </Button>
-                                        )}
-                                        {canConfirm && (
-                                          <>
+                                      <div>
+                                        <Space wrap>
+                                          {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
                                             <Button
-                                              type="primary"
                                               size="small"
-                                              icon={<CheckCircleOutlined />}
-                                              loading={actionLoading}
-                                              onClick={() => handleVerifyMilestone(milestone, true)}
+                                              icon={<CarOutlined />}
+                                              onClick={() => {
+                                                setMilestonesDrawerOpen(false);
+                                                onNavigate?.('giao-hang-pod');
+                                              }}
                                             >
-                                              Đã xem và xác nhận
+                                              Xem giao nhận
                                             </Button>
-                                            {milestone.status === 'PendingReview' && (
+                                          )}
+                                          {canConfirm && (
+                                            <>
                                               <Button
-                                                danger
+                                                type="primary"
                                                 size="small"
-                                                icon={<CloseCircleOutlined />}
-                                                onClick={() => handleVerifyMilestone(milestone, false)}
+                                                icon={<CheckCircleOutlined />}
+                                                loading={actionLoading}
+                                                onClick={() => handleVerifyMilestone(milestone, true)}
                                               >
-                                                Yêu cầu chỉnh sửa
+                                                Đã xem và xác nhận
                                               </Button>
-                                            )}
-                                          </>
+                                              {milestone.status === 'PendingReview' && (
+                                                <Button
+                                                  danger
+                                                  size="small"
+                                                  icon={<CloseCircleOutlined />}
+                                                  onClick={() => handleVerifyMilestone(milestone, false)}
+                                                >
+                                                  Yêu cầu chỉnh sửa
+                                                </Button>
+                                              )}
+                                            </>
+                                          )}
+                                          {alreadyPaid ? (
+                                            <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
+                                          ) : canPay ? (
+                                            <Button
+                                              size="small"
+                                              icon={<DollarOutlined />}
+                                              loading={payingMilestoneId === milestone.id}
+                                              onClick={() => handlePayMilestone(milestone)}
+                                            >
+                                              Thanh toán mốc {money(milestone.amount)}
+                                            </Button>
+                                          ) : null}
+                                        </Space>
+
+                                        {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && contractDeliveries.some((d) => d.driverName) && (
+                                          <div style={{ marginTop: 8, padding: '8px 12px', background: '#faf8f6', borderRadius: 8, border: '1px solid #e4dcd3' }}>
+                                            <div style={{ fontSize: 12, fontWeight: 600, color: '#231a18', marginBottom: 4 }}>
+                                              Thông tin tài xế giao hàng:
+                                            </div>
+                                            {contractDeliveries.map((deliv, dIdx) => (
+                                              deliv.driverName ? (
+                                                <div key={deliv.id || dIdx} style={{ fontSize: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderTop: dIdx > 0 ? '1px dashed #e4dcd3' : 'none' }}>
+                                                  <div>
+                                                    <span style={{ fontWeight: 600, color: '#8c1524' }}>
+                                                      {deliv.batchNumber ? `Đợt ${deliv.batchNumber}: ` : ''}
+                                                    </span>
+                                                    Tài xế <strong>{deliv.driverName}</strong> ({deliv.vehiclePlate ? `BS: ${deliv.vehiclePlate}` : 'Xe xưởng'})
+                                                    {deliv.driverClaimedAt ? (
+                                                      <Tag color="green" style={{ fontSize: 10, marginLeft: 6 }}>Đã nhận</Tag>
+                                                    ) : (
+                                                      <Tag color="orange" style={{ fontSize: 10, marginLeft: 6 }}>Chưa nhận</Tag>
+                                                    )}
+                                                  </div>
+                                                  {deliv.driverPhone && (
+                                                    <Button
+                                                      size="small"
+                                                      type="primary"
+                                                      icon={<PhoneOutlined />}
+                                                      href={`tel:${deliv.driverPhone}`}
+                                                      style={{ fontSize: 11, height: 22, padding: '0 8px', background: '#2d5a43', borderColor: '#2d5a43' }}
+                                                    >
+                                                      Gọi ({deliv.driverPhone})
+                                                    </Button>
+                                                  )}
+                                                </div>
+                                              ) : null
+                                            ))}
+                                          </div>
                                         )}
-                                        {alreadyPaid ? (
-                                          <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
-                                        ) : canPay ? (
-                                          <Button
-                                            size="small"
-                                            icon={<DollarOutlined />}
-                                            loading={payingMilestoneId === milestone.id}
-                                            onClick={() => handlePayMilestone(milestone)}
-                                          >
-                                            Thanh toán mốc {money(milestone.amount)}
-                                          </Button>
-                                        ) : null}
-                                      </Space>
+                                      </div>
                                     );
                                   })()}
                                 </div>

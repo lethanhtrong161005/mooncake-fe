@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Button,
   Card,
+  Form,
   Input,
   Result,
+  Space,
   Spin,
   Tag,
   Typography,
@@ -17,16 +19,20 @@ import {
   ClockCircleOutlined,
   CompassOutlined,
   DeleteOutlined,
+  FileTextOutlined,
+  InboxOutlined,
+  LockOutlined,
   PhoneOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
   SyncOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import SignatureCanvas from '../../components/delivery/SignatureCanvas';
 import deliveryService from '../../services/deliveryService';
 import '../../components/delivery/delivery-share.css';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 const MAX_PHOTOS = 5;
 const OFFLINE_QUEUE_KEY = 'mooncake_offline_pod';
@@ -88,23 +94,36 @@ export default function DriverMobileView({
   onBack,
   onComplete,
 }) {
-  const [shareToken] = useState(() => {
+  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
+
+  const [initialToken] = useState(() => {
     if (propShareToken) return propShareToken;
-    return new URLSearchParams(window.location.search).get('token');
+    return urlParams.get('token');
+  });
+
+  const [initialShareCode] = useState(() => {
+    return urlParams.get('code') || urlParams.get('shareCode');
   });
 
   const [deliveryId] = useState(() => {
     if (propDeliveryId) return propDeliveryId;
-    return new URLSearchParams(window.location.search).get('id');
+    return urlParams.get('id');
   });
 
-  const isPublicMode = Boolean(shareToken);
+  const [activeToken, setActiveToken] = useState(initialToken);
+  const [manualCode, setManualCode] = useState('');
+  const [searchingCode, setSearchingCode] = useState(false);
 
   const [delivery, setDelivery] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedProof, setSubmittedProof] = useState(null);
+
+  // Claim trip state
+  const [claimForm] = Form.useForm();
+  const [claiming, setClaiming] = useState(false);
+  const [claimConflictError, setClaimConflictError] = useState(null);
 
   // PoD capture state (multi-photo support up to 5)
   const [photos, setPhotos] = useState([]);
@@ -117,6 +136,9 @@ export default function DriverMobileView({
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const fileInputRef = useRef(null);
+
+  const isClaimed = Boolean(delivery?.driverClaimedAt);
+  const isPublicMode = Boolean(activeToken || initialShareCode || delivery?.shareCode);
 
   const syncOfflineQueue = useCallback(async () => {
     const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
@@ -184,69 +206,133 @@ export default function DriverMobileView({
     );
   }, []);
 
+  // Load delivery details by token, share code or id
+  const fetchDeliveryData = useCallback(async (tokenParam, codeParam, idParam) => {
+    if (!tokenParam && !codeParam && !idParam) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setLoadError(null);
+      let data = null;
+
+      if (tokenParam) {
+        data = await deliveryService.getPublicByToken(tokenParam);
+      } else if (codeParam) {
+        data = await deliveryService.getPublicByShareCode(codeParam);
+        if (data?.token) {
+          setActiveToken(data.token);
+        }
+      } else if (idParam) {
+        data = await deliveryService.get(idParam);
+      }
+
+      setDelivery(data);
+      if (data?.token) {
+        setActiveToken(data.token);
+      }
+      if (data?.recipientName) {
+        setRecipientName(data.recipientName);
+      }
+
+      claimForm.setFieldsValue({
+        driverName: data?.driverName || '',
+        driverPhone: data?.driverPhone || '',
+        vehiclePlate: data?.vehiclePlate || '',
+      });
+    } catch (err) {
+      const status = err.status ?? err.response?.status;
+      const localizedMessage =
+        status === 410
+          ? 'Liên kết PoD này đã hết hạn, bị thu hồi hoặc đã được thay thế. Vui lòng liên hệ xưởng cung ứng để nhận link chia sẻ mới (Reshare).'
+          : status === 404
+            ? 'Không tìm thấy chuyến giao hàng với thông tin hoặc mã chuyến này.'
+            : err.response?.data?.message || err.message || 'Không thể tải thông tin chuyến giao hàng.';
+      setLoadError({
+        status: status === 410 || status === 404 ? 'warning' : 'error',
+        title:
+          status === 410
+            ? 'Liên kết giao nhận đã hết hạn hoặc đã được thay thế'
+            : status === 404
+              ? 'Không tìm thấy chuyến giao hàng'
+              : 'Không thể tải thông tin chuyến giao hàng',
+        subtitle: localizedMessage,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [claimForm]);
+
   useEffect(() => {
     let ignore = false;
-    const loadDelivery = async () => {
-      if (!shareToken && !deliveryId) {
-        setLoadError({
-          status: 'warning',
-          title: 'Thiếu mã liên kết giao nhận',
-          subtitle:
-            'Vui lòng mở đúng liên kết do xưởng cung ứng gửi hoặc liên hệ điều phối viên để được cấp lại link mới.',
-        });
-        setLoading(false);
-        return;
+    Promise.resolve().then(() => {
+      if (!ignore) {
+        fetchDeliveryData(initialToken, initialShareCode, deliveryId);
       }
-
-      try {
-        setLoading(true);
-        setLoadError(null);
-        const data = shareToken
-          ? await deliveryService.getPublicByToken(shareToken)
-          : await deliveryService.get(deliveryId);
-
-        if (!ignore) {
-          setDelivery(data);
-          if (data?.recipientName) {
-            setRecipientName(data.recipientName);
-          }
-        }
-      } catch (err) {
-        if (!ignore) {
-          const status = err.status ?? err.response?.status;
-          const localizedMessage =
-            status === 410
-              ? 'Liên kết PoD này đã hết hạn, bị thu hồi hoặc đã được thay thế. Vui lòng liên hệ xưởng cung ứng để nhận link chia sẻ mới (Reshare).'
-              : status === 404
-                ? 'Liên kết giao nhận không hợp lệ hoặc đã bị thay thế bằng liên kết mới.'
-                : err.response?.data?.message ||
-                err.message ||
-                'Không thể tải thông tin chuyến giao hàng.';
-          setLoadError({
-            status: status === 410 || status === 404 ? 'warning' : 'error',
-            title:
-              status === 410
-                ? 'Liên kết giao nhận đã hết hạn hoặc đã được thay thế'
-                : status === 404
-                  ? 'Liên kết giao nhận không tồn tại'
-                  : 'Không thể tải thông tin chuyến giao hàng',
-            subtitle: localizedMessage,
-          });
-        }
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadDelivery();
+    });
     return () => {
       ignore = true;
     };
-  }, [shareToken, deliveryId]);
+  }, [deliveryId, fetchDeliveryData, initialShareCode, initialToken]);
+
+  const handleSearchByCode = async () => {
+    const code = manualCode.trim();
+    if (!code) {
+      message.warning('Vui lòng nhập mã chuyến giao hàng.');
+      return;
+    }
+    setSearchingCode(true);
+    await fetchDeliveryData(null, code, null);
+    setSearchingCode(false);
+  };
+
+  const handleClaimTrip = async (values) => {
+    const tokenToUse = activeToken || delivery?.token || initialToken;
+    if (!tokenToUse) {
+      message.error('Không tìm thấy token hợp lệ của chuyến giao. Vui lòng liên hệ xưởng cung ứng.');
+      return;
+    }
+
+    setClaiming(true);
+    setClaimConflictError(null);
+    try {
+      const result = await deliveryService.claimPublicTrip(tokenToUse, {
+        driverName: values.driverName.trim(),
+        driverPhone: values.driverPhone.trim(),
+        vehiclePlate: values.vehiclePlate.trim(),
+      });
+
+      message.success('Nhận chuyến thành công! Bạn có thể bắt đầu chụp ảnh PoD.');
+      setDelivery((prev) => ({
+        ...prev,
+        driverName: result?.driverName || values.driverName.trim(),
+        driverPhone: result?.driverPhone || values.driverPhone.trim(),
+        vehiclePlate: result?.vehiclePlate || values.vehiclePlate.trim(),
+        driverClaimedAt: result?.driverClaimedAt || new Date().toISOString(),
+      }));
+    } catch (err) {
+      const status = err.status ?? err.response?.status;
+      if (status === 409) {
+        const conflictMsg =
+          'Chuyến giao này đã được tài xế khác nhận. Vui lòng liên hệ xưởng cung ứng để được hỗ trợ điều phối.';
+        setClaimConflictError(conflictMsg);
+        message.error(conflictMsg);
+      } else {
+        message.error(err.response?.data?.message || err.message || 'Lỗi khi nhận chuyến.');
+      }
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const handleCapturePhotos = async (e) => {
+    if (!isClaimed) {
+      message.warning('Vui lòng hoàn thành bước Nhận chuyến trước khi chụp ảnh.');
+      return;
+    }
+
     const selectedFiles = Array.from(e.target.files || []);
     e.target.value = '';
     if (selectedFiles.length === 0) return;
@@ -262,6 +348,8 @@ export default function DriverMobileView({
 
     try {
       const nextPhotos = [];
+      const tokenToUse = activeToken || delivery?.token || initialToken;
+
       for (const file of batch) {
         if (file.size > 10 * 1024 * 1024) {
           message.error(`Ảnh "${file.name}" vượt quá giới hạn 10MB.`);
@@ -270,15 +358,11 @@ export default function DriverMobileView({
 
         const previewUrl = await compressImageFileToDataUrl(file);
         let remoteUrl = null;
-        if (shareToken && !isOffline) {
+        if (tokenToUse && !isOffline) {
           try {
-            const uploaded = await deliveryService.uploadPublicProofPhoto(
-              shareToken,
-              file
-            );
+            const uploaded = await deliveryService.uploadPublicProofPhoto(tokenToUse, file);
             remoteUrl = uploaded?.url || null;
           } catch {
-            // Fallback seamlessly to compressed data URL when cloud upload is unavailable
             remoteUrl = null;
           }
         }
@@ -303,6 +387,11 @@ export default function DriverMobileView({
   };
 
   const handleSubmit = async () => {
+    if (!isClaimed) {
+      message.error('Vui lòng xác nhận Nhận chuyến trước khi nộp biên bản PoD.');
+      return;
+    }
+
     if (photos.length === 0) {
       message.error('Vui lòng chụp ít nhất 1 ảnh kiện hàng tại điểm giao.');
       return;
@@ -330,10 +419,12 @@ export default function DriverMobileView({
       notes: notes.trim(),
     };
 
+    const tokenToUse = activeToken || delivery?.token || initialToken;
+
     if (isOffline) {
       const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
       queue.push({
-        shareToken: shareToken || null,
+        shareToken: tokenToUse || null,
         deliveryId: delivery?.deliveryId || delivery?.id || deliveryId || null,
         payload,
         timestamp: Date.now(),
@@ -350,8 +441,8 @@ export default function DriverMobileView({
 
     setSubmitting(true);
     try {
-      const response = shareToken
-        ? await deliveryService.submitPublicProof(shareToken, payload)
+      const response = tokenToUse
+        ? await deliveryService.submitPublicProof(tokenToUse, payload)
         : await deliveryService.submitProof(
           delivery?.id || delivery?.deliveryId || deliveryId,
           payload
@@ -365,9 +456,7 @@ export default function DriverMobileView({
       });
       onComplete?.();
     } catch (err) {
-      message.error(
-        err.response?.data?.message || err.message || 'Lỗi khi nộp bằng chứng giao hàng.'
-      );
+      message.error(err.response?.data?.message || err.message || 'Lỗi khi nộp bằng chứng giao hàng.');
     } finally {
       setSubmitting(false);
     }
@@ -384,10 +473,48 @@ export default function DriverMobileView({
     );
   }
 
+  // If no delivery loaded yet (e.g. driver opened bare /giao-hang-tai-xe without query params)
+  if (!delivery && !loadError) {
+    return (
+      <div className="min-h-screen bg-[#faf7f2] flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-2xl border border-[#e4dcd3] bg-white p-6 space-y-4">
+          <div className="text-center space-y-1">
+            <InboxOutlined className="text-4xl text-[#8c1524]" />
+            <h1 className="text-lg font-bold text-[#231a18] m-0">Tôi là Tài xế Giao hàng</h1>
+            <p className="text-xs text-[#6c625e]">
+              Nhập mã chuyến giao hàng do xưởng cung ứng cung cấp để xem hàng cần giao và nộp PoD
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Input
+              size="large"
+              placeholder="VD: DEL-2026-XXXX hoặc mã chuyến"
+              value={manualCode}
+              onChange={(e) => setManualCode(e.target.value)}
+              onPressEnter={handleSearchByCode}
+              className="text-center font-mono font-bold uppercase text-lg"
+            />
+            <Button
+              type="primary"
+              block
+              size="large"
+              loading={searchingCode}
+              onClick={handleSearchByCode}
+              className="bg-[#8c1524] h-11 font-semibold"
+            >
+              Tìm chuyến giao hàng
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loadError) {
     return (
       <div className="min-h-screen bg-[#faf7f2] flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md rounded-2xl border border-[#e4dcd3] bg-white p-6">
+        <div className="w-full max-w-md rounded-2xl border border-[#e4dcd3] bg-white p-6 space-y-4">
           <Result
             status={loadError.status}
             title={
@@ -398,14 +525,24 @@ export default function DriverMobileView({
             subTitle={
               <span className="text-xs text-[#6c625e]">{loadError.subtitle}</span>
             }
-            extra={
-              !isPublicMode && onBack ? (
-                <Button type="primary" onClick={onBack}>
-                  Quay lại quản lý giao hàng
-                </Button>
-              ) : null
-            }
           />
+          <div className="pt-2 border-t border-stone-100">
+            <span className="text-xs text-stone-500 block mb-2 text-center">
+              Hoặc nhập mã chuyến khác:
+            </span>
+            <Space.Compact className="w-full">
+              <Input
+                placeholder="Nhập mã chuyến (Trip code)"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onPressEnter={handleSearchByCode}
+                className="font-mono text-xs uppercase"
+              />
+              <Button type="primary" onClick={handleSearchByCode} loading={searchingCode}>
+                Tìm
+              </Button>
+            </Space.Compact>
+          </div>
         </div>
       </div>
     );
@@ -505,18 +642,18 @@ export default function DriverMobileView({
     );
   }
 
-  const phoneLink = delivery?.recipientPhone
-    ? `tel:${delivery.recipientPhone}`
-    : null;
+  const phoneLink = delivery?.recipientPhone ? `tel:${delivery.recipientPhone}` : null;
   const mapsLink = delivery?.toAddress
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      delivery.toAddress
-    )}`
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(delivery.toAddress)}`
     : null;
+
+  const batchDisplay = delivery?.batchNumber
+    ? `Đợt ${delivery.batchNumber}${delivery.totalBatches ? `/${delivery.totalBatches}` : ''}`
+    : 'Đợt 1';
 
   return (
     <div className="driver-pod-page">
-      <div className="driver-pod-container">
+      <div className="driver-pod-container space-y-3">
         {/* Top Mobile Bar */}
         <header className="driver-pod-topbar">
           <div className="flex items-center gap-2">
@@ -549,9 +686,14 @@ export default function DriverMobileView({
             <div className="font-mono text-xs font-semibold text-[#7d1322]">
               {delivery?.deliveryNumber || '---'}
             </div>
-            <Tag color={statusMeta.color} className="m-0 mt-1 text-[11px]">
-              {statusMeta.text}
-            </Tag>
+            <div className="flex items-center justify-end gap-1 mt-1">
+              <Tag color="purple" className="m-0 text-[10px]">
+                {batchDisplay}
+              </Tag>
+              <Tag color={statusMeta.color} className="m-0 text-[10px]">
+                {statusMeta.text}
+              </Tag>
+            </div>
           </div>
         </header>
 
@@ -564,50 +706,69 @@ export default function DriverMobileView({
           />
         )}
 
-        {/* Destination & Contact Card */}
+        {/* Khối 1: Thông tin đơn hàng (Không hiển thị giá) */}
         <Card className="rounded-2xl border-[#e4dcd3] bg-white" size="small">
           <div className="space-y-2.5">
-            <div className="driver-pod-card-row">
-              <span className="font-semibold text-[#9a6b16]">Điểm giao nhận</span>
-              <span className="font-mono text-[#6c625e]">
-                {delivery?.referenceCode || delivery?.contractNumber || 'Đơn hàng B2B'}
-              </span>
-            </div>
-
-            <Paragraph className="m-0 text-sm font-semibold text-[#231a18]">
-              {delivery?.toAddress || 'Chưa có địa chỉ chi tiết'}
-            </Paragraph>
-
-            <div className="space-y-0.5 text-xs text-[#6c625e]">
-              <div>
-                <span className="font-medium text-[#231a18]">Người nhận:</span>{' '}
-                {delivery?.recipientName || 'Thủ kho'} (
-                {delivery?.recipientPhone || 'Chưa có SĐT'})
+            <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+              <div className="flex items-center gap-1.5">
+                <FileTextOutlined className="text-[#8c1524]" />
+                <span className="font-bold text-sm text-[#231a18]">Thông tin đơn hàng</span>
               </div>
-              {delivery?.trackingCode && (
-                <div>
-                  <span className="font-medium text-[#231a18]">Mã xe / vận đơn:</span>{' '}
-                  <span className="font-mono">{delivery.trackingCode}</span>
-                </div>
-              )}
+              <Space size="small">
+                <Tag color={delivery?.orderType === 'Contract' ? 'gold' : 'blue'} className="m-0 text-[11px]">
+                  {delivery?.orderType === 'Contract' ? 'Hợp đồng' : 'Đơn sỉ'}
+                </Tag>
+                <Tag color="purple" className="m-0 text-[11px]">
+                  {batchDisplay}
+                </Tag>
+              </Space>
+            </div>
+
+            <div className="space-y-1.5 text-xs text-[#6c625e]">
+              <div>
+                <span className="font-medium text-[#231a18]">Mã chứng từ:</span>{' '}
+                <span className="font-mono font-semibold text-[#8c1524]">
+                  {delivery?.contractNumber || delivery?.orderNumber || delivery?.referenceCode || delivery?.deliveryNumber}
+                </span>
+              </div>
+
+              <div>
+                <span className="font-medium text-[#231a18]">Doanh nghiệp nhận:</span>{' '}
+                <span className="font-semibold text-stone-900">
+                  {delivery?.recipientCompanyName || delivery?.customerName || 'Doanh nghiệp nhận'}
+                </span>
+              </div>
+
+              <div>
+                <span className="font-medium text-[#231a18]">Lịch hẹn giao:</span>{' '}
+                <span className="font-medium text-amber-900">
+                  {delivery?.scheduledDate || 'Đang cập nhật'}
+                </span>
+              </div>
+
+              <div>
+                <span className="font-medium text-[#231a18]">Người nhận tại kho:</span>{' '}
+                {delivery?.recipientName || 'Thủ kho'} ({delivery?.recipientPhone || 'Chưa có SĐT'})
+              </div>
+
+              <div>
+                <span className="font-medium text-[#231a18]">Địa chỉ giao:</span>{' '}
+                <span className="text-[#231a18]">{delivery?.toAddress || 'Chưa có địa chỉ chi tiết'}</span>
+              </div>
+
               {delivery?.notes && (
-                <div>
-                  <span className="font-medium text-[#231a18]">Dặn dò từ xưởng:</span>{' '}
-                  {delivery.notes}
+                <div className="rounded-lg bg-amber-50/70 p-2 text-amber-950 border border-amber-200/60 mt-1">
+                  <span className="font-semibold">Ghi chú giao / đóng gói:</span> {delivery.notes}
                 </div>
               )}
             </div>
 
-            <div className="driver-pod-card-actions">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100">
               <Button
                 icon={<PhoneOutlined />}
                 href={phoneLink}
                 disabled={!phoneLink}
-                style={
-                  phoneLink
-                    ? { borderColor: '#2d5a43', color: '#2d5a43' }
-                    : undefined
-                }
+                className="text-[#2d5a43] border-[#2d5a43]"
               >
                 Gọi người nhận
               </Button>
@@ -624,191 +785,329 @@ export default function DriverMobileView({
           </div>
         </Card>
 
-        {/* Step 1: Multi-Photo Capture */}
-        <Card
-          className="rounded-2xl border-[#e4dcd3] bg-white"
-          size="small"
-          title={
-            <div className="driver-pod-step-header text-xs sm:text-sm">
-              <span className="flex items-center gap-1.5 font-semibold text-[#231a18]">
-                <CameraOutlined className="text-[#9a6b16]" />
-                1. Chụp ảnh kiện hàng ({photos.length}/{MAX_PHOTOS})
-              </span>
-              {photos.length > 0 && (
-                <Tag color="green" className="m-0">
-                  <CheckCircleOutlined /> Đã có {photos.length} ảnh
-                </Tag>
-              )}
+        {/* Khối 2: Hàng cần giao (Không hiển thị giá) */}
+        <Card className="rounded-2xl border-[#e4dcd3] bg-white" size="small">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+              <div className="flex items-center gap-1.5 font-bold text-sm text-[#231a18]">
+                <InboxOutlined className="text-[#9a6b16]" />
+                <span>Hàng cần giao · {batchDisplay}</span>
+              </div>
+              <Tag color="purple">{delivery?.items?.length || 0} món</Tag>
             </div>
-          }
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            className="driver-pod-hidden-input"
-            onChange={handleCapturePhotos}
-          />
 
-          {photos.length > 0 ? (
-            <div className="space-y-3">
-              <div className="driver-pod-photo-grid">
-                {photos.map((photo, index) => (
-                  <div
-                    key={photo.id}
-                    className="driver-pod-photo-item"
-                  >
-                    <img
-                      src={photo.previewUrl}
-                      alt={`Ảnh bàn giao ${index + 1}`}
-                    />
-                    <button
-                      type="button"
-                      aria-label={`Xóa ảnh ${index + 1}`}
-                      onClick={() => handleRemovePhoto(photo.id)}
-                      className="driver-pod-photo-remove"
-                    >
-                      <DeleteOutlined className="text-xs" />
-                    </button>
+            {delivery?.items && delivery.items.length > 0 ? (
+              <div className="divide-y divide-stone-100 rounded-xl border border-stone-200 bg-stone-50/50">
+                {delivery.items.map((it, idx) => (
+                  <div key={it.id || idx} className="flex items-center justify-between p-3 text-xs">
+                    <div>
+                      <div className="font-semibold text-stone-900 text-sm">{it.productName}</div>
+                      {it.unit && <div className="text-stone-500">Đơn vị: {it.unit}</div>}
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-base text-[#8c1524]">
+                        {it.quantity?.toLocaleString('vi-VN')}
+                      </span>
+                      <span className="text-stone-600 ml-1 font-medium">{it.unit || 'hộp'}</span>
+                    </div>
                   </div>
                 ))}
-
-                {photos.length < MAX_PHOTOS && (
-                  <button
-                    type="button"
-                    disabled={photoUploading}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="driver-pod-photo-add"
-                  >
-                    <PlusOutlined className="text-base" />
-                    <span>{photoUploading ? 'Đang tải…' : 'Thêm ảnh'}</span>
-                  </button>
-                )}
               </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled={photoUploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="driver-pod-photo-dropzone"
-            >
-              <CameraOutlined className="mb-2 text-3xl text-[#9a6b16]" />
-              <div className="text-sm font-semibold text-[#231a18]">
-                {photoUploading
-                  ? 'Đang xử lý ảnh…'
-                  : 'Chạm để chụp hoặc chọn ảnh bàn giao'}
+            ) : (
+              <div className="p-3 bg-stone-50 rounded-xl text-xs text-stone-600 text-center">
+                Toàn bộ kiện hàng theo vận đơn {delivery?.trackingCode || 'xe xưởng'}.
               </div>
-              <div className="mt-1 text-xs text-[#6c625e]">
-                Chụp rõ kiện hàng, tem niêm phong hoặc biên bản có dấu mộc (tối đa 5 ảnh)
-              </div>
-            </button>
-          )}
-        </Card>
-
-        {/* Step 2: Recipient Name & Digital Signature */}
-        <Card
-          className="rounded-2xl border-[#e4dcd3] bg-white"
-          size="small"
-          title={
-            <div className="driver-pod-step-header text-xs sm:text-sm">
-              <span className="font-semibold text-[#231a18]">
-                2. Chữ ký điện tử người nhận hàng
-              </span>
-              {signatureDataUrl && (
-                <Tag color="green" className="m-0">
-                  <CheckCircleOutlined /> Đã ký
-                </Tag>
-              )}
-            </div>
-          }
-        >
-          <div className="mb-3">
-            <label
-              htmlFor="driver-recipient-input"
-              className="mb-1 block text-xs font-medium text-[#6c625e]"
-            >
-              Họ tên người trực tiếp ký nhận
-            </label>
-            <Input
-              id="driver-recipient-input"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-              placeholder="Nhập họ tên thủ kho hoặc người nhận"
-            />
+            )}
           </div>
-
-          <SignatureCanvas onSignatureChange={setSignatureDataUrl} />
         </Card>
 
-        {/* Step 3: GPS & Notes */}
+        {/* Khối 3: Bước Nhận chuyến (trước khi chụp ảnh) */}
         <Card
           className="rounded-2xl border-[#e4dcd3] bg-white"
           size="small"
           title={
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-semibold text-[#231a18]">
-                3. Ghi chú &amp; tọa độ GPS
+              <span className="font-semibold text-[#231a18] flex items-center gap-1.5">
+                <UserOutlined className="text-[#8c1524]" />
+                <span>Tiếp nhận chuyến giao</span>
               </span>
-              <Button
-                size="small"
-                type="link"
-                onClick={requestLocation}
-                icon={<SyncOutlined spin={gpsLoading} />}
-                className="p-0 text-xs"
-              >
-                Cập nhật GPS
-              </Button>
+              {isClaimed ? (
+                <Tag color="green" icon={<CheckCircleOutlined />}>
+                  Đã nhận chuyến
+                </Tag>
+              ) : (
+                <Tag color="orange">Chưa nhận</Tag>
+              )}
             </div>
           }
         >
-          <div className="space-y-3">
-            <Input.TextArea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ghi chú thực tế (VD: Giao đủ số lượng hộp nguyên vẹn tại cổng 2)"
-              className="text-xs"
-            />
+          {isClaimed ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-semibold text-sm">
+                <CheckCircleOutlined className="text-emerald-600" />
+                <span>Bạn đã nhận chuyến lúc {formatDateTime(delivery.driverClaimedAt)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-emerald-950 pt-1">
+                <div>Tài xế: <strong>{delivery.driverName || '—'}</strong></div>
+                <div>SĐT: <strong>{delivery.driverPhone || '—'}</strong></div>
+                <div>Biển số: <strong>{delivery.vehiclePlate || 'Xe xưởng'}</strong></div>
+                {delivery.shareCode && (
+                  <div>Mã chuyến: <strong className="font-mono">{delivery.shareCode}</strong></div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Alert
+                type="info"
+                showIcon
+                className="text-xs bg-amber-50/60 border-amber-200"
+                message="Tài xế xác nhận thông tin để nhận chuyến trước khi chụp ảnh và bàn giao PoD."
+              />
 
-            <div className="flex items-center justify-between rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-3 py-2 text-xs">
-              <span className="flex items-center gap-1.5 text-[#6c625e]">
-                <CompassOutlined className="text-[#9a6b16]" />
-                <span>Tọa độ thực địa</span>
-              </span>
-              {gpsLoading ? (
-                <span className="text-[#6c625e]">
-                  <SyncOutlined spin /> Đang định vị…
-                </span>
-              ) : (
-                <span className="font-mono font-semibold text-[#231a18] tabular-nums">
-                  {coords.lat
-                    ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`
-                    : 'Chưa có GPS'}
-                </span>
+              {claimConflictError && (
+                <Alert
+                  type="error"
+                  showIcon
+                  className="text-xs"
+                  message={claimConflictError}
+                />
               )}
+
+              <Form form={claimForm} layout="vertical" onFinish={handleClaimTrip} size="small">
+                <Form.Item
+                  name="driverName"
+                  label="Họ và tên tài xế"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên tài xế' }]}
+                >
+                  <Input placeholder="VD: Nguyễn Văn Tuấn" />
+                </Form.Item>
+
+                <Form.Item
+                  name="driverPhone"
+                  label="Số điện thoại tài xế"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập SĐT tài xế' },
+                    { pattern: /^(0|\+84)(3|5|7|8|9)[0-9]{8}$/, message: 'SĐT không đúng định dạng VN' },
+                  ]}
+                >
+                  <Input placeholder="VD: 0987654321" />
+                </Form.Item>
+
+                <Form.Item
+                  name="vehiclePlate"
+                  label="Biển số xe"
+                  rules={[{ required: true, message: 'Vui lòng nhập biển số xe' }]}
+                >
+                  <Input placeholder="VD: 29C-123.45" />
+                </Form.Item>
+
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={claiming}
+                  className="bg-[#8c1524] h-10 font-semibold"
+                >
+                  Xác nhận Nhận Chuyến Giao
+                </Button>
+              </Form>
+            </div>
+          )}
+        </Card>
+
+        {/* Khóa các bước PoD nếu chưa nhận chuyến */}
+        {!isClaimed && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-center space-y-1">
+            <LockOutlined className="text-xl text-amber-700" />
+            <div className="text-xs font-semibold text-amber-900">
+              Quyền nộp PoD đang bị khóa
+            </div>
+            <div className="text-[11px] text-amber-800">
+              Vui lòng hoàn thành bước <strong>Tiếp nhận chuyến giao</strong> ở trên để mở chức năng chụp ảnh và lấy chữ ký PoD.
             </div>
           </div>
-        </Card>
-      </div>
+        )}
 
-      {/* Fixed Bottom Action Bar */}
-      <div className="driver-pod-bottom-bar">
-        <div className="driver-pod-bottom-inner">
-          <Button
-            type="primary"
-            block
-            size="large"
-            loading={submitting || photoUploading}
-            onClick={handleSubmit}
-            icon={<SafetyCertificateOutlined />}
-            className="h-12 font-semibold"
-          >
-            Xác nhận bàn giao &amp; nộp PoD
-          </Button>
-        </div>
+        {/* Step 1: Multi-Photo Capture (Chỉ mở sau khi đã nhận chuyến) */}
+        {isClaimed && (
+          <>
+            <Card
+              className="rounded-2xl border-[#e4dcd3] bg-white"
+              size="small"
+              title={
+                <div className="driver-pod-step-header text-xs sm:text-sm">
+                  <span className="flex items-center gap-1.5 font-semibold text-[#231a18]">
+                    <CameraOutlined className="text-[#9a6b16]" />
+                    1. Chụp ảnh kiện hàng ({photos.length}/{MAX_PHOTOS})
+                  </span>
+                  {photos.length > 0 && (
+                    <Tag color="green" className="m-0">
+                      <CheckCircleOutlined /> Đã có {photos.length} ảnh
+                    </Tag>
+                  )}
+                </div>
+              }
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                className="driver-pod-hidden-input"
+                onChange={handleCapturePhotos}
+              />
+
+              {photos.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="driver-pod-photo-grid">
+                    {photos.map((photo, index) => (
+                      <div key={photo.id} className="driver-pod-photo-item">
+                        <img src={photo.previewUrl} alt={`Ảnh bàn giao ${index + 1}`} />
+                        <button
+                          type="button"
+                          aria-label={`Xóa ảnh ${index + 1}`}
+                          onClick={() => handleRemovePhoto(photo.id)}
+                          className="driver-pod-photo-remove"
+                        >
+                          <DeleteOutlined className="text-xs" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {photos.length < MAX_PHOTOS && (
+                      <button
+                        type="button"
+                        disabled={photoUploading}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="driver-pod-photo-add"
+                      >
+                        <PlusOutlined className="text-base" />
+                        <span>{photoUploading ? 'Đang tải…' : 'Thêm ảnh'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={photoUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="driver-pod-photo-dropzone"
+                >
+                  <CameraOutlined className="mb-2 text-3xl text-[#9a6b16]" />
+                  <div className="text-sm font-semibold text-[#231a18]">
+                    {photoUploading ? 'Đang xử lý ảnh…' : 'Chạm để chụp hoặc chọn ảnh bàn giao'}
+                  </div>
+                  <div className="mt-1 text-xs text-[#6c625e]">
+                    Chụp rõ kiện hàng, tem niêm phong hoặc biên bản có dấu mộc (tối đa 5 ảnh)
+                  </div>
+                </button>
+              )}
+            </Card>
+
+            {/* Step 2: Recipient Name & Digital Signature */}
+            <Card
+              className="rounded-2xl border-[#e4dcd3] bg-white"
+              size="small"
+              title={
+                <div className="driver-pod-step-header text-xs sm:text-sm">
+                  <span className="font-semibold text-[#231a18]">
+                    2. Chữ ký điện tử người nhận hàng
+                  </span>
+                  {signatureDataUrl && (
+                    <Tag color="green" className="m-0">
+                      <CheckCircleOutlined /> Đã ký
+                    </Tag>
+                  )}
+                </div>
+              }
+            >
+              <div className="mb-3">
+                <label
+                  htmlFor="driver-recipient-input"
+                  className="mb-1 block text-xs font-medium text-[#6c625e]"
+                >
+                  Họ tên người trực tiếp ký nhận
+                </label>
+                <Input
+                  id="driver-recipient-input"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="Nhập họ tên thủ kho hoặc người nhận"
+                />
+              </div>
+
+              <SignatureCanvas onSignatureChange={setSignatureDataUrl} />
+            </Card>
+
+            {/* Step 3: GPS & Notes */}
+            <Card
+              className="rounded-2xl border-[#e4dcd3] bg-white"
+              size="small"
+              title={
+                <div className="flex items-center justify-between text-xs sm:text-sm">
+                  <span className="font-semibold text-[#231a18]">
+                    3. Ghi chú &amp; tọa độ GPS
+                  </span>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={requestLocation}
+                    icon={<SyncOutlined spin={gpsLoading} />}
+                    className="p-0 text-xs"
+                  >
+                    Cập nhật GPS
+                  </Button>
+                </div>
+              }
+            >
+              <div className="space-y-3">
+                <Input.TextArea
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ghi chú thực tế (VD: Giao đủ số lượng hộp nguyên vẹn tại cổng 2)"
+                  className="text-xs"
+                />
+
+                <div className="flex items-center justify-between rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-3 py-2 text-xs">
+                  <span className="flex items-center gap-1.5 text-[#6c625e]">
+                    <CompassOutlined className="text-[#9a6b16]" />
+                    <span>Tọa độ thực địa</span>
+                  </span>
+                  {gpsLoading ? (
+                    <span className="text-[#6c625e]">
+                      <SyncOutlined spin /> Đang định vị…
+                    </span>
+                  ) : (
+                    <span className="font-mono font-semibold text-[#231a18] tabular-nums">
+                      {coords.lat ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : 'Chưa có GPS'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            {/* Fixed Bottom Action Bar */}
+            <div className="driver-pod-bottom-bar">
+              <div className="driver-pod-bottom-inner">
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  loading={submitting || photoUploading}
+                  onClick={handleSubmit}
+                  icon={<SafetyCertificateOutlined />}
+                  className="h-12 font-semibold bg-[#8c1524]"
+                >
+                  Xác nhận bàn giao &amp; nộp PoD
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
