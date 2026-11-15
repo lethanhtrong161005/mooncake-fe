@@ -360,7 +360,7 @@ export default function SupplierDashboard({ onNavigate }) {
       title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      width: 130,
+      width: 172,
       render: (_, order) => (
         <div className="sd-actions">
           {order.status === 'Pending' && (
@@ -411,7 +411,7 @@ export default function SupplierDashboard({ onNavigate }) {
       title="Tổng quan Xưởng sản xuất"
       subtitle="Theo dõi đơn hàng doanh nghiệp vừa tiếp nhận, tiến độ sản xuất và hồ sơ bao bì in logo."
       extra={
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading}>
             Làm mới
           </Button>
@@ -508,13 +508,13 @@ export default function SupplierDashboard({ onNavigate }) {
               aria-label="Tìm mã đơn hoặc người nhận"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: 220 }}
+              className="sd-control-search"
             />
             <Select
               aria-label="Trạng thái"
               value={statusFilter}
               onChange={handleStatusChange}
-              style={{ width: 185 }}
+              className="sd-control-select"
               options={[
                 { value: 'All', label: 'Tất cả trạng thái' },
                 { value: 'Pending', label: 'Chờ xác nhận' },
@@ -526,7 +526,7 @@ export default function SupplierDashboard({ onNavigate }) {
                 { value: 'Cancelled', label: 'Đã hủy' },
               ]}
             />
-            <Button onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}>
+            <Button className="sd-control-btn" onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}>
               Mở sổ đơn đầy đủ
             </Button>
           </div>
@@ -538,7 +538,7 @@ export default function SupplierDashboard({ onNavigate }) {
           columns={columns}
           dataSource={orders}
           tableLayout="fixed"
-          scroll={{ x: 1080 }}
+          scroll={{ x: 1120 }}
           pagination={{
             current: query.page,
             pageSize: query.pageSize,
@@ -560,7 +560,7 @@ export default function SupplierDashboard({ onNavigate }) {
 
       <Modal
         title={
-          <Space>
+          <Space wrap>
             <PictureOutlined style={{ color: '#7d1322' }} />
             <span>Hồ sơ bao bì thiết kế · #{selectedOrder?.orderNumber || ''}</span>
           </Space>
@@ -569,6 +569,7 @@ export default function SupplierDashboard({ onNavigate }) {
         onCancel={() => setPackagingOpen(false)}
         footer={null}
         width={760}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         loading={packagingLoading}
         destroyOnHidden
       >
@@ -605,7 +606,7 @@ export default function SupplierDashboard({ onNavigate }) {
                   'Chưa tải lên'
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Thông điệp nắp hộp" span={2}>
+              <Descriptions.Item label="Thông điệp nắp hộp" span={{ xs: 1, sm: 2 }}>
                 {packaging.specialMessage || '—'}
               </Descriptions.Item>
             </Descriptions>

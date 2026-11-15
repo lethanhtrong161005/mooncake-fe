@@ -5,6 +5,7 @@ import {
   Descriptions,
   Drawer,
   Form,
+  Grid,
   Input,
   InputNumber,
   Modal,
@@ -85,6 +86,7 @@ const helpLabel = (label, explanation) => (
 );
 
 export default function BiddingPage({ onNavigate }) {
+  const screens = Grid.useBreakpoint();
   const rfqPage = usePagedList(rfqService.listSupplierInvitationsPaged);
   const rfqs = rfqPage.items;
   const loading = rfqPage.loading;
@@ -235,8 +237,9 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Gói thầu',
       dataIndex: 'title',
+      width: 240,
       render: (value, item) => (
-        <div className="max-w-sm">
+        <div className="max-w-sm break-words">
           <div className="font-medium text-[#231a18]">{value}</div>
           <div className="mt-0.5 text-xs text-[#6c625e] tabular-nums">
             Giao trước: {item.deliveryDateRequired || 'Chưa chốt'}
@@ -247,6 +250,7 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Khách hàng',
       key: 'customerName',
+      width: 185,
       render: (_, item) => (
         <div>
           <div className="text-sm text-[#231a18]">{item.customerName || 'Doanh nghiệp B2B'}</div>
@@ -259,6 +263,7 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Hạn nộp báo giá',
       dataIndex: 'bidDeadline',
+      width: 155,
       render: (value) => (
         <span className="text-xs tabular-nums text-[#231a18]">
           {new Date(value).toLocaleString('vi-VN')}
@@ -268,6 +273,7 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
+      width: 120,
       render: (value) => {
         const meta = STATUS_META[value] || { label: value, color: 'default' };
         return <Tag color={meta.color}>{meta.label}</Tag>;
@@ -276,10 +282,10 @@ export default function BiddingPage({ onNavigate }) {
     {
       title: 'Thao tác',
       align: 'right',
-      width: 240,
+      width: 220,
       render: (_, item) => (
         item.awaitingSupplierConfirmation ? (
-          <Space size="small">
+          <Space size="small" wrap>
             <Button
               type="primary"
               size="small"
@@ -293,7 +299,7 @@ export default function BiddingPage({ onNavigate }) {
             </Button>
           </Space>
         ) : (
-          <Space size="small">
+          <Space size="small" wrap>
             <Button
               type="primary"
               size="small"
@@ -354,14 +360,15 @@ export default function BiddingPage({ onNavigate }) {
             />
           </div>
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4">
             <Table
               rowKey="id"
               loading={loading}
               columns={columns}
               dataSource={rfqs}
               size="middle"
-              scroll={{ x: 920 }}
+              tableLayout="fixed"
+              scroll={{ x: 960 }}
               pagination={{
                 current: rfqPage.query.page,
                 pageSize: rfqPage.query.pageSize,
@@ -381,16 +388,16 @@ export default function BiddingPage({ onNavigate }) {
             {`${selectedRfq?.myBid ? 'Sửa báo giá' : 'Nộp báo giá'} · ${selectedRfq?.rfqNumber || ''}`}
           </span>
         }
-        width={760}
+        width={screens.md ? 760 : '100%'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         footer={
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-[#6c625e]">
               Tổng dự kiến:{' '}
               <span className="font-semibold tabular-nums text-[#7d1322]">{money(total)}</span>
             </div>
-            <Space>
+            <Space wrap>
               <Button onClick={() => setDrawerOpen(false)}>Đóng</Button>
               <Button
                 type="primary"
@@ -440,7 +447,7 @@ export default function BiddingPage({ onNavigate }) {
                             <Input />
                           </Form.Item>
                           <Row gutter={12}>
-                            <Col xs={24} md={12}>
+                            <Col xs={24} sm={12}>
                               <Form.Item
                                 {...restField}
                                 name={[restField.name, 'unitPrice']}
@@ -453,7 +460,7 @@ export default function BiddingPage({ onNavigate }) {
                                 <MoneyInput min={0.01} className="w-full" />
                               </Form.Item>
                             </Col>
-                            <Col xs={24} md={12}>
+                            <Col xs={24} sm={12}>
                               <Form.Item
                                 {...restField}
                                 name={[restField.name, 'notes']}

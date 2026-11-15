@@ -362,6 +362,7 @@ export default function ProductManage({ onNavigate }) {
       title: 'Sản phẩm',
       dataIndex: 'name',
       key: 'name',
+      width: 320,
       render: (name, row) => {
         const categoryName = categoryMap.get(row.categoryId);
         return (
@@ -401,6 +402,7 @@ export default function ProductManage({ onNavigate }) {
     {
       title: 'Giá B2B',
       key: 'price',
+      width: 165,
       render: (_, row) => (
         <span className="font-semibold tabular-nums text-sm text-[#7d1322]">
           {row.minPrice === row.maxPrice
@@ -413,12 +415,14 @@ export default function ProductManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'effectiveStatus',
       key: 'effectiveStatus',
+      width: 120,
       render: statusTag,
     },
     {
       title: 'Cập nhật',
       dataIndex: 'updatedAtUtc',
       key: 'updatedAtUtc',
+      width: 110,
       render: (value) => (
         <span className="tabular-nums text-xs text-[#6c625e]">
           {value ? new Date(value).toLocaleDateString('vi-VN') : 'Chưa rõ'}
@@ -429,9 +433,9 @@ export default function ProductManage({ onNavigate }) {
       title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      width: 220,
+      width: 185,
       render: (_, row) => (
-        <Space size="small">
+        <Space size={[6, 6]} wrap>
           <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>
             Sửa
           </Button>
@@ -466,7 +470,7 @@ export default function ProductManage({ onNavigate }) {
       title="Sản phẩm và biến thể"
       subtitle="Quản lý catalog B2B, SKU, tồn kho và trạng thái xuất bản của gian hàng."
       extra={
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={triggerReload} loading={loading}>
             Tải lại
           </Button>
@@ -497,8 +501,8 @@ export default function ProductManage({ onNavigate }) {
         >
           {/* Search & Filter Toolbar */}
           <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-3.5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-              <div className="md:col-span-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
@@ -510,7 +514,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="md:col-span-3">
+              <div className="lg:col-span-3">
                 <Select
                   value={categoryFilter}
                   onChange={(value) => {
@@ -526,7 +530,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div className="lg:col-span-2">
                 <Select
                   value={statusFilter}
                   onChange={(value) => {
@@ -539,7 +543,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="flex min-w-0 items-center gap-2 md:col-span-4">
+              <div className="flex min-w-0 items-center gap-2 sm:col-span-2 lg:col-span-4">
                 <Select
                   value={sortBy}
                   onChange={(value) => {
@@ -576,13 +580,14 @@ export default function ProductManage({ onNavigate }) {
           </div>
 
           {/* Product Ledger Table */}
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4">
             <Table
               rowKey="productId"
               loading={loading}
               columns={columns}
               dataSource={items}
               size="middle"
+              scroll={{ x: 900 }}
               locale={{
                 emptyText: (
                   <Empty
@@ -634,6 +639,7 @@ export default function ProductManage({ onNavigate }) {
         }
         open={open}
         width={920}
+        style={{ maxWidth: 'calc(100vw - 24px)', top: 16 }}
         destroyOnHidden
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
@@ -682,7 +688,7 @@ export default function ProductManage({ onNavigate }) {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-5">
+          <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2 lg:grid-cols-5">
             <Form.Item name="basePrice" label="Giá cơ bản" rules={[{ required: true }]}>
               <InputNumber min={0} precision={0} className="w-full" addonAfter="₫" />
             </Form.Item>
@@ -745,8 +751,8 @@ export default function ProductManage({ onNavigate }) {
                         key={field.key}
                         className="rounded-xl border border-[#e4dcd3] bg-white p-3.5"
                       >
-                        <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-12">
-                          <div className="sm:col-span-4">
+                        <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2 lg:grid-cols-12">
+                          <div className="sm:col-span-2 lg:col-span-4">
                             <Form.Item
                               {...field}
                               name={[field.name, 'name']}
@@ -756,7 +762,7 @@ export default function ProductManage({ onNavigate }) {
                               <Input placeholder="Thập cẩm 200g" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'sku']}
@@ -766,7 +772,7 @@ export default function ProductManage({ onNavigate }) {
                               <Input placeholder="SKU-01" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'priceAdjustment']}
@@ -776,7 +782,7 @@ export default function ProductManage({ onNavigate }) {
                               <InputNumber className="w-full" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'initialStockQty']}
@@ -786,7 +792,7 @@ export default function ProductManage({ onNavigate }) {
                               <InputNumber min={0} className="w-full" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'weightGram']}

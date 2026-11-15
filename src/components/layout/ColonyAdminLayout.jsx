@@ -8,7 +8,6 @@ import {
   Avatar,
   Breadcrumb,
   Tag,
-  Space,
   Button,
   Divider,
   Drawer,
@@ -34,7 +33,6 @@ import {
   MenuUnfoldOutlined,
   HomeOutlined,
   MessageOutlined,
-  BellOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useChat } from '../../hooks/useChat';
@@ -251,38 +249,89 @@ export default function ColonyAdminLayout({
         {/* Colony Header */}
         <Header className="workspace-header">
           {/* Left: Collapse Button + Breadcrumbs */}
-          <Space orientation="horizontal" size="middle">
+          <div className="workspace-header__left">
             <Button
               type="text"
               icon={compact || collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               aria-label="Mở điều hướng"
               onClick={() => compact ? setMobileMenuOpen(true) : setCollapsed(!collapsed)}
-              style={{ fontSize: 16, width: 36, height: 36 }}
+              className="workspace-header__toggle"
             />
-            {!compact && <Breadcrumb
-              items={[
-                { title: <HomeOutlined onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')} style={{ cursor: 'pointer' }} /> },
-                { title: isAdmin ? 'Quản trị' : 'Nhà cung cấp' },
-                { title: title || 'Tổng quan' },
-              ]}
-            />}
-          </Space>
+            {!compact ? (
+              <Breadcrumb
+                items={[
+                  { title: <HomeOutlined onClick={() => onNavigate?.(isAdmin ? 'admin/dashboard' : 'nha-cung-cap/dashboard')} style={{ cursor: 'pointer' }} /> },
+                  { title: isAdmin ? 'Quản trị' : 'Nhà cung cấp' },
+                  { title: title || 'Tổng quan' },
+                ]}
+              />
+            ) : (
+              <span className="workspace-header__mobile-title">{title || 'Tổng quan'}</span>
+            )}
+          </div>
 
-          <Space size="middle" align="center" className="workspace-header__actions">
+          <div className="workspace-header__actions">
+            {!isAdmin && (
+              <button
+                type="button"
+                className={`workspace-icon-btn${activeKey === 'nha-cung-cap/tin-nhan' ? ' workspace-icon-btn--active' : ''}`}
+                aria-label={unreadCount > 0 ? `Tin nhắn khách hàng (${unreadCount} chưa đọc)` : 'Tin nhắn khách hàng'}
+                title="Tin nhắn khách hàng"
+                onClick={() => onNavigate?.('nha-cung-cap/tin-nhan')}
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
+                  <path d="M8.5 11.5h7" />
+                  <path d="M8.5 14.5h4.5" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="workspace-icon-btn__badge" aria-hidden="true">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
 
-            {!isAdmin && <Badge count={unreadCount} overflowCount={99} size="small">
-              <Button type="text" shape="circle" icon={<MessageOutlined />}
-                aria-label="Tin nhắn khách hàng" title="Tin nhắn khách hàng"
-                onClick={() => onNavigate?.('nha-cung-cap/tin-nhan')} />
-            </Badge>}
+            <button
+              type="button"
+              className={`workspace-icon-btn${activeKey === 'thong-bao' ? ' workspace-icon-btn--active' : ''}`}
+              aria-label={notificationUnread > 0 ? `Thông báo (${notificationUnread} chưa đọc)` : 'Thông báo'}
+              title="Thông báo hoạt động và xác minh"
+              onClick={() => onNavigate?.('thong-bao')}
+            >
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6.8 9.2a5.2 5.2 0 1 1 10.4 0c0 4.6 1.8 6.4 2.6 7.3a.8.8 0 0 1-.6 1.3H4.8a.8.8 0 0 1-.6-1.3c.8-.9 2.6-2.7 2.6-7.3Z" />
+                <path d="M9.8 20.3a2.4 2.4 0 0 0 4.4 0" />
+                <path d="M12 2.5v1.5" />
+              </svg>
+              {notificationUnread > 0 && (
+                <span className="workspace-icon-btn__badge workspace-icon-btn__badge--bell" aria-hidden="true">
+                  {notificationUnread > 99 ? '99+' : notificationUnread}
+                </span>
+              )}
+            </button>
 
-            <Badge count={notificationUnread} overflowCount={99} size="small">
-              <Button type="text" shape="circle" icon={<BellOutlined />}
-                aria-label="Thông báo" title="Thông báo hoạt động và xác minh"
-                onClick={() => onNavigate?.('thong-bao')} />
-            </Badge>
-
-            <Divider orientation="vertical" style={{ height: 24, margin: '0 4px' }} />
+            <Divider orientation="vertical" className="workspace-header__divider" />
 
             {/* User Profile */}
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
@@ -300,7 +349,7 @@ export default function ColonyAdminLayout({
                 </span>}
               </button>
             </Dropdown>
-          </Space>
+          </div>
         </Header>
 
         {/* Colony Content Area */}
@@ -308,11 +357,11 @@ export default function ColonyAdminLayout({
           {/* Page Banner / Header */}
           {(title || extra) && (
             <div className="workspace-page-heading">
-              <div>
+              <div className="workspace-page-heading__copy">
                 <h1>{title}</h1>
                 {subtitle && <p>{subtitle}</p>}
               </div>
-              {extra && <div>{extra}</div>}
+              {extra && <div className="workspace-page-heading__extra">{extra}</div>}
             </div>
           )}
 

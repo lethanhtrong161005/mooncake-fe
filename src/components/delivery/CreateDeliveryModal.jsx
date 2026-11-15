@@ -104,9 +104,9 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
   return (
     <Modal
       title={
-        <div className="flex items-center gap-2 text-slate-800">
-          <CarOutlined className="text-amber-600 text-lg" />
-          <span>Tạo Chuyến Giao Hàng Mới (Chia Đợt - Split Shipment)</span>
+        <div className="flex flex-wrap items-center gap-2 text-slate-800 pr-6">
+          <CarOutlined className="text-amber-600 text-lg shrink-0" />
+          <span>Tạo Chuyến Giao Hàng Mới (Chia Đợt)</span>
         </div>
       }
       open={open}
@@ -116,6 +116,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
       cancelText="Hủy"
       confirmLoading={loading}
       width={650}
+      style={{ maxWidth: 'calc(100vw - 24px)' }}
       centered
       okButtonProps={{ className: 'bg-amber-600 hover:bg-amber-500 font-semibold' }}
     >
@@ -149,24 +150,24 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
             </Select>
           </Form.Item>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Form.Item
               name="deliveryType"
               label="Phương thức vận chuyển"
               rules={[{ required: true }]}
             >
-              <Radio.Group buttonStyle="solid" style={{ display: 'flex', width: '100%' }}>
+              <Radio.Group buttonStyle="solid" className="grid grid-cols-2 w-full">
                 <Radio.Button
                   value="SelfArranged"
-                  style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center', whiteSpace: 'nowrap' }}
+                  style={{ textAlign: 'center', paddingInline: 8, overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   Xưởng tự chở
                 </Radio.Button>
                 <Radio.Button
                   value="PlatformManaged"
-                  style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center', whiteSpace: 'nowrap' }}
+                  style={{ textAlign: 'center', paddingInline: 8, overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
-                  Đơn vị vận chuyển
+                  ĐV vận chuyển
                 </Radio.Button>
               </Radio.Group>
             </Form.Item>
@@ -206,7 +207,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
             <Input placeholder="Số nhà, đường, cổng kho, quận/huyện, tỉnh/thành" />
           </Form.Item>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Form.Item
               name="recipientName"
               label="Họ tên người nhận (Thủ kho / Đại diện)"
@@ -227,7 +228,7 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Form.Item name="trackingCode" label="Mã vận đơn / Biển số xe">
               <Input placeholder="VD: TA-TRUCK-889 hoặc VTP-123456" />
             </Form.Item>

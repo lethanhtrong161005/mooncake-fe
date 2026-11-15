@@ -49,10 +49,11 @@
 .sd-kpi__value {
   margin-top: 8px;
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 24px;
+  font-size: clamp(19px, 1.8vw, 24px);
   font-weight: 600;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 .sd-kpi__caption {
@@ -99,6 +100,15 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  max-width: 100%;
+}
+
+.sd-control-search {
+  width: 220px;
+}
+
+.sd-control-select {
+  width: 185px;
 }
 
 .sd-order-link {
@@ -240,7 +250,7 @@
   background-color: #ffffff;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1240px) {
   .sd-ribbon {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -264,6 +274,7 @@
   }
 
   .sd-kpi {
+    padding: 14px 16px;
     border-right: none;
     border-bottom: 1px solid #e4dcd3;
   }
@@ -274,5 +285,12 @@
 
   .sd-ledger__header {
     padding: 14px;
+  }
+
+  .sd-ledger__controls,
+  .sd-control-search,
+  .sd-control-select,
+  .sd-control-btn {
+    width: 100% !important;
   }
 }

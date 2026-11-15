@@ -215,6 +215,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Tiêu đề / ghi chú',
       dataIndex: 'title',
       key: 'title',
+      width: 210,
       render: (t) => (
         <span className="font-medium text-[#231a18]">{t || 'Hợp đồng đơn hàng RFQ'}</span>
       ),
@@ -243,6 +244,7 @@ export default function ContractManage({ onNavigate }) {
     {
       title: 'Chữ ký xưởng',
       key: 'signature',
+      width: 140,
       render: (_, r) => (
         r.signedBySupplierAt
           ? <Tag color="success">Đã ký và gửi</Tag>
@@ -253,6 +255,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 135,
       render: (st) => (
         <Tag color={statusMap[st]?.[0] || 'default'}>
           {statusMap[st]?.[1] || st}
@@ -263,6 +266,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Thao tác',
       key: 'action',
       align: 'right',
+      width: 210,
       render: (_, record) => (
         <Space size="small" wrap>
           <Button
@@ -297,7 +301,8 @@ export default function ContractManage({ onNavigate }) {
                     </Descriptions.Item>
                   </Descriptions>
                 ),
-                width: 640,
+                width: 560,
+                style: { maxWidth: 'calc(100vw - 24px)' },
                 okText: 'Xác nhận hợp đồng',
                 cancelText: 'Xem lại',
                 okButtonProps: { style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } },
@@ -404,7 +409,7 @@ export default function ContractManage({ onNavigate }) {
           open={milestonesModalOpen}
           onCancel={() => setMilestonesModalOpen(false)}
           footer={(
-            <Space>
+            <Space wrap>
               {contractDetails?.status === 'Active' && m2Paid && (
                 <Button
                   type="primary"
@@ -419,6 +424,7 @@ export default function ContractManage({ onNavigate }) {
             </Space>
           )}
           width={760}
+          style={{ maxWidth: 'calc(100vw - 24px)' }}
           destroyOnHidden
         >
           {contractDetails && (
@@ -481,7 +487,7 @@ export default function ContractManage({ onNavigate }) {
                 )}
                 items={contractDetails.milestones?.map((m) => ({
                   title: (
-                    <Space>
+                    <Space wrap>
                       <Text strong className="text-[#231a18]">{m.name}</Text>
                       <Tag color={milestoneStatusMap[m.status]?.[0] || 'default'}>
                         {milestoneStatusMap[m.status]?.[1] || m.status}
@@ -576,6 +582,7 @@ export default function ContractManage({ onNavigate }) {
         okText="Gửi đơn xin gia hạn"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Alert
@@ -622,6 +629,7 @@ export default function ContractManage({ onNavigate }) {
         okText="Nộp Báo Cáo Tiến Độ"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Form form={progressForm} layout="vertical">

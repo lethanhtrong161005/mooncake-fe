@@ -271,6 +271,7 @@ export default function PackagingTemplateManager({ shopId }) {
       title: 'Mẫu hộp & Ngày tạo',
       dataIndex: 'name',
       key: 'name',
+      width: 270,
       render: (name, record) => (
         <div className="flex items-start gap-3.5">
           <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-[#e4dcd3] bg-[#faf7f2]">
@@ -300,6 +301,7 @@ export default function PackagingTemplateManager({ shopId }) {
     {
       title: 'Chất liệu & Kỹ thuật',
       key: 'specs',
+      width: 175,
       render: (_, record) => (
         <div className="space-y-1 text-xs">
           <div className="font-medium text-[#231a18]">
@@ -314,6 +316,7 @@ export default function PackagingTemplateManager({ shopId }) {
     {
       title: 'Quy cách & MOQ',
       key: 'capacity',
+      width: 130,
       render: (_, record) => (
         <div className="space-y-1 text-xs tabular-nums">
           <div className="font-medium text-[#231a18]">{record.capacity} bánh</div>
@@ -327,6 +330,7 @@ export default function PackagingTemplateManager({ shopId }) {
       title: 'Phụ phí phôi',
       dataIndex: 'basePrice',
       key: 'basePrice',
+      width: 120,
       render: (val) => (
         <span className="font-semibold tabular-nums text-sm text-[#7d1322]">
           {money(val)}
@@ -337,6 +341,7 @@ export default function PackagingTemplateManager({ shopId }) {
       title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'isActive',
+      width: 145,
       render: (val) => (
         <Tag
           color={val ? 'success' : 'default'}
@@ -350,6 +355,7 @@ export default function PackagingTemplateManager({ shopId }) {
       title: 'Thao tác',
       key: 'action',
       align: 'right',
+      width: 100,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -424,8 +430,8 @@ export default function PackagingTemplateManager({ shopId }) {
 
       {/* Filter & Search Toolbar */}
       <div className="mt-5 rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-3.5">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-          <div className="md:col-span-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="sm:col-span-2 lg:col-span-5">
             <Input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
@@ -437,7 +443,7 @@ export default function PackagingTemplateManager({ shopId }) {
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="lg:col-span-2">
             <Select
               value={statusFilter}
               onChange={(val) => {
@@ -450,7 +456,7 @@ export default function PackagingTemplateManager({ shopId }) {
             />
           </div>
 
-          <div className="md:col-span-2">
+          <div className="lg:col-span-2">
             <Select
               value={capacityFilter}
               onChange={(val) => {
@@ -463,7 +469,7 @@ export default function PackagingTemplateManager({ shopId }) {
             />
           </div>
 
-          <div className="md:col-span-3 flex items-center gap-2">
+          <div className="sm:col-span-2 lg:col-span-3 flex items-center gap-2">
             <Select
               value={materialFilter}
               onChange={(val) => {
@@ -500,13 +506,15 @@ export default function PackagingTemplateManager({ shopId }) {
       </div>
 
       {/* Specification Ledger Table */}
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4">
         <Table
           dataSource={templates}
           columns={columns}
           rowKey="id"
           loading={loading}
           size="middle"
+          tableLayout="fixed"
+          scroll={{ x: 940 }}
           locale={{
             emptyText: (
               <Empty
@@ -567,6 +575,7 @@ export default function PackagingTemplateManager({ shopId }) {
         }}
         footer={null}
         width={840}
+        style={{ maxWidth: 'calc(100vw - 24px)', top: 16 }}
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleSave} className="pt-4">

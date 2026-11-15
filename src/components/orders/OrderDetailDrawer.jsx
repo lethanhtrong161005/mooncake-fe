@@ -6,6 +6,7 @@ import {
   Divider,
   Drawer,
   Empty,
+  Grid,
   Image,
   Spin,
   Table,
@@ -80,6 +81,7 @@ export default function OrderDetailDrawer({
   onClose,
   onOpenPaymentSchedule,
 }) {
+  const screens = Grid.useBreakpoint();
   const [manualRefreshing, setManualRefreshing] = useState(false);
   const [snapshot, setSnapshot] = useState({
     orderId: null,
@@ -389,7 +391,7 @@ export default function OrderDetailDrawer({
             bordered
             size="small"
             column={{ xs: 1, sm: 2 }}
-            styles={{ label: { backgroundColor: '#faf7f2', fontWeight: 600, width: 150 } }}
+            styles={{ label: { backgroundColor: '#faf7f2', fontWeight: 600, width: screens.sm ? 150 : 112 } }}
           >
             <Descriptions.Item label="Người nhận">{current?.recipientName || '—'}</Descriptions.Item>
             <Descriptions.Item label="Số điện thoại">{current?.recipientPhone || '—'}</Descriptions.Item>
@@ -405,11 +407,11 @@ export default function OrderDetailDrawer({
             <Descriptions.Item label="Ngày tạo đơn">
               {formatDateTime(current?.createdAtUtc)}
             </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ nhận hàng" span={2}>
+            <Descriptions.Item label="Địa chỉ nhận hàng" span={{ xs: 1, sm: 2 }}>
               {current?.deliveryAddress || '—'}
             </Descriptions.Item>
             {current?.notes && (
-              <Descriptions.Item label="Ghi chú đơn" span={2}>
+              <Descriptions.Item label="Ghi chú đơn" span={{ xs: 1, sm: 2 }}>
                 {current.notes}
               </Descriptions.Item>
             )}
@@ -521,7 +523,7 @@ export default function OrderDetailDrawer({
           {role === 'customer'
             && Number(resolvedPayment?.remainingAmount || 0) > 0
             && onOpenPaymentSchedule && (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-[#e8d5b7] bg-[#fffaf0] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e8d5b7] bg-[#fffaf0] px-4 py-3">
                 <span className="text-xs sm:text-sm text-stone-700">
                   Còn <b>{money(resolvedPayment.remainingAmount)}</b> chưa thanh toán theo lịch trình.
                 </span>
@@ -626,7 +628,7 @@ export default function OrderDetailDrawer({
       children: (
         <div className="space-y-4">
           {resolvedFinance && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
               <div className="rounded-xl border border-stone-200 bg-white p-3">
                 <div className="text-[11px] text-stone-500">Đã thu vào hệ thống</div>
                 <div className="text-sm font-bold text-stone-900 tabular-nums mt-0.5">
@@ -746,14 +748,14 @@ export default function OrderDetailDrawer({
           Làm mới
         </Button>
       }
-      width={860}
+      width={screens.lg ? 860 : screens.sm ? 640 : '100%'}
       open={open}
       onClose={onClose}
       destroyOnHidden
-      styles={{ body: { backgroundColor: '#faf9f6', padding: 20 } }}
+      styles={{ wrapper: { maxWidth: '100vw' }, body: { backgroundColor: '#faf9f6', padding: screens.sm ? 20 : 14 } }}
     >
       <Spin spinning={loading}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="rounded-xl bg-white border border-stone-200 p-3">
             <div className="text-[11px] text-stone-500">Tổng đơn hàng</div>
             <div className="text-base font-bold text-[#8c1524] tabular-nums mt-0.5">

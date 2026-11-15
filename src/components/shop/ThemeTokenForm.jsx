@@ -21,7 +21,7 @@ export default function ThemeTokenForm({ prefix = [] }) {
           </Form.Item>
         </Col>
       ))}
-      <Col xs={12}>
+      <Col xs={24} sm={12}>
         <Form.Item
           name={[...prefix, 'borderRadiusPx']}
           label="Bo góc (px)"
@@ -30,7 +30,7 @@ export default function ThemeTokenForm({ prefix = [] }) {
           <InputNumber min={0} max={24} precision={0} className="w-full" />
         </Form.Item>
       </Col>
-      <Col xs={12}>
+      <Col xs={24} sm={12}>
         <Form.Item
           name={[...prefix, 'fontScale']}
           label="Tỷ lệ chữ"

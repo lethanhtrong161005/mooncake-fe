@@ -103,9 +103,9 @@ function InformationForm({ shop, catalog, onSaved, onDirtyChange }) {
         />
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
         {/* Left Zone: Brand Identity & Public Contact Desk */}
-        <div className="rounded-2xl border border-[#e4dcd3] bg-white p-6 sm:p-7 lg:col-span-7">
+        <div className="rounded-2xl border border-[#e4dcd3] bg-white p-4 sm:p-6 md:col-span-7">
           <div className="border-b border-[#efe9e1] pb-4">
             <h2 className="m-0 font-serif text-xl font-semibold tracking-tight text-[#231a18]">
               {shop ? 'Hồ sơ gian hàng công khai' : 'Khởi tạo gian hàng đầu tiên'}
@@ -151,7 +151,7 @@ function InformationForm({ shop, catalog, onSaved, onDirtyChange }) {
                 name="templateId"
                 label="Mẫu giao diện ban đầu"
                 rules={[{ required: true }]}
-                className="mb-0 flex-1 min-w-[220px]"
+                className="mb-0 w-full sm:w-auto sm:flex-1 sm:min-w-[220px]"
               >
                 <Select
                   options={[...catalog.items, ...extraTemplates].map((template) => ({
@@ -242,7 +242,7 @@ function InformationForm({ shop, catalog, onSaved, onDirtyChange }) {
         </div>
 
         {/* Right Zone: Visual Identity Assets */}
-        <aside className="flex flex-col justify-between rounded-2xl border border-[#e4dcd3] bg-[#fdfbf8] p-6 sm:p-7 lg:col-span-5">
+        <aside className="flex flex-col justify-between rounded-2xl border border-[#e4dcd3] bg-[#fdfbf8] p-4 sm:p-6 md:col-span-5">
           <div>
             <div className="border-b border-[#ebe3da] pb-4">
               <h2 className="m-0 font-serif text-xl font-semibold tracking-tight text-[#231a18]">

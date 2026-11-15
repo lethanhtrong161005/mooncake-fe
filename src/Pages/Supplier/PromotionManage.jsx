@@ -196,6 +196,7 @@ export default function PromotionManage({ onNavigate }) {
       title: 'Chương trình chiết khấu',
       dataIndex: 'name',
       key: 'name',
+      width: 280,
       render: (text, record) => {
         const prod = products.find(
           (p) => p.productId === record.productId || p.id === record.productId,
@@ -220,6 +221,7 @@ export default function PromotionManage({ onNavigate }) {
     {
       title: 'Mức giảm giá B2B',
       key: 'discount',
+      width: 170,
       render: (_, record) => {
         const isPercent = record.discountType === 0 || record.discountType === 'Percentage';
         return (
@@ -240,6 +242,7 @@ export default function PromotionManage({ onNavigate }) {
     {
       title: 'Thời gian áp dụng',
       key: 'duration',
+      width: 140,
       render: (_, record) => {
         if (!record.startAtUtc && !record.endAtUtc) {
           return <Tag>Vô thời hạn</Tag>;
@@ -255,6 +258,7 @@ export default function PromotionManage({ onNavigate }) {
     {
       title: 'Trạng thái',
       key: 'status',
+      width: 120,
       render: (_, record) => {
         const st = getPromoStatus(record);
         return <Tag color={st.color}>{st.text}</Tag>;
@@ -297,7 +301,7 @@ export default function PromotionManage({ onNavigate }) {
       title="Khuyến mãi & chiết khấu theo sản lượng"
       subtitle="Thiết lập chính sách giảm giá theo bậc số lượng hộp cho đơn hàng doanh nghiệp."
       extra={
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>
             Làm mới
           </Button>
@@ -356,6 +360,7 @@ export default function PromotionManage({ onNavigate }) {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 buttonStyle="solid"
                 size="small"
+                className="flex flex-wrap gap-1.5 [&>.ant-radio-button-wrapper]:rounded-md [&>.ant-radio-button-wrapper::before]:hidden"
               >
                 <Radio.Button value="ALL">Tất cả ({promotions.length})</Radio.Button>
                 <Radio.Button value="ACTIVE">Đang áp dụng</Radio.Button>
@@ -365,7 +370,7 @@ export default function PromotionManage({ onNavigate }) {
             </div>
           </div>
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4">
             <Table
               columns={columns}
               dataSource={filteredPromotions}
@@ -394,6 +399,7 @@ export default function PromotionManage({ onNavigate }) {
         cancelText="Đóng"
         okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
         width={620}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Alert

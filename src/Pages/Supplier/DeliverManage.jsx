@@ -253,7 +253,7 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Điều phối & chi tiết',
       key: 'actions',
       align: 'right',
-      width: '16%',
+      width: '21%',
       render: (_, record) => {
         const status = record.status;
         return (
@@ -443,7 +443,7 @@ export default function DeliverManage({ onNavigate }) {
                 showSizeChanger: true,
                 pageSizeOptions: [10, 20, 50, 100],
               }}
-              scroll={{ x: 960 }}
+              scroll={{ x: 1060 }}
             />
           </div>
         </section>

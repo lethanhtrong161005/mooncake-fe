@@ -451,6 +451,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Đơn hàng & SLA',
       dataIndex: 'orderNumber',
       key: 'orderNumber',
+      width: 180,
       render: (value, order) => {
         const sla = order.status === 'Pending'
           ? { date: order.responseDeadlineAtUtc || order.responseDeadlineAt, label: 'SLA phản hồi' }
@@ -474,8 +475,9 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Doanh nghiệp / người nhận',
       key: 'customer',
+      width: 170,
       render: (_, order) => (
-        <div className="max-w-[145px] space-y-0.5">
+        <div className="max-w-[160px] space-y-0.5">
           <div className="truncate font-medium text-sm text-[#231a18]">
             {order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}
           </div>
@@ -487,8 +489,9 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Hạng mục & bao bì',
       key: 'items',
+      width: 185,
       render: (_, order) => (
-        <div className="max-w-[155px] space-y-1 text-xs text-[#231a18]">
+        <div className="max-w-[175px] space-y-1 text-xs text-[#231a18]">
           {order.items?.map((item) => (
             <div key={item.variantId} className="tabular-nums leading-snug">
               {item.productName || 'Bánh Trung Thu'} ({item.variantName || 'Chuẩn'}) ×{' '}
@@ -510,6 +513,7 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Ngày giao',
       key: 'deliveryDate',
+      width: 130,
       render: (_, order) => (
         <div className="space-y-0.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
           {order.confirmedDeliveryDate ? (
@@ -537,6 +541,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Tổng tiền & cọc',
       key: 'totalAmount',
       align: 'right',
+      width: 145,
       render: (_, order) => (
         <div className="space-y-1 text-right whitespace-nowrap">
           <div className="font-semibold tabular-nums text-sm text-[#7d1322]">
@@ -557,6 +562,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 135,
       render: (value) => {
         const meta = STATUS_META[value] || { label: value, color: 'default' };
         return <Tag color={meta.color} className="m-0 whitespace-nowrap">{meta.label}</Tag>;
@@ -566,7 +572,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Thao tác xưởng',
       key: 'actions',
       align: 'right',
-      width: 176,
+      width: 195,
       render: (_, order) => {
         const allowedActions = order.allowedActions || [];
 
@@ -711,14 +717,15 @@ export default function OrderManage({ onNavigate }) {
           />
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4">
           <Table
             rowKey="id"
             loading={loading}
             columns={columns}
             dataSource={orders}
             size="middle"
-            scroll={{ x: 900 }}
+            tableLayout="fixed"
+            scroll={{ x: 1135 }}
             pagination={{
               current: orderQuery.page,
               pageSize: orderQuery.pageSize,
@@ -799,6 +806,7 @@ export default function OrderManage({ onNavigate }) {
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#2d5a43', borderColor: '#2d5a43' } }}
         width={660}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <div className="my-3 space-y-4 text-xs sm:text-sm text-[#231a18]">
@@ -882,7 +890,8 @@ export default function OrderManage({ onNavigate }) {
         }
         open={policyDrawerOpen}
         onClose={() => setPolicyDrawerOpen(false)}
-        width={560}
+        width={mobile ? '100%' : 560}
+        styles={{ wrapper: { maxWidth: '100vw' } }}
       >
         <Form form={policyForm} layout="vertical" onFinish={savePolicy}>
           <Alert
@@ -902,7 +911,7 @@ export default function OrderManage({ onNavigate }) {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="minLeadTimeDays"
                 label={<span className="text-xs font-medium">Thời gian chuẩn bị tối thiểu (ngày)</span>}
@@ -911,7 +920,7 @@ export default function OrderManage({ onNavigate }) {
                 <InputNumber min={1} max={30} className="w-full" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="vatTaxPercent"
                 label={<span className="text-xs font-medium">Thuế suất VAT (%)</span>}
@@ -978,7 +987,8 @@ export default function OrderManage({ onNavigate }) {
         }
         open={payoutDrawerOpen}
         onClose={() => setPayoutDrawerOpen(false)}
-        width={480}
+        width={mobile ? '100%' : 480}
+        styles={{ wrapper: { maxWidth: '100vw' } }}
       >
         <Form form={payoutAccountForm} layout="vertical" onFinish={savePayoutAccount}>
           <Alert
@@ -1042,6 +1052,7 @@ export default function OrderManage({ onNavigate }) {
         onCancel={() => setPackagingOpen(false)}
         footer={null}
         width={780}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         loading={packagingLoading}
         destroyOnHidden
       >
@@ -1049,7 +1060,7 @@ export default function OrderManage({ onNavigate }) {
           <Empty description="Đơn hàng không yêu cầu bao bì riêng." />
         ) : (
           <div className="space-y-5 pt-2">
-            <Descriptions bordered column={2} size="small">
+            <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small">
               <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 <Tag color="blue">{packaging.status}</Tag>
@@ -1060,7 +1071,7 @@ export default function OrderManage({ onNavigate }) {
                   <EyeOutlined /> Xem logo doanh nghiệp
                 </a>
               </Descriptions.Item>
-              <Descriptions.Item label="Thông điệp" span={2}>
+              <Descriptions.Item label="Thông điệp" span={{ xs: 1, sm: 2 }}>
                 {packaging.specialMessage || '—'}
               </Descriptions.Item>
             </Descriptions>

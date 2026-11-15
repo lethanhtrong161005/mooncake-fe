@@ -284,7 +284,7 @@ export default function ChatWindow({ thread, onBack, onClose, onMinimize, onNavi
               type="text"
               size="small"
               onClick={onBack}
-              className="md:hidden text-stone-500 hover:text-stone-800 -ml-1"
+              className="lg:hidden text-stone-500 hover:text-stone-800 -ml-1"
               aria-label="Quay lại"
             >
               ←

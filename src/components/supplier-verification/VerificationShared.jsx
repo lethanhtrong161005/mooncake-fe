@@ -63,18 +63,21 @@ export function VerificationDocuments({ documents = [], removable = false, reloa
         rowKey="documentId"
         dataSource={documents}
         pagination={false}
-        scroll={{ x: 550 }}
+        tableLayout="fixed"
+        scroll={{ x: 640 }}
         locale={{ emptyText: 'Chưa có tài liệu' }}
         columns={[
-          { title: 'Tài liệu', dataIndex: 'originalFileName' },
+          { title: 'Tài liệu', dataIndex: 'originalFileName', width: 200, ellipsis: true },
           {
             title: 'Loại',
             dataIndex: 'documentType',
+            width: 150,
             render: (value) => DOCUMENT_TYPES.find((type) => type.value === value)?.label || value,
           },
           {
             title: 'Trạng thái',
             dataIndex: 'uploadStatus',
+            width: 110,
             render: (value) => (
               <Tag color={value === 'Ready' ? 'success' : 'warning'}>
                 {{ Ready: 'Sẵn sàng', Uploading: 'Đang xử lý', Failed: 'Thất bại', Quarantined: 'Cách ly' }[value]
@@ -85,6 +88,7 @@ export function VerificationDocuments({ documents = [], removable = false, reloa
           {
             title: 'Hết hạn',
             dataIndex: 'expiresOn',
+            width: 110,
             render: (value) => (
               <span className="tabular-nums text-xs text-[#6c625e]">
                 {value || 'Không khai báo'}
@@ -94,6 +98,7 @@ export function VerificationDocuments({ documents = [], removable = false, reloa
           {
             title: 'Thao tác',
             key: 'actions',
+            width: 90,
             render: (_, row) => (
               <Space>
                 <Button
@@ -283,6 +288,7 @@ export function VerificationHistory({ profileId, revision }) {
         footer={null}
         onCancel={() => setSnapshot(null)}
         width={760}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <VerificationSnapshot profile={{ currentSubmission: snapshot }} />
