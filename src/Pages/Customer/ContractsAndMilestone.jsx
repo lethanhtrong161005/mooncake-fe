@@ -22,6 +22,7 @@ import {
 } from 'antd';
 import {
   AlertOutlined,
+  CarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
@@ -207,7 +208,18 @@ export default function ContractsAndMilestone({ onNavigate }) {
 
   useEffect(() => {
     const refreshContracts = (event) => {
-      if (!event || ['contract', 'payment'].includes(event.category) || /^(contract|payment)\./.test(event.type || '')) load();
+      const isDeliveryEvent = event?.category === 'delivery' || /^(delivery)\./.test(event?.type || '');
+      if (!event || ['contract', 'payment'].includes(event.category)
+        || /^(contract|payment)\./.test(event.type || '') || isDeliveryEvent) load();
+      if (isDeliveryEvent && milestonesDrawerOpen && selected?.id) {
+        Promise.all([
+          contractService.get(selected.id),
+          deliveryService.getByContract(selected.id),
+        ]).then(([details, deliveryData]) => {
+          setContractDetails(details);
+          setContractDeliveries(Array.isArray(deliveryData) ? deliveryData : deliveryData?.items || []);
+        }).catch((error) => message.error(errorMessage(error)));
+      }
     };
     signalRManager.on('MarketplaceChanged', refreshContracts);
     signalRManager.on('ReceiveNotification', refreshContracts);
@@ -215,7 +227,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
       signalRManager.off('MarketplaceChanged', refreshContracts);
       signalRManager.off('ReceiveNotification', refreshContracts);
     };
-  }, [load]);
+  }, [load, milestonesDrawerOpen, selected?.id]);
 
   const paymentByContract = useMemo(
     () => new Map(payments.filter((payment) => payment.contractId).map((payment) => [payment.contractId, payment])),
@@ -238,6 +250,9 @@ export default function ContractsAndMilestone({ onNavigate }) {
 
   const allContractDeliveriesArrived = contractDeliveries.length > 0
     && contractDeliveries.every((delivery) => delivery.status === 'Delivered');
+  const contractHasDeliveryInProgress = contractDeliveries.some((delivery) => (
+    !['Delivered', 'Failed', 'Returned'].includes(delivery.status)
+  ));
   const milestone2IsPaid = contractDetails?.milestones?.some((milestone) => (
     milestone.sequenceNumber === 2 && milestone.status === 'Paid'
   )) || false;
@@ -851,10 +866,14 @@ export default function ContractsAndMilestone({ onNavigate }) {
                 title: (
                   <Space>
                     <Text strong>{milestone.name}</Text>
-                    <Tag color={milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
-                      ? 'warning' : milestoneStatusMap[milestone.status]?.[0] || 'default'}>
-                      {milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
-                        ? 'Chờ thanh toán & nghiệm thu' : milestoneStatusMap[milestone.status]?.[1] || milestone.status}
+                    <Tag color={milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
+                      ? 'processing'
+                      : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
+                        ? 'warning' : milestoneStatusMap[milestone.status]?.[0] || 'default'}>
+                      {milestone.sequenceNumber === 3 && contractHasDeliveryInProgress
+                        ? 'Đang tiến hành giao hàng'
+                        : milestone.sequenceNumber === 3 && finalMilestoneReadyForSettlement && milestone.status !== 'Paid'
+                          ? 'Chờ thanh toán & nghiệm thu' : milestoneStatusMap[milestone.status]?.[1] || milestone.status}
                     </Tag>
                   </Space>
                 ),
@@ -918,6 +937,18 @@ export default function ContractsAndMilestone({ onNavigate }) {
                           ));
                           return (
                             <Space wrap>
+                              {milestone.sequenceNumber === 3 && contractDeliveries.length > 0 && (
+                                <Button
+                                  size="small"
+                                  icon={<CarOutlined />}
+                                  onClick={() => {
+                                    setMilestonesDrawerOpen(false);
+                                    onNavigate?.('giao-hang-pod');
+                                  }}
+                                >
+                                  Xem giao nhận
+                                </Button>
+                              )}
                               {canConfirm && (
                                 <>
                                   <Button

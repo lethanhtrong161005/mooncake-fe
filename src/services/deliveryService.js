@@ -52,6 +52,10 @@ export const deliveryService = {
     );
   },
 
+  async confirmReceipt(id) {
+    return unwrap(await apiClient.post(API_ENDPOINTS.DELIVERIES.CONFIRM_RECEIPT(id)));
+  },
+
   async updateCarrierInfo(id, payload) {
     return unwrap(await apiClient.put(API_ENDPOINTS.DELIVERIES.CARRIER_INFO(id), payload));
   },

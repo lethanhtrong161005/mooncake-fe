@@ -166,6 +166,7 @@ export const API_ENDPOINTS = {
     DETAILS: (id) => `/${API_VERSION}/deliveries/${id}`,
     CREATE: `/${API_VERSION}/deliveries`,
     STATUS: (id) => `/${API_VERSION}/deliveries/${id}/status`,
+    CONFIRM_RECEIPT: (id) => `/${API_VERSION}/deliveries/${id}/confirm-receipt`,
     CARRIER_INFO: (id) => `/${API_VERSION}/deliveries/${id}/carrier-info`,
     BY_CONTRACT: (contractId) => `/${API_VERSION}/deliveries/contract/${contractId}`,
     BY_ORDER: (orderId) => `/${API_VERSION}/deliveries/order/${orderId}`,
