@@ -28,6 +28,8 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -206,25 +208,43 @@ export default function ContractManage({ onNavigate }) {
       title: 'Số hợp đồng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
-      width: 175,
+      width: 165,
       render: (no) => (
-        <span className="font-mono text-sm font-semibold text-[#7d1322]">{no}</span>
+        <div className="max-w-[150px]">
+          <TruncatedTooltip
+            text={no}
+            className="font-mono text-sm font-semibold text-[#7d1322]"
+          />
+        </div>
       ),
     },
     {
       title: 'Tiêu đề / ghi chú',
       dataIndex: 'title',
       key: 'title',
-      render: (t) => (
-        <span className="font-medium text-[#231a18]">{t || 'Hợp đồng đơn hàng RFQ'}</span>
-      ),
+      width: 240,
+      render: (t, record) => {
+        const titleText = t || 'Hợp đồng đơn hàng RFQ';
+        const fullNote = record?.termsAndConditions
+          ? `${titleText} — ${record.termsAndConditions}`
+          : titleText;
+        return (
+          <div className="max-w-[225px]">
+            <TruncatedTooltip
+              text={titleText}
+              tooltipContent={fullNote}
+              className="font-medium text-sm text-[#231a18]"
+            />
+          </div>
+        );
+      },
     },
     {
       title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       key: 'totalValue',
       align: 'right',
-      width: 150,
+      width: 130,
       render: (amt) => (
         <span className="font-semibold tabular-nums text-[#7d1322] whitespace-nowrap">
           {money(amt)}
@@ -235,7 +255,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Hạn giao hàng',
       dataIndex: 'deliveryDeadline',
       key: 'deliveryDeadline',
-      width: 120,
+      width: 105,
       render: (d) => (
         <span className="text-xs tabular-nums text-[#6c625e] whitespace-nowrap">{d || '—'}</span>
       ),
@@ -243,18 +263,20 @@ export default function ContractManage({ onNavigate }) {
     {
       title: 'Chữ ký xưởng',
       key: 'signature',
+      width: 130,
       render: (_, r) => (
         r.signedBySupplierAt
-          ? <Tag color="success">Đã ký và gửi</Tag>
-          : <Tag color="warning">Cần ký hợp đồng</Tag>
+          ? <Tag color="success" className="m-0 whitespace-nowrap">Đã ký và gửi</Tag>
+          : <Tag color="warning" className="m-0 whitespace-nowrap">Cần ký hợp đồng</Tag>
       ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 140,
       render: (st) => (
-        <Tag color={statusMap[st]?.[0] || 'default'}>
+        <Tag color={statusMap[st]?.[0] || 'default'} className="m-0 whitespace-nowrap">
           {statusMap[st]?.[1] || st}
         </Tag>
       ),
@@ -262,24 +284,24 @@ export default function ContractManage({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'action',
-      align: 'right',
+      align: 'center',
+      width: 90,
       render: (_, record) => (
-        <Space size="small" wrap>
-          <Button
-            size="small"
-            icon={<FileTextOutlined />}
-            onClick={() => handleOpenMilestones(record)}
-          >
-            Xem hợp đồng
-          </Button>
-
-          {record.status === 'PendingSignature' && !record.signedBySupplierAt && (
-            <Button
-              type="primary"
-              size="small"
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-              icon={<SafetyCertificateOutlined />}
-              onClick={() => Modal.confirm({
+        <RowActionMenu
+          ariaLabel={`Thao tác hợp đồng ${record.contractNumber}`}
+          actions={[
+            {
+              key: 'view',
+              label: 'Xem hợp đồng',
+              icon: <FileTextOutlined />,
+              onClick: () => handleOpenMilestones(record),
+            },
+            {
+              key: 'sign',
+              label: 'Xác nhận hợp đồng',
+              icon: <SafetyCertificateOutlined />,
+              show: record.status === 'PendingSignature' && !record.signedBySupplierAt,
+              onClick: () => Modal.confirm({
                 title: `Xác nhận hợp đồng ${record.contractNumber}?`,
                 content: (
                   <Descriptions bordered size="small" column={1}>
@@ -297,38 +319,30 @@ export default function ContractManage({ onNavigate }) {
                     </Descriptions.Item>
                   </Descriptions>
                 ),
-                width: 640,
+                width: 560,
+                style: { maxWidth: 'calc(100vw - 24px)' },
                 okText: 'Xác nhận hợp đồng',
                 cancelText: 'Xem lại',
                 okButtonProps: { style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } },
                 onOk: () => handleConfirmContract(record),
-              })}
-            >
-              Xác nhận hợp đồng
-            </Button>
-          )}
-
-          {record.status === 'Active' && (
-            <>
-              <Button
-                size="small"
-                icon={<ClockCircleOutlined />}
-                onClick={() => handleOpenExtension(record)}
-              >
-                Xin gia hạn
-              </Button>
-              <Button
-                type="primary"
-                size="small"
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-                icon={<FileDoneOutlined />}
-                onClick={() => handleRequestFinalAcceptance(record)}
-              >
-                Yêu cầu nghiệm thu
-              </Button>
-            </>
-          )}
-        </Space>
+              }),
+            },
+            {
+              key: 'extend',
+              label: 'Xin gia hạn',
+              icon: <ClockCircleOutlined />,
+              show: record.status === 'Active',
+              onClick: () => handleOpenExtension(record),
+            },
+            {
+              key: 'accept',
+              label: 'Yêu cầu nghiệm thu',
+              icon: <FileDoneOutlined />,
+              show: record.status === 'Active',
+              onClick: () => handleRequestFinalAcceptance(record),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -380,6 +394,7 @@ export default function ContractManage({ onNavigate }) {
               rowKey="id"
               loading={loading}
               size="middle"
+              tableLayout="fixed"
               pagination={{
                 current: contractPage.query.page,
                 pageSize: contractPage.query.pageSize,
@@ -388,7 +403,7 @@ export default function ContractManage({ onNavigate }) {
                 showSizeChanger: true,
                 pageSizeOptions: [10, 20, 50, 100],
               }}
-              scroll={{ x: 950 }}
+              scroll={{ x: 1000 }}
             />
           </div>
         </section>
@@ -404,7 +419,7 @@ export default function ContractManage({ onNavigate }) {
           open={milestonesModalOpen}
           onCancel={() => setMilestonesModalOpen(false)}
           footer={(
-            <Space>
+            <Space wrap>
               {contractDetails?.status === 'Active' && m2Paid && (
                 <Button
                   type="primary"
@@ -419,6 +434,7 @@ export default function ContractManage({ onNavigate }) {
             </Space>
           )}
           width={760}
+          style={{ maxWidth: 'calc(100vw - 24px)' }}
           destroyOnHidden
         >
           {contractDetails && (
@@ -481,7 +497,7 @@ export default function ContractManage({ onNavigate }) {
                 )}
                 items={contractDetails.milestones?.map((m) => ({
                   title: (
-                    <Space>
+                    <Space wrap>
                       <Text strong className="text-[#231a18]">{m.name}</Text>
                       <Tag color={milestoneStatusMap[m.status]?.[0] || 'default'}>
                         {milestoneStatusMap[m.status]?.[1] || m.status}
@@ -576,6 +592,7 @@ export default function ContractManage({ onNavigate }) {
         okText="Gửi đơn xin gia hạn"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Alert
@@ -622,6 +639,7 @@ export default function ContractManage({ onNavigate }) {
         okText="Nộp Báo Cáo Tiến Độ"
         cancelText="Hủy"
         okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Form form={progressForm} layout="vertical">

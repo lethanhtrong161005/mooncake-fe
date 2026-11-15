@@ -7,6 +7,7 @@ import {
   Drawer,
   Empty,
   Form,
+  Grid,
   Image,
   Input,
   Space,
@@ -95,6 +96,7 @@ export default function DeliveryDetailDrawer({
   onUpdated,
   onOpenShareModal,
 }) {
+  const screens = Grid.useBreakpoint();
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -295,7 +297,7 @@ export default function DeliveryDetailDrawer({
           bordered
           size="small"
           column={1}
-          labelStyle={{ width: 190, backgroundColor: '#faf7f2', color: '#6c625e' }}
+          styles={{ label: { width: screens.sm ? 180 : 120, backgroundColor: '#faf7f2', color: '#6c625e' } }}
         >
           <Descriptions.Item label="Chứng từ tham chiếu">
             <Space wrap size="small">
@@ -398,7 +400,7 @@ export default function DeliveryDetailDrawer({
                   </Text>
                 </Space>
 
-                <Space size="small">
+                <Space wrap size="small">
                   <Tag
                     icon={<SafetyCertificateOutlined />}
                     color={proof.isVerified ? 'success' : 'default'}
@@ -461,7 +463,7 @@ export default function DeliveryDetailDrawer({
                 size="small"
                 column={1}
                 bordered
-                labelStyle={{ width: 150, backgroundColor: '#faf7f2', color: '#6c625e' }}
+                styles={{ label: { width: screens.sm ? 150 : 112, backgroundColor: '#faf7f2', color: '#6c625e' } }}
               >
                 <Descriptions.Item label="Người ký / nộp">
                   {proof.takenBy || 'Tài xế giao hàng'}
@@ -506,7 +508,8 @@ export default function DeliveryDetailDrawer({
     <Drawer
       open={open}
       onClose={onClose}
-      width={720}
+      width={screens.md ? 720 : '100%'}
+      styles={{ wrapper: { maxWidth: '100vw' }, body: { padding: screens.sm ? 24 : 14 } }}
       destroyOnClose={false}
       title={
         <div className="flex items-center gap-2 text-[#231a18]">
