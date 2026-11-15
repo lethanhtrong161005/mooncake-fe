@@ -10,12 +10,12 @@ import {
   Checkbox,
   DatePicker,
   Form,
+  Grid,
   Input,
   Modal,
   Result,
   Select,
   Skeleton,
-  Space,
   Steps,
   Typography,
   Upload,
@@ -36,6 +36,7 @@ import {
 
 export default function SupplierVerificationPanel({ onNavigate }) {
   const { message } = AntApp.useApp();
+  const screens = Grid.useBreakpoint();
   const { user, refreshCurrentUser } = useAuth();
   const notifications = useVerificationNotifications();
   const version = notifications?.workflowVersion || 0;
@@ -138,6 +139,7 @@ export default function SupplierVerificationPanel({ onNavigate }) {
         <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-4">
           <Steps
             size="small"
+            direction={screens.sm ? 'horizontal' : 'vertical'}
             current={status === 'Verified' ? 3 : status === 'Pending' ? 2 : enough ? 1 : 0}
             items={[
               { title: 'Thông tin' },
@@ -277,18 +279,19 @@ export default function SupplierVerificationPanel({ onNavigate }) {
                 </p>
               </div>
 
-              <Space wrap className="mb-4">
+              <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
                 <Select
                   aria-label="Loại tài liệu"
                   options={DOCUMENT_TYPES}
                   value={documentType}
                   onChange={setDocumentType}
-                  style={{ width: 270 }}
+                  className="w-full sm:w-[270px]"
                 />
                 <DatePicker
                   aria-label="Ngày hết hạn giấy tờ"
                   placeholder="Ngày hết hạn (nếu có)"
                   onChange={(_, value) => setExpiresOn(value || null)}
+                  className="w-full sm:w-auto"
                 />
                 <Upload
                   showUploadList={false}
@@ -313,7 +316,7 @@ export default function SupplierVerificationPanel({ onNavigate }) {
                     Tải giấy tờ lên
                   </Button>
                 </Upload>
-              </Space>
+              </div>
 
               <div className="rounded-xl border border-[#e4dcd3] bg-white p-2">
                 <VerificationDocuments documents={staged} removable reload={resource.reload} />
@@ -355,6 +358,8 @@ export default function SupplierVerificationPanel({ onNavigate }) {
       </section>
 
       <Modal
+        width={680}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         title={
           <span className="font-serif text-lg font-semibold text-[#231a18]">
             Kiểm tra hồ sơ trước khi gửi

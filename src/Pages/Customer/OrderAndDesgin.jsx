@@ -19,20 +19,17 @@ import {
   Table,
   Tag,
   Typography,
-  Upload,
   message,
 } from 'antd';
 import {
   ArrowRightOutlined,
   CheckCircleFilled,
-  CloudUploadOutlined,
   CreditCardOutlined,
   CrownOutlined,
   DeleteOutlined,
   ExclamationCircleOutlined,
   GiftOutlined,
   InfoCircleOutlined,
-  PictureOutlined,
   PlusOutlined,
   SafetyCertificateFilled,
   ShoppingCartOutlined,
@@ -48,6 +45,7 @@ import productService from '../../services/productService';
 import customPackagingService from '../../services/customPackagingService';
 import packagingTemplateService from '../../services/packagingTemplateService';
 import LiveBoxPreviewStudio from '../../components/packaging/LiveBoxPreviewStudio';
+import PackagingImageUpload from '../../components/packaging/PackagingImageUpload';
 import GoogleMapAddressPicker from '../../components/common/GoogleMapAddressPicker';
 import '../../styles/order-page.css';
 
@@ -120,7 +118,6 @@ export default function OrderAndDesgin({ onNavigate }) {
   const [submitting, setSubmitting] = useState(false);
   const [packagingTemplates, setPackagingTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Modals state
   const [termsModalOpen, setTermsModalOpen] = useState(false);
@@ -299,35 +296,6 @@ export default function OrderAndDesgin({ onNavigate }) {
     setOrderItems((prev) =>
       prev.map((item) => (item.key === key ? { ...item, [field]: value } : item))
     );
-  };
-
-  const handleUploadLogoFile = async (file) => {
-    if (!file) return false;
-    const isImage = file.type?.startsWith('image/') || file.name?.endsWith('.svg');
-    if (!isImage) {
-      message.error('Vui lòng chọn tệp hình ảnh (PNG, SVG, JPG, WEBP).');
-      return false;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      message.error('Kích thước logo không được vượt quá 10MB.');
-      return false;
-    }
-    setUploadingLogo(true);
-    try {
-      const res = await customPackagingService.uploadLogo(file);
-      const url = res?.url || res?.data?.url || res?.secureUrl;
-      if (url) {
-        form.setFieldValue('companyLogoUrl', url);
-        message.success('Đã tải ảnh logo doanh nghiệp thành công!');
-      } else {
-        message.error('Không nhận được đường dẫn logo từ máy chủ.');
-      }
-    } catch (err) {
-      message.error(errorMessage(err));
-    } finally {
-      setUploadingLogo(false);
-    }
-    return false;
   };
 
   const resolveIdempotencyKey = (payload) => {
@@ -1047,103 +1015,34 @@ export default function OrderAndDesgin({ onNavigate }) {
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-semibold text-stone-700">
-                          Logo doanh nghiệp (Đường dẫn HTTPS)
+                          Logo doanh nghiệp
                         </span>
                         <span className="text-[11px] text-stone-400">
                           PNG nền trong suốt, SVG, JPG (Tối đa 10MB)
                         </span>
                       </div>
 
-                      <Upload.Dragger
-                        name="logo"
-                        accept="image/*,.svg"
-                        multiple={false}
-                        showUploadList={false}
-                        beforeUpload={handleUploadLogoFile}
-                        disabled={uploadingLogo}
-                        className="bg-stone-50/70 hover:bg-amber-50/40 border-stone-200 hover:border-amber-500 rounded-xl transition-all"
-                        style={{ padding: '16px 12px' }}
+                      <Form.Item
+                        name="companyLogoUrl"
+                        className="mb-0"
+                        rules={[
+                          {
+                            required: true,
+                            message: 'Vui lòng tải lên ảnh logo doanh nghiệp.',
+                          },
+                        ]}
                       >
-                        {uploadingLogo ? (
-                          <div className="py-2 flex flex-col items-center gap-2">
-                            <Spin size="default" />
-                            <span className="text-xs font-semibold text-amber-800">
-                              Đang tải logo lên máy chủ lưu trữ...
-                            </span>
-                          </div>
-                        ) : companyLogoUrl ? (
-                          <div className="py-1 flex items-center justify-between gap-3 px-2">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={companyLogoUrl}
-                                alt="Logo doanh nghiệp đã chọn"
-                                className="w-14 h-14 object-contain bg-white rounded-lg p-1.5 border border-stone-200 shadow-2xs"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                              <div className="text-left">
-                                <span className="text-xs font-bold text-stone-900 flex items-center gap-1">
-                                  <CheckCircleFilled className="text-emerald-600" /> Đã gắn đường
-                                  dẫn logo
-                                </span>
-                                <span className="text-[11px] text-stone-500 line-clamp-1 block max-w-xs mt-0.5">
-                                  {companyLogoUrl}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              size="small"
-                              type="text"
-                              danger
-                              aria-label="Xóa logo đã chọn"
-                              icon={<DeleteOutlined />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                form.setFieldValue('companyLogoUrl', '');
-                              }}
-                            >
-                              Xóa
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="py-2 flex flex-col items-center gap-1.5">
-                            <CloudUploadOutlined className="text-2xl text-amber-700" />
-                            <span className="text-xs font-bold text-stone-800">
-                              Kéo thả hoặc nhấp để tải logo doanh nghiệp
-                            </span>
-                            <span className="text-[11px] text-stone-500">
-                              Khuyến khích dùng file PNG nền trong suốt để ép kim lên nắp hộp sắc
-                              nét nhất
-                            </span>
-                          </div>
-                        )}
-                      </Upload.Dragger>
-
-                      <div className="mt-2">
-                        <Form.Item
-                          name="companyLogoUrl"
-                          className="mb-0"
-                          rules={[
-                            {
-                              required: true,
-                              message: 'Vui lòng tải lên logo hoặc nhập đường dẫn HTTPS.',
-                            },
-                            {
-                              type: 'url',
-                              message: 'Vui lòng nhập định dạng URL hợp lệ (https://...).',
-                            },
-                          ]}
-                        >
-                          <Input
-                            size="middle"
-                            placeholder="Hoặc dán trực tiếp đường dẫn HTTPS: https://example.com/logo.png"
-                            style={{ borderRadius: 8, fontSize: 12 }}
-                            prefix={<PictureOutlined className="text-stone-400 mr-1" />}
-                            allowClear
-                          />
-                        </Form.Item>
-                      </div>
+                        <PackagingImageUpload
+                          uploader={(file) => customPackagingService.uploadLogo(file)}
+                          dragTitle="Kéo thả hoặc nhấp để tải logo doanh nghiệp"
+                          dragHint="Khuyến khích dùng file PNG nền trong suốt để ép kim lên nắp hộp sắc nét nhất"
+                          previewAlt="Logo doanh nghiệp đã chọn"
+                          successText="Đã tải lên logo doanh nghiệp"
+                          removeText="Xóa"
+                          previewWidth={56}
+                          previewHeight={56}
+                        />
+                      </Form.Item>
                     </div>
 
                     {/* Brand Color Pair */}

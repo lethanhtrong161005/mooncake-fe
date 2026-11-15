@@ -3,14 +3,13 @@ import {
   Table,
   Button,
   Tag,
-  Space,
   Pagination,
   message,
-  Tooltip,
 } from 'antd';
 import {
   CarOutlined,
   CameraOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
   MobileOutlined,
   FileDoneOutlined,
@@ -24,6 +23,8 @@ import deliveryService from '../../services/deliveryService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import { signalRManager } from '../../services/signalrService';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import '../../styles/journey-pages.css';
 
 const STATUS_TAG_MAP = {
@@ -83,9 +84,13 @@ export default function DeliveryPoD({ onNavigate }) {
       title: 'Mã chuyến giao',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
+      width: 170,
       render: (text, r) => (
-        <div>
-          <span className="journey-delivery-code">{text || r.deliveryCode || 'Chưa có mã'}</span>
+        <div className="max-w-[155px]">
+          <TruncatedTooltip
+            text={text || r.deliveryCode || 'Chưa có mã'}
+            className="journey-delivery-code font-semibold text-[#7d1322]"
+          />
           <div className="text-[11px] text-slate-400">
             {r.deliveryType === 'SelfArranged' ? 'Xưởng tự chở' : 'Đơn vị VC'}
           </div>
@@ -96,32 +101,57 @@ export default function DeliveryPoD({ onNavigate }) {
       title: 'Hợp đồng / đơn hàng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
-      render: (text, r) => (
-        <div>
-          <strong className="text-slate-800">{text || r.contractNo || 'HĐ-B2B'}</strong>
-          <div className="text-xs text-slate-500 truncate max-w-xs">{r.supplierName || 'Nhà cung cấp'}</div>
-        </div>
-      ),
+      width: 205,
+      render: (text, r) => {
+        const refCode = text || r.contractNo || 'HĐ-B2B';
+        const supplier = r.supplierName || 'Nhà cung cấp';
+        return (
+          <div className="max-w-[190px]">
+            <TruncatedTooltip
+              text={refCode}
+              tooltipContent={`${refCode} · ${supplier}`}
+              className="font-semibold text-slate-800"
+            />
+            <TruncatedTooltip
+              text={supplier}
+              tooltipContent={`${refCode} · ${supplier}`}
+              className="text-xs text-slate-500"
+            />
+          </div>
+        );
+      },
     },
     {
       title: 'Điểm nhận & người nhận',
       key: 'destination',
-      render: (_, r) => (
-        <div className="text-xs">
-          <div className="font-medium text-slate-800 truncate max-w-xs">{r.toAddress || 'Tại kho khách hàng'}</div>
-          <div className="text-slate-500">
-            {r.recipientName || 'Chưa cập nhật'}{r.recipientPhone ? ` · ${r.recipientPhone}` : ''}
+      width: 250,
+      render: (_, r) => {
+        const address = r.toAddress || 'Tại kho khách hàng';
+        const recipient = `${r.recipientName || 'Chưa cập nhật'}${r.recipientPhone ? ` · ${r.recipientPhone}` : ''}`;
+        return (
+          <div className="max-w-[235px] text-xs">
+            <TruncatedTooltip
+              text={address}
+              tooltipContent={`${recipient} — ${address}`}
+              className="font-medium text-slate-800"
+            />
+            <TruncatedTooltip
+              text={recipient}
+              tooltipContent={`${recipient} — ${address}`}
+              className="text-slate-500"
+            />
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Mã vận đơn',
       dataIndex: 'trackingCode',
       key: 'trackingCode',
+      width: 165,
       render: (t) => (
-        <Tag color="cyan" className="font-mono">
-          {t || 'Nội bộ xưởng'}
+        <Tag color="cyan" className="m-0 max-w-[150px] truncate align-bottom font-mono">
+          <TruncatedTooltip text={t || 'Nội bộ xưởng'} className="font-mono text-xs" />
         </Tag>
       ),
     },
@@ -129,8 +159,9 @@ export default function DeliveryPoD({ onNavigate }) {
       title: 'Ngày dự kiến',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
+      width: 120,
       render: (d, r) => (
-        <span className="text-xs text-slate-600">
+        <span className="whitespace-nowrap text-xs tabular-nums text-slate-600">
           <ClockCircleOutlined className="mr-1 text-slate-400" />
           {d || r.expectedDate || 'Đang cập nhật'}
         </span>
@@ -140,10 +171,11 @@ export default function DeliveryPoD({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 165,
       render: (status) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
         return (
-          <Tag color={config.color} className="font-semibold text-xs px-2.5 py-0.5">
+          <Tag color={config.color} className="m-0 whitespace-nowrap px-2.5 py-0.5 text-xs font-semibold">
             {config.text}
           </Tag>
         );
@@ -152,60 +184,45 @@ export default function DeliveryPoD({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'actions',
-      align: 'right',
+      align: 'center',
+      width: 84,
       render: (_, record) => {
         const isDelivered = record.status === 'Delivered' || record.status === 'delivered';
         return (
-          <Space size="small">
-            <Button
-              size="small"
-              icon={<CameraOutlined />}
-              onClick={() => handleOpenPod(record)}
-              className="border-amber-300 text-amber-800 hover:bg-amber-50 font-medium"
-            >
-              Xem PoD
-            </Button>
-
-            {!isDelivered && (
-              <Tooltip title="Mở giao diện tài xế nộp ảnh và chữ ký bàn giao">
-                <Button
-                  size="small"
-                  icon={<MobileOutlined />}
-                  onClick={() => {
-                    onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`);
-                  }}
-                  className="text-xs border-slate-300"
-                >
-                  Giao diện tài xế
-                </Button>
-              </Tooltip>
-            )}
-
-            {!isDelivered && record.status === 'AwaitingCustomerConfirmation' && (
-              <Button
-                size="small"
-                type="dashed"
-                className="text-emerald-700 border-emerald-400 hover:bg-emerald-50 font-medium text-xs"
-                onClick={() => handleConfirmReceived(record)}
-              >
-                Nhận hàng
-              </Button>
-            )}
-
-            {isDelivered && (
-              <Button
-                size="small"
-                type="primary"
-                icon={<FileDoneOutlined />}
-                className="bg-emerald-600 hover:bg-emerald-500 font-medium text-xs"
-                onClick={() => {
-                  onNavigate?.('hop-dong-tien-do');
-                }}
-              >
-                Xem mốc nghiệm thu
-              </Button>
-            )}
-          </Space>
+          <RowActionMenu
+            ariaLabel={`Thao tác chuyến giao ${record.deliveryNumber || record.deliveryCode || ''}`}
+            actions={[
+              {
+                key: 'pod',
+                label: 'Xem biên bản PoD',
+                icon: <CameraOutlined />,
+                onClick: () => handleOpenPod(record),
+              },
+              {
+                key: 'driver',
+                label: 'Mở giao diện tài xế',
+                icon: <MobileOutlined />,
+                show: !isDelivered,
+                onClick: () => onNavigate?.(`driver-delivery-view?id=${record.id || record.key}`),
+              },
+              {
+                key: 'confirm',
+                label: 'Xác nhận đã nhận hàng',
+                icon: <CheckCircleOutlined />,
+                show: !isDelivered && record.status === 'AwaitingCustomerConfirmation',
+                confirmTitle: `Xác nhận đã nhận đủ hàng cho chuyến ${record.deliveryNumber || ''}?`,
+                confirmContent: 'Hệ thống sẽ giải phóng đợt thanh toán Milestone tương ứng cho xưởng.',
+                onClick: () => handleConfirmReceived(record),
+              },
+              {
+                key: 'milestones',
+                label: 'Xem mốc nghiệm thu',
+                icon: <FileDoneOutlined />,
+                show: isDelivered,
+                onClick: () => onNavigate?.('hop-dong-tien-do'),
+              },
+            ]}
+          />
         );
       },
     },
@@ -244,7 +261,7 @@ export default function DeliveryPoD({ onNavigate }) {
             pagination={{ current: deliveryPage.query.page, pageSize: deliveryPage.query.pageSize,
               total: deliveryPage.totalCount, onChange: deliveryPage.setPage, showSizeChanger: true,
               pageSizeOptions: [10, 20, 50, 100] }}
-            scroll={{ x: 1200 }}
+            scroll={{ x: 1159 }}
             locale={{ emptyText: <div className="journey-empty"><CarOutlined /><strong>{deliveryPage.search || deliveryPage.query.status ? 'Không tìm thấy chuyến giao' : 'Chưa có chuyến giao'}</strong><p>{deliveryPage.search || deliveryPage.query.status ? 'Thử đổi từ khóa hoặc trạng thái.' : 'Khi xưởng tạo chuyến giao, hành trình sẽ xuất hiện ở đây.'}</p><Button onClick={deliveryPage.search || deliveryPage.query.status ? deliveryPage.reset : () => onNavigate?.('hop-dong-tien-do')}>{deliveryPage.search || deliveryPage.query.status ? 'Xóa bộ lọc' : 'Xem hợp đồng'}</Button></div> }}
           />
           </div>
