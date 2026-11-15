@@ -12,12 +12,14 @@ import {
   Space,
   Steps,
   Table,
+  Tabs,
   Tag,
   Typography,
   message,
 } from 'antd';
 import {
   AlertOutlined,
+  CheckCircleOutlined,
   ClockCircleOutlined,
   FileDoneOutlined,
   FileTextOutlined,
@@ -27,17 +29,21 @@ import {
   TruckOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
-import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
+import ContractSignModal from '../../components/contracts/ContractSignModal';
+import ContractFulfillmentTable from '../../components/contracts/ContractFulfillmentTable';
+import ContractBatchDeliveryModal from '../../components/contracts/ContractBatchDeliveryModal';
+import { renderMilestoneStatusTag, extractRejectionReason } from '../../components/contracts/milestoneUtils';
 import { signalRManager } from '../../services/signalrService';
 
 const { Paragraph, Text } = Typography;
 const { TextArea } = Input;
 
-const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
+const money = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => (
   error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.'
 );
@@ -55,18 +61,6 @@ const statusMap = {
   Cancelled: ['default', 'Đã hủy'],
 };
 
-const milestoneStatusMap = {
-  Pending: ['default', 'Chưa đến hạn'],
-  AwaitingPayment: ['warning', 'Khách đang thanh toán'],
-  Paid: ['success', 'Đã nhận tiền'],
-  InProgress: ['processing', 'Đang sản xuất'],
-  PendingReview: ['orange', 'Đang chờ khách duyệt'],
-  CompletedOnTime: ['success', 'Hoàn thành đúng hạn'],
-  CompletedLate: ['purple', 'Hoàn thành trễ hạn'],
-  Overdue: ['error', 'Quá hạn'],
-  Failed: ['error', 'Khách yêu cầu sửa'],
-};
-
 export default function ContractManage({ onNavigate }) {
   const contractPage = usePagedList(contractService.listMinePaged);
   const contracts = contractPage.items;
@@ -75,6 +69,15 @@ export default function ContractManage({ onNavigate }) {
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractDetails, setContractDetails] = useState(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+
+  // OTP Contract Signing Modal
+  const [signModalOpen, setSignModalOpen] = useState(false);
+  const [signContractTarget, setSignContractTarget] = useState(null);
+
+  const openSignModal = (record) => {
+    setSignContractTarget(record);
+    setSignModalOpen(true);
+  };
 
   const [milestonesModalOpen, setMilestonesModalOpen] = useState(false);
   const [extensionModalOpen, setExtensionModalOpen] = useState(false);
@@ -96,20 +99,6 @@ export default function ContractManage({ onNavigate }) {
     signalRManager.on('ReceiveNotification', refreshContracts);
     return () => signalRManager.off('ReceiveNotification', refreshContracts);
   }, [loadContracts]);
-
-  const handleConfirmContract = async (record) => {
-    setSelectedContract(record);
-    setActionLoading(true);
-    try {
-      await contractService.sign(record.id, '', true);
-      message.success(`Đã ký và gửi hợp đồng ${record.contractNumber} cho khách hàng xem lại.`);
-      await loadContracts();
-    } catch (error) {
-      message.error(errorMessage(error));
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleOpenMilestones = async (record) => {
     setSelectedContract(record);
@@ -241,13 +230,30 @@ export default function ContractManage({ onNavigate }) {
       ),
     },
     {
-      title: 'Xưởng xác nhận',
+      title: 'Xác nhận hợp đồng',
       key: 'signature',
-      render: (_, r) => (
-        r.signedBySupplierAt
-          ? <Tag color="success">Đã ký và gửi</Tag>
-          : <Tag color="warning">Cần ký hợp đồng</Tag>
-      ),
+      render: (_, r) => {
+        const supplierSigned = Boolean(r.signedBySupplierAt || r.isSignedBySupplier);
+        const customerSigned = Boolean(r.signedByCustomerAt || r.isSignedByCustomer);
+        return (
+          <Space direction="vertical" size={2}>
+            {supplierSigned ? (
+              <Tag color="success" icon={<CheckCircleOutlined />}>
+                Xưởng đã ký {r.signedBySupplierAt ? `lúc ${dayjs(r.signedBySupplierAt).format('HH:mm DD/MM/YYYY')}` : ''}
+              </Tag>
+            ) : (
+              <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ bạn ký</Tag>
+            )}
+            {customerSigned ? (
+              <Tag color="success" icon={<CheckCircleOutlined />}>
+                Khách đã ký {r.signedByCustomerAt ? `lúc ${dayjs(r.signedByCustomerAt).format('HH:mm DD/MM/YYYY')}` : ''}
+              </Tag>
+            ) : (
+              <Tag color="processing" icon={<ClockCircleOutlined />}>Chờ khách ký</Tag>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Trạng thái',
@@ -270,42 +276,23 @@ export default function ContractManage({ onNavigate }) {
             icon={<FileTextOutlined />}
             onClick={() => handleOpenMilestones(record)}
           >
-            Xem hợp đồng
+            Xem hợp đồng &amp; đối soát
           </Button>
 
-          {record.status === 'PendingSignature' && !record.signedBySupplierAt && (
-            <Button
-              type="primary"
-              size="small"
-              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-              icon={<SafetyCertificateOutlined />}
-              onClick={() => Modal.confirm({
-                title: `Xác nhận hợp đồng ${record.contractNumber}?`,
-                content: (
-                  <Descriptions bordered size="small" column={1}>
-                    <Descriptions.Item label="Hợp đồng">
-                      {record.title || 'Hợp đồng RFQ'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Tổng giá trị">
-                      {money(record.totalValue)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Hạn giao">
-                      {record.deliveryDeadline || '—'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Điều khoản">
-                      {record.termsAndConditions || 'Theo nội dung báo giá và tiến độ đã thống nhất.'}
-                    </Descriptions.Item>
-                  </Descriptions>
-                ),
-                width: 640,
-                okText: 'Xác nhận hợp đồng',
-                cancelText: 'Xem lại',
-                okButtonProps: { style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } },
-                onOk: () => handleConfirmContract(record),
-              })}
-            >
-              Xác nhận hợp đồng
-            </Button>
+          {record.status === 'PendingSignature' && (
+            !(record.signedBySupplierAt || record.isSignedBySupplier) ? (
+              <Button
+                type="primary"
+                size="small"
+                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => openSignModal(record)}
+              >
+                Ký hợp đồng
+              </Button>
+            ) : (
+              <Tag color="success">Đã ký (Chờ khách)</Tag>
+            )
           )}
 
           {record.status === 'Active' && (
@@ -412,13 +399,13 @@ export default function ContractManage({ onNavigate }) {
                   style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
                   onClick={() => setDeliveryModalOpen(true)}
                 >
-                  Tạo chuyến giao
+                  Tạo đợt giao mới
                 </Button>
               )}
               <Button onClick={() => setMilestonesModalOpen(false)}>Đóng</Button>
             </Space>
           )}
-          width={760}
+          width={840}
           destroyOnHidden
         >
           {contractDetails && (
@@ -454,99 +441,167 @@ export default function ContractManage({ onNavigate }) {
                 </Descriptions.Item>
               </Descriptions>
 
-              {contractDetails.pendingExtension && (
-                <Alert
-                  type="warning"
-                  showIcon
-                  icon={<ClockCircleOutlined />}
-                  title="Đang chờ khách phản hồi yêu cầu gia hạn"
-                  description={`Ngày xin gia hạn: ${contractDetails.pendingExtension.proposedDueDate}. Lý do: ${contractDetails.pendingExtension.reason}`}
-                />
-              )}
+              <Tabs
+                defaultActiveKey="milestones"
+                items={[
+                  {
+                    key: 'milestones',
+                    label: (
+                      <span>
+                        <FileDoneOutlined />
+                        Tiến độ các mốc
+                      </span>
+                    ),
+                    children: (
+                      <div className="space-y-4 pt-2">
+                        {contractDetails.pendingExtension && (
+                          <Alert
+                            type="warning"
+                            showIcon
+                            icon={<ClockCircleOutlined />}
+                            title="Đang chờ khách phản hồi yêu cầu gia hạn"
+                            description={`Ngày xin gia hạn: ${contractDetails.pendingExtension.proposedDueDate}. Lý do: ${contractDetails.pendingExtension.reason}`}
+                          />
+                        )}
 
-              {contractDetails.activeDispute && (
-                <Alert
-                  type="error"
-                  showIcon
-                  icon={<AlertOutlined />}
-                  title="Hợp đồng đang có khiếu nại tranh chấp"
-                  description={`Lý do: ${contractDetails.activeDispute.disputeReason}. Quỹ ký quỹ đang bị tạm giữ để quản trị viên giải quyết.`}
-                />
-              )}
+                        {contractDetails.activeDispute && (
+                          <Alert
+                            type="error"
+                            showIcon
+                            icon={<AlertOutlined />}
+                            title="Hợp đồng đang có khiếu nại tranh chấp"
+                            description={`Lý do: ${contractDetails.activeDispute.disputeReason}. Quỹ ký quỹ đang bị tạm giữ để quản trị viên giải quyết.`}
+                          />
+                        )}
 
-              <Steps
-                direction="vertical"
-                current={contractDetails.milestones?.findIndex(
-                  (m) => m.status === 'InProgress' || m.status === 'PendingReview',
-                )}
-                items={contractDetails.milestones?.map((m) => ({
-                  title: (
-                    <Space>
-                      <Text strong className="text-[#231a18]">{m.name}</Text>
-                      <Tag color={milestoneStatusMap[m.status]?.[0] || 'default'}>
-                        {milestoneStatusMap[m.status]?.[1] || m.status}
-                      </Tag>
-                    </Space>
-                  ),
-                  description: (
-                    <div className="mb-4 mt-1.5 space-y-2 rounded-xl border border-[#e4dcd3] bg-[#faf7f2] p-3.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                        <span>
-                          Số tiền:{' '}
-                          <strong className="tabular-nums text-[#7d1322]">{money(m.amount)}</strong>{' '}
-                          <span className="text-xs text-[#6c625e]">({m.percentage}%)</span>
-                        </span>
-                        <span className="text-xs tabular-nums text-[#6c625e]">
-                          Hạn chót: <strong className="text-[#231a18]">{m.dueDate || '—'}</strong>
-                        </span>
+                        <Steps
+                          direction="vertical"
+                          current={contractDetails.milestones?.findIndex(
+                            (m) => m.status === 'InProgress' || m.status === 'PendingReview',
+                          )}
+                          items={contractDetails.milestones?.map((m) => ({
+                            title: (
+                              <Space>
+                                <Text strong className="text-[#231a18]">{m.name}</Text>
+                                {renderMilestoneStatusTag(m)}
+                              </Space>
+                            ),
+                            description: (
+                              <div className="mb-4 mt-1.5 space-y-2 rounded-xl border border-[#e4dcd3] bg-[#faf7f2] p-3.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                                  <span>
+                                    Số tiền:{' '}
+                                    <strong className="tabular-nums text-[#7d1322]">{money(m.amount)}</strong>{' '}
+                                    <span className="text-xs text-[#6c625e]">({m.percentage}%)</span>
+                                  </span>
+                                  <span className="text-xs tabular-nums text-[#6c625e]">
+                                    Hạn chót: <strong className="text-[#231a18]">{m.dueDate || '—'}</strong>
+                                  </span>
+                                </div>
+
+                                {m.status === 'Failed' && (
+                                  <Alert
+                                    type="error"
+                                    showIcon
+                                    className="!my-2"
+                                    message="Khách hàng yêu cầu chỉnh sửa / từ chối mốc"
+                                    description={extractRejectionReason(m.progressNotes) || 'Chưa có thông tin lý do cụ thể.'}
+                                  />
+                                )}
+
+                                {m.progressNotes && (
+                                  <div>
+                                    <Text type="secondary" className="text-xs">Ghi chú tiến độ đã nộp</Text>
+                                    <Paragraph className="!my-1 rounded-lg border border-[#e4dcd3] bg-white p-2.5 text-sm">
+                                      {m.progressNotes}
+                                    </Paragraph>
+                                  </div>
+                                )}
+
+                                {m.evidenceUrls && m.evidenceUrls.length > 0 && (
+                                  <div>
+                                    <Text type="secondary" className="text-xs">Bằng chứng hình ảnh</Text>
+                                    <div className="mt-1.5 flex flex-wrap gap-2">
+                                      <Image.PreviewGroup>
+                                        {m.evidenceUrls.map((url, index) => (
+                                          <Image
+                                            key={index}
+                                            width={72}
+                                            height={72}
+                                            src={url}
+                                            style={{ objectFit: 'cover', borderRadius: 8 }}
+                                            fallback="https://placehold.co/100x100?text=Evidence"
+                                          />
+                                        ))}
+                                      </Image.PreviewGroup>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {!m.isDeposit && (
+                                  <div className="pt-1">
+                                    <Divider className="!my-2" />
+                                    {['Failed', 'Overdue'].includes(m.status) ? (
+                                      <Button
+                                        type="primary"
+                                        size="small"
+                                        icon={<ReloadOutlined />}
+                                        style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+                                        onClick={() => handleOpenProgressModal(m)}
+                                      >
+                                        Nộp lại tiến độ
+                                      </Button>
+                                    ) : ['InProgress', 'Pending'].includes(m.status) ? (
+                                      <Button
+                                        type="primary"
+                                        size="small"
+                                        icon={<UploadOutlined />}
+                                        style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+                                        onClick={() => handleOpenProgressModal(m)}
+                                      >
+                                        Báo cáo tiến độ &amp; Nộp ảnh bằng chứng
+                                      </Button>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+                            ),
+                          }))}
+                        />
                       </div>
-
-                      {m.progressNotes && (
-                        <div>
-                          <Text type="secondary" className="text-xs">Ghi chú tiến độ đã nộp</Text>
-                          <Paragraph className="!my-1 rounded-lg border border-[#e4dcd3] bg-white p-2.5 text-sm">
-                            {m.progressNotes}
-                          </Paragraph>
-                        </div>
-                      )}
-
-                      {m.evidenceUrls && m.evidenceUrls.length > 0 && (
-                        <div>
-                          <Text type="secondary" className="text-xs">Bằng chứng hình ảnh</Text>
-                          <div className="mt-1.5 flex flex-wrap gap-2">
-                            <Image.PreviewGroup>
-                              {m.evidenceUrls.map((url, index) => (
-                                <Image
-                                  key={index}
-                                  width={72}
-                                  height={72}
-                                  src={url}
-                                  style={{ objectFit: 'cover', borderRadius: 8 }}
-                                  fallback="https://placehold.co/100x100?text=Evidence"
-                                />
-                              ))}
-                            </Image.PreviewGroup>
-                          </div>
-                        </div>
-                      )}
-
-                      {!m.isDeposit && ['InProgress', 'Pending', 'Failed'].includes(m.status) && (
-                        <div className="pt-1">
-                          <Divider className="!my-2" />
-                          <Button
-                            type="primary"
-                            size="small"
-                            icon={<UploadOutlined />}
-                            style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-                            onClick={() => handleOpenProgressModal(m)}
-                          >
-                            Báo cáo tiến độ &amp; Nộp ảnh bằng chứng
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ),
-                }))}
+                    ),
+                  },
+                  {
+                    key: 'fulfillment',
+                    label: (
+                      <span>
+                        <TruckOutlined />
+                        Đối soát giao hàng &amp; PoD
+                      </span>
+                    ),
+                    children: (
+                      <div className="pt-2">
+                        <ContractFulfillmentTable
+                          contractId={contractDetails.id}
+                          contractNumber={contractDetails.contractNumber}
+                          extraActions={
+                            contractDetails?.status === 'Active' && m2Paid ? (
+                              <Button
+                                type="primary"
+                                size="small"
+                                icon={<TruckOutlined />}
+                                style={{ backgroundColor: '#8c1524', borderColor: '#8c1524' }}
+                                onClick={() => setDeliveryModalOpen(true)}
+                              >
+                                Tạo đợt giao mới
+                              </Button>
+                            ) : null
+                          }
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
               />
             </div>
           )}
@@ -554,14 +609,22 @@ export default function ContractManage({ onNavigate }) {
       )}
 
       {contractDetails && (
-        <CreateDeliveryModal
+        <ContractBatchDeliveryModal
           open={deliveryModalOpen}
           onClose={() => setDeliveryModalOpen(false)}
           onSuccess={() => loadContracts()}
-          contracts={[contractDetails]}
-          initialContractId={contractDetails.id}
+          contract={contractDetails}
         />
       )}
+
+      {/* Modal Ký Hợp Đồng B2B bằng OTP */}
+      <ContractSignModal
+        open={signModalOpen}
+        onClose={() => setSignModalOpen(false)}
+        onSuccess={() => loadContracts()}
+        contract={signContractTarget}
+        role="Supplier"
+      />
 
       <Modal
         title={
