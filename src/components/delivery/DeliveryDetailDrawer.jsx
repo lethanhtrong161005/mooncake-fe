@@ -40,7 +40,7 @@ const STATUS_META = {
   Confirmed: { text: 'Đã xác nhận', color: 'blue' },
   PickedUp: { text: 'Đã bốc lên xe', color: 'geekblue' },
   InTransit: { text: 'Đang vận chuyển', color: 'gold' },
-  AwaitingCustomerConfirmation: { text: 'Chờ khách đối soát PoD', color: 'cyan' },
+  AwaitingCustomerConfirmation: { text: 'Chờ khách xác nhận nhận hàng', color: 'cyan' },
   Delivered: { text: 'Đã giao hàng (PoD)', color: 'green' },
   Disputed: { text: 'Đang khiếu nại PoD', color: 'red' },
   Failed: { text: 'Giao thất bại', color: 'red' },
@@ -558,6 +558,15 @@ export default function DeliveryDetailDrawer({
                 showIcon
                 className="mt-3 text-xs"
                 message="Chuyến giao này đang có khiếu nại PoD từ khách hàng. Bạn có thể chia sẻ lại link cho tài xế bổ sung chứng từ hoặc phối hợp xử lý trên trang đơn hàng."
+              />
+            )}
+
+            {current.status === 'AwaitingCustomerConfirmation' && (
+              <Alert
+                type="info"
+                showIcon
+                className="mt-3 text-xs"
+                message="Đã có bằng chứng bàn giao. Chuyến giao đang chờ khách hàng xác nhận đã nhận hàng."
               />
             )}
 

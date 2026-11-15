@@ -30,6 +30,7 @@ import FilterBar from '../../components/common/FilterBar';
 import usePagedList from '../../hooks/usePagedList';
 import contractService from '../../services/contractService';
 import deliveryService from '../../services/deliveryService';
+import { signalRManager } from '../../services/signalrService';
 import '../../styles/supplier-deliveries.css';
 
 const STATUS_TAG_MAP = {
@@ -37,7 +38,7 @@ const STATUS_TAG_MAP = {
   Confirmed: { text: 'Đã xác nhận', color: 'blue' },
   PickedUp: { text: 'Đã bốc lên xe', color: 'geekblue' },
   InTransit: { text: 'Đang vận chuyển', color: 'gold' },
-  AwaitingCustomerConfirmation: { text: 'Chờ khách đối soát PoD', color: 'cyan' },
+  AwaitingCustomerConfirmation: { text: 'Chờ khách xác nhận nhận hàng', color: 'cyan' },
   Delivered: { text: 'Đã giao hàng (PoD)', color: 'green' },
   Disputed: { text: 'Đang khiếu nại PoD', color: 'red' },
   Failed: { text: 'Giao thất bại', color: 'red' },
@@ -99,6 +100,14 @@ export default function DeliverManage({ onNavigate }) {
       ignore = true;
     };
   }, [message]);
+
+  useEffect(() => {
+    const refreshDeliveryStatus = (event) => {
+      if (event?.category === 'delivery' || event?.type?.startsWith('delivery.')) fetchData();
+    };
+    signalRManager.on('ReceiveNotification', refreshDeliveryStatus);
+    return () => signalRManager.off('ReceiveNotification', refreshDeliveryStatus);
+  }, [fetchData]);
 
   const metrics = useMemo(() => {
     const inFlight = new Set(['Pending', 'Confirmed', 'PickedUp', 'InTransit']);

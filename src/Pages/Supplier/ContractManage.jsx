@@ -24,12 +24,14 @@ import {
   InfoCircleOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
+  TruckOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
 import { signalRManager } from '../../services/signalrService';
 
 const { Paragraph, Text } = Typography;
@@ -72,6 +74,7 @@ export default function ContractManage({ onNavigate }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractDetails, setContractDetails] = useState(null);
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
 
   const [milestonesModalOpen, setMilestonesModalOpen] = useState(false);
   const [extensionModalOpen, setExtensionModalOpen] = useState(false);
@@ -81,6 +84,9 @@ export default function ContractManage({ onNavigate }) {
   const [progressForm] = Form.useForm();
 
   const loadContracts = contractPage.refresh;
+  const m2Paid = contractDetails?.milestones?.some(
+    (milestone) => !milestone.isDeposit && milestone.sequenceNumber === 2 && milestone.status === 'Paid',
+  );
   useEffect(() => {
     if (contractPage.error) message.error(errorMessage(contractPage.error));
   }, [contractPage.error]);
@@ -397,7 +403,21 @@ export default function ContractManage({ onNavigate }) {
           }
           open={milestonesModalOpen}
           onCancel={() => setMilestonesModalOpen(false)}
-          footer={<Button onClick={() => setMilestonesModalOpen(false)}>Đóng</Button>}
+          footer={(
+            <Space>
+              {contractDetails?.status === 'Active' && m2Paid && (
+                <Button
+                  type="primary"
+                  icon={<TruckOutlined />}
+                  style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
+                  onClick={() => setDeliveryModalOpen(true)}
+                >
+                  Tạo chuyến giao
+                </Button>
+              )}
+              <Button onClick={() => setMilestonesModalOpen(false)}>Đóng</Button>
+            </Space>
+          )}
           width={760}
           destroyOnHidden
         >
@@ -531,6 +551,16 @@ export default function ContractManage({ onNavigate }) {
             </div>
           )}
         </Modal>
+      )}
+
+      {contractDetails && (
+        <CreateDeliveryModal
+          open={deliveryModalOpen}
+          onClose={() => setDeliveryModalOpen(false)}
+          onSuccess={() => loadContracts()}
+          contracts={[contractDetails]}
+          initialContractId={contractDetails.id}
+        />
       )}
 
       <Modal

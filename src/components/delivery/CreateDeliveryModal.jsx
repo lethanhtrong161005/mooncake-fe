@@ -19,7 +19,7 @@ const parseTerms = (value) => {
   try { return JSON.parse(value) || {}; } catch { return {}; }
 };
 
-export default function CreateDeliveryModal({ open, onClose, onSuccess, contracts = [] }) {
+export default function CreateDeliveryModal({ open, onClose, onSuccess, contracts = [], initialContractId }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [loadingContract, setLoadingContract] = useState(false);
@@ -28,8 +28,12 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
   useEffect(() => {
     if (!open) return;
     form.resetFields();
-    form.setFieldsValue({ deliveryType: 'SelfArranged', fromAddress: DEFAULT_FROM_ADDRESS });
-  }, [form, open]);
+    form.setFieldsValue({
+      deliveryType: 'SelfArranged',
+      fromAddress: DEFAULT_FROM_ADDRESS,
+      ...(initialContractId ? { contractId: initialContractId } : {}),
+    });
+  }, [form, initialContractId, open]);
 
   useEffect(() => {
     if (!open || !selectedContractId) return undefined;
@@ -151,11 +155,17 @@ export default function CreateDeliveryModal({ open, onClose, onSuccess, contract
               label="Phương thức vận chuyển"
               rules={[{ required: true }]}
             >
-              <Radio.Group buttonStyle="solid" className="w-full">
-                <Radio.Button value="SelfArranged" className="w-1/2 text-center">
+              <Radio.Group buttonStyle="solid" style={{ display: 'flex', width: '100%' }}>
+                <Radio.Button
+                  value="SelfArranged"
+                  style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center', whiteSpace: 'nowrap' }}
+                >
                   Xưởng tự chở
                 </Radio.Button>
-                <Radio.Button value="PlatformManaged" className="w-1/2 text-center">
+                <Radio.Button
+                  value="PlatformManaged"
+                  style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center', whiteSpace: 'nowrap' }}
+                >
                   Đơn vị vận chuyển
                 </Radio.Button>
               </Radio.Group>

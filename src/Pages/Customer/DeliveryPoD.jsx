@@ -23,6 +23,7 @@ import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import deliveryService from '../../services/deliveryService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import { signalRManager } from '../../services/signalrService';
 import '../../styles/journey-pages.css';
 
 const STATUS_TAG_MAP = {
@@ -30,6 +31,7 @@ const STATUS_TAG_MAP = {
   Confirmed: { text: 'Đã xác nhận', color: 'blue' },
   PickedUp: { text: 'Đã bốc lên xe', color: 'geekblue' },
   InTransit: { text: 'Đang vận chuyển', color: 'gold' },
+  AwaitingCustomerConfirmation: { text: 'Chờ bạn xác nhận nhận hàng', color: 'cyan' },
   Delivered: { text: 'Đã bàn giao (PoD)', color: 'green' },
   Failed: { text: 'Giao thất bại', color: 'red' },
   Returned: { text: 'Đã chuyển hoàn', color: 'volcano' },
@@ -47,6 +49,13 @@ export default function DeliveryPoD({ onNavigate }) {
 
   const fetchDeliveries = deliveryPage.refresh;
   useEffect(() => { if (deliveryPage.error) message.error(deliveryPage.error.message); }, [deliveryPage.error]);
+  useEffect(() => {
+    const refreshOnDeliveryCreated = (event) => {
+      if (event?.category === 'delivery' || event?.type?.startsWith('delivery.')) fetchDeliveries();
+    };
+    signalRManager.on('ReceiveNotification', refreshOnDeliveryCreated);
+    return () => signalRManager.off('ReceiveNotification', refreshOnDeliveryCreated);
+  }, [fetchDeliveries]);
 
   const handleOpenPod = async (record) => {
     setSelectedDelivery(record);
@@ -61,11 +70,11 @@ export default function DeliveryPoD({ onNavigate }) {
 
   const handleConfirmReceived = async (record) => {
     try {
-      await deliveryService.updateStatus(record.id || record.key, 'Delivered', 'Khách hàng đối soát và xác nhận đã nhận đủ hàng.');
+      await deliveryService.confirmReceipt(record.id || record.key);
       message.success('Đã xác nhận nhận đủ hàng nguyên vẹn! Hệ thống đã kích hoạt giải phóng đợt thanh toán Milestone tương ứng.');
       fetchDeliveries();
-    } catch {
-      message.error('Không thể cập nhật trạng thái nhận hàng.');
+    } catch (error) {
+      message.error(error.response?.data?.message || error.message || 'Không thể cập nhật trạng thái nhận hàng.');
     }
   };
 
@@ -172,7 +181,7 @@ export default function DeliveryPoD({ onNavigate }) {
               </Tooltip>
             )}
 
-            {!isDelivered && (record.status === 'InTransit' || record.status === 'in_transit') && (
+            {!isDelivered && record.status === 'AwaitingCustomerConfirmation' && (
               <Button
                 size="small"
                 type="dashed"
