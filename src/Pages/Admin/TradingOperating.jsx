@@ -10,7 +10,6 @@ import {
   Modal,
   Descriptions,
   message,
-  Typography,
   Alert,
   Form,
   InputNumber,
@@ -19,16 +18,19 @@ import {
   Col,
   Statistic,
   Image,
+  Tooltip,
 } from 'antd';
 import {
   FileProtectOutlined,
   DollarCircleOutlined,
   WarningOutlined,
   BankOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import { adminService } from '../../services/adminService';
 import { contractService } from '../../services/contractService';
+import deliveryService from '../../services/deliveryService';
 import orderService from '../../services/orderService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -40,12 +42,18 @@ export default function TradingOperating({ onNavigate }) {
   const [loading, setLoading] = useState(false);
 
   // Contract disputes & monitoring state (Legacy B2B)
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const contractDisputePage = usePagedList(adminService.getDisputesPaged, { syncUrl: false });
   const disputes = contractDisputePage.items.map((d) => ({
     key: d.id, id: d.id, disputeId: d.id ? `DISP-${d.id.slice(0, 8)}` : 'DISP',
     contractNo: d.contractNumber || 'HĐ-B2B', buyer: d.customerName || 'Bên mua',
     seller: d.supplierName || 'Bên bán', reason: d.disputeReason || 'Tranh chấp hợp đồng',
-    escrowAmount: `${Number(d.heldEscrowAmount || 0).toLocaleString('vi-VN')} ₫`,
+    escrowAmount: `${Number(d.heldEscrowAmount || 0).toLocaleString('vi-VN')} ₫`,
     status: (d.status || 'pending').toLowerCase(), severity: 'high',
     createdAt: d.raisedAt || d.createdAt,
   }));
@@ -78,6 +86,8 @@ export default function TradingOperating({ onNavigate }) {
   const [disputeRefundAmount, setDisputeRefundAmount] = useState(0);
   const [disputeNotes, setDisputeNotes] = useState('');
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputePodProofs, setDisputePodProofs] = useState([]);
+  const [disputePodLoading, setDisputePodLoading] = useState(false);
 
   const [activeRefundCase, setActiveRefundCase] = useState(null);
   const [refundCaseApprove, setRefundCaseApprove] = useState(true);
@@ -108,7 +118,7 @@ export default function TradingOperating({ onNavigate }) {
           contractNo: c.contractNumber || c.contractNo || `HD-2025-${idx + 1}`,
           buyer: c.customerName || c.buyer || 'Khách hàng',
           seller: c.supplierName || c.seller || 'Xưởng Bánh',
-          value: typeof c.totalAmount === 'number' ? `${c.totalAmount.toLocaleString('vi-VN')} ₫` : c.value || '0 ₫',
+          value: typeof c.totalAmount === 'number' ? `${c.totalAmount.toLocaleString('vi-VN')} ₫` : c.value || '0 ₫',
           progress: c.status || 'Active',
           escrowStatus: c.escrowStatus || 'Bảo chứng an toàn',
           status: (c.status || 'active').toLowerCase(),
@@ -127,10 +137,11 @@ export default function TradingOperating({ onNavigate }) {
     payoutPage.refresh();
     deliveryDisputePage.refresh();
     contractDisputePage.refresh();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refundPage.refresh, payoutPage.refresh, deliveryDisputePage.refresh, contractDisputePage.refresh]);
 
   useEffect(() => {
-    loadData();
+    void Promise.resolve().then(loadData);
   }, [loadData]);
 
   // Legacy dispute modal handler
@@ -172,9 +183,24 @@ export default function TradingOperating({ onNavigate }) {
   // Direct Bulk Order Dispute Modal Handler
   const handleOpenDirectDisputeModal = (dispute) => {
     setActiveDisputeItem(dispute);
+    setDisputePodProofs([]);
     setDisputeResolutionAction('ReleasePayout');
-    setDisputeRefundAmount(0);
+    setDisputeRefundAmount(dispute.orderPaidAmount || 0);
     setDisputeNotes('');
+
+    if (dispute.orderId) {
+      setDisputePodLoading(true);
+      deliveryService.getByOrder(dispute.orderId)
+        .then((deliveries) => {
+          const list = Array.isArray(deliveries) ? deliveries : [deliveries];
+          const proofs = list
+            .flatMap((d) => d?.proofs || [])
+            .filter(Boolean);
+          setDisputePodProofs(proofs);
+        })
+        .catch(() => setDisputePodProofs([]))
+        .finally(() => setDisputePodLoading(false));
+    }
   };
 
   const handleResolveDirectDispute = async () => {
@@ -204,7 +230,8 @@ export default function TradingOperating({ onNavigate }) {
   const handleOpenRefundCaseModal = (rc) => {
     setActiveRefundCase(rc);
     setRefundCaseApprove(true);
-    setRefundApprovedAmount(rc.requestedAmount || 0);
+    const suggested = rc.suggestedRefundAmount ?? rc.proposedRefundAmount ?? rc.requestedAmount ?? 0;
+    setRefundApprovedAmount(suggested);
     setRefundReferenceCode(`REF-SIM-${Date.now().toString().slice(-6)}`);
     setRefundCaseNotes('Phê duyệt hoàn tiền theo quy chế bảo vệ đơn hàng số lượng lớn.');
   };
@@ -439,9 +466,24 @@ export default function TradingOperating({ onNavigate }) {
       title: 'Trạng Thái',
       dataIndex: 'status',
       key: 'status',
-      render: (st) => {
+      render: (st, record) => {
+        if (st === 'AwaitingSupplierRebuttal') {
+          const deadline = record.rebuttalDeadlineAtUtc || record.rebuttalDeadlineAt;
+          const isOverdue = deadline ? new Date(deadline).getTime() <= now : false;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <Tag color="warning">Chờ xưởng phản biện</Tag>
+              {deadline && (
+                <span style={{ fontSize: 11, color: isOverdue ? '#cf1322' : '#d48806' }}>
+                  {isOverdue ? 'Đã quá hạn 48h' : `Đến: ${new Date(deadline).toLocaleString('vi-VN')}`}
+                </span>
+              )}
+            </div>
+          );
+        }
+        if (st === 'Open') return <Tag color="processing">Đã phản biện / Đang xử lý</Tag>;
         if (st === 'Reported' || st === 'Investigating') return <Tag color="error">Đang Tranh Chấp</Tag>;
-        if (st === 'Resolved') return <Tag color="success">Đã Xử Lý</Tag>;
+        if (st?.startsWith('Resolved')) return <Tag color="success">Đã Xử Lý</Tag>;
         return <Tag>{st}</Tag>;
       },
     },
@@ -454,17 +496,34 @@ export default function TradingOperating({ onNavigate }) {
     {
       title: 'Hành Động',
       key: 'action',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          danger={record.status !== 'Resolved'}
-          icon={<FileProtectOutlined />}
-          onClick={() => handleOpenDirectDisputeModal(record)}
-        >
-          {record.status === 'Resolved' ? 'Xem Kết Quả' : 'Phán Quyết'}
-        </Button>
-      ),
+      render: (_, record) => {
+        const deadline = record.rebuttalDeadlineAtUtc || record.rebuttalDeadlineAt;
+        const hasRebuttal = Boolean(
+          record.supplierRebuttalNotes ||
+          record.supplierRebuttalAt ||
+          record.supplierRebuttalAtUtc ||
+          record.status === 'Open',
+        );
+        const isDeadlinePassed = deadline ? new Date(deadline).getTime() <= now : false;
+        const isLocked = record.status === 'AwaitingSupplierRebuttal' && !hasRebuttal && !isDeadlinePassed;
+        const lockText = isLocked
+          ? `Chờ xưởng phản biện đến ${deadline ? new Date(deadline).toLocaleString('vi-VN') : ''}`
+          : '';
+
+        return (
+          <Tooltip title={lockText || undefined}>
+            <Button
+              type="primary"
+              size="small"
+              danger={!record.status?.startsWith('Resolved') && !isLocked}
+              icon={<FileProtectOutlined />}
+              onClick={() => handleOpenDirectDisputeModal(record)}
+            >
+              {record.status?.startsWith('Resolved') ? 'Xem Kết Quả' : isLocked ? 'Chờ phản biện' : 'Phán Quyết'}
+            </Button>
+          </Tooltip>
+        );
+      },
     },
   ];
 
@@ -922,84 +981,239 @@ export default function TradingOperating({ onNavigate }) {
       )}
 
       {/* Modal Direct Bulk Order Delivery Dispute Resolution */}
-      {activeDisputeItem && (
-        <Modal
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cf1322' }}>
-              <WarningOutlined />
-              <span>Phán Quyết Khiếu Nại Giao Hàng: {activeDisputeItem.orderNumber || activeDisputeItem.id.slice(0, 8)}</span>
-            </div>
-          }
-          open={!!activeDisputeItem}
-          onCancel={() => setActiveDisputeItem(null)}
-          onOk={handleResolveDirectDispute}
-          confirmLoading={disputeSubmitting}
-          okText="Ban Hành Phán Quyết"
-          okType="danger"
-          width={650}
-        >
-          <Descriptions bordered size="small" column={2} style={{ marginTop: 12 }}>
-            <Descriptions.Item label="Mã Đơn">{activeDisputeItem.orderNumber || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Loại Vấn Đề">{activeDisputeItem.issueType}</Descriptions.Item>
-            <Descriptions.Item label="Nội Dung Khiếu Nại" span={2}>
-              {activeDisputeItem.description}
-            </Descriptions.Item>
-            {activeDisputeItem.evidenceUrls && activeDisputeItem.evidenceUrls.length > 0 && (
-              <Descriptions.Item label="Ảnh Bằng Chứng" span={2}>
-                <Space size={8}>
-                  {activeDisputeItem.evidenceUrls.map((url, idx) => (
-                    <Image key={idx} src={url} width={80} height={80} style={{ objectFit: 'cover', borderRadius: 4 }} />
-                  ))}
-                </Space>
-              </Descriptions.Item>
+      {activeDisputeItem && (() => {
+        const deadline = activeDisputeItem.rebuttalDeadlineAtUtc || activeDisputeItem.rebuttalDeadlineAt;
+        const hasRebuttal = Boolean(
+          activeDisputeItem.supplierRebuttalNotes ||
+          activeDisputeItem.supplierRebuttalAt ||
+          activeDisputeItem.supplierRebuttalAtUtc ||
+          activeDisputeItem.status === 'Open',
+        );
+        const isDeadlinePassed = deadline ? new Date(deadline).getTime() <= now : false;
+        const isAwaitingRebuttal = activeDisputeItem.status === 'AwaitingSupplierRebuttal';
+        const isResolutionLocked = isAwaitingRebuttal && !hasRebuttal && !isDeadlinePassed;
+        const deadlineFormatted = deadline ? new Date(deadline).toLocaleString('vi-VN') : '';
+        const lockNotice = `Chờ xưởng phản biện đến ${deadlineFormatted}`;
+        const isResolved = activeDisputeItem.status?.startsWith('Resolved');
+
+        return (
+          <Modal
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#cf1322' }}>
+                <WarningOutlined />
+                <span>Phán Quyết Khiếu Nại Giao Hàng: {activeDisputeItem.orderNumber || activeDisputeItem.id.slice(0, 8)}</span>
+              </div>
+            }
+            open={!!activeDisputeItem}
+            onCancel={() => setActiveDisputeItem(null)}
+            onOk={handleResolveDirectDispute}
+            confirmLoading={disputeSubmitting}
+            okText={isResolutionLocked ? 'Đang Chờ Phản Biện' : 'Ban Hành Phán Quyết'}
+            okType="danger"
+            okButtonProps={{ disabled: isResolutionLocked || isResolved, title: isResolutionLocked ? lockNotice : undefined }}
+            width={820}
+          >
+            {isResolutionLocked && (
+              <Alert
+                type="warning"
+                showIcon
+                icon={<ClockCircleOutlined />}
+                style={{ marginTop: 8, marginBottom: 12 }}
+                message={lockNotice}
+                description="Khiếu nại đang ở trạng thái AwaitingSupplierRebuttal. Xưởng có thời hạn 48 giờ để nộp phản biện và bằng chứng. Nút phân xử bị khoá cho đến khi xưởng nộp phản biện hoặc thời hạn phản biện kết thúc."
+              />
             )}
-          </Descriptions>
 
-          <Form layout="vertical" style={{ marginTop: 16 }}>
-            <Form.Item label="Hình Thức Giải Quyết Tranh Chấp">
-              <Radio.Group
-                value={disputeResolutionAction}
-                onChange={(e) => setDisputeResolutionAction(e.target.value)}
-              >
-                <Space direction="vertical">
-                  <Radio value="ReleasePayout">
-                    <strong>Bác bỏ khiếu nại & Giải phóng thanh toán:</strong> Người mua xác nhận sai / ảnh PoD đầy đủ, giải phóng tiền cho NCC.
-                  </Radio>
-                  <Radio value="FullRefund">
-                    <strong>Chấp thuận Hoàn Tiền 100%:</strong> Xác định lỗi do NCC / Hàng vỡ hỏng hoàn toàn, hoàn tiền về ví người mua.
-                  </Radio>
-                  <Radio value="PartialRefund">
-                    <strong>Hoàn tiền một phần (Hòa giải):</strong> Hoàn một phần giá trị cho người mua, phần còn lại giải phóng cho NCC.
-                  </Radio>
-                </Space>
-              </Radio.Group>
-            </Form.Item>
+            <Descriptions bordered size="small" column={2} style={{ marginTop: 12 }}>
+              <Descriptions.Item label="Mã Đơn">{activeDisputeItem.orderNumber || 'N/A'}</Descriptions.Item>
+              <Descriptions.Item label="Trạng Thái">
+                <Tag color={isAwaitingRebuttal ? 'warning' : isResolved ? 'success' : 'processing'}>
+                  {activeDisputeItem.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Số Tiền Đã Cọc / Thanh Toán" span={2}>
+                <strong style={{ color: '#7d1322' }}>
+                  {(activeDisputeItem.orderPaidAmount || 0).toLocaleString('vi-VN')} ₫
+                </strong>
+              </Descriptions.Item>
+            </Descriptions>
 
-            {disputeResolutionAction === 'PartialRefund' && (
-              <Form.Item label="Số Tiền Hoàn Trả Khách Hàng (VND)">
-                <InputNumber
-                  min={1000}
-                  step={100000}
-                  value={disputeRefundAmount}
-                  onChange={(v) => setDisputeRefundAmount(v || 0)}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\$\s?|(,*)/g, '')}
-                  style={{ width: '100%' }}
+            {/* Chi tiết khiếu nại hiển thị phản biện + bằng chứng của xưởng cạnh ảnh PoD và ảnh của khách */}
+            <div style={{ marginTop: 14, marginBottom: 14 }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#262626' }}>
+                Đối chiếu chứng từ &amp; bằng chứng ba bên:
+              </div>
+              <Row gutter={[12, 12]}>
+                {/* 1. Ảnh & Yêu cầu của khách hàng */}
+                <Col xs={24} md={8}>
+                  <Card
+                    size="small"
+                    title={<span style={{ color: '#cf1322', fontSize: 12 }}>1. Khách hàng khiếu nại</span>}
+                    style={{ height: '100%', borderColor: '#ffa39e', backgroundColor: '#fff1f0' }}
+                  >
+                    <div style={{ fontSize: 12, marginBottom: 8 }}>
+                      <div><strong>Vấn đề:</strong> {activeDisputeItem.issueType}</div>
+                      <div style={{ color: '#595959', marginTop: 4 }}>{activeDisputeItem.description}</div>
+                    </div>
+                    {activeDisputeItem.evidenceUrls && activeDisputeItem.evidenceUrls.length > 0 ? (
+                      <div>
+                        <div style={{ fontSize: 11, color: '#8c8c8c', marginBottom: 4 }}>Ảnh khách đính kèm:</div>
+                        <Image.PreviewGroup>
+                          <Space wrap size={6}>
+                            {activeDisputeItem.evidenceUrls.map((url, idx) => (
+                              <Image
+                                key={idx}
+                                src={url}
+                                width={60}
+                                height={60}
+                                style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #ffccc7' }}
+                              />
+                            ))}
+                          </Space>
+                        </Image.PreviewGroup>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#8c8c8c' }}>Không có ảnh đính kèm</span>
+                    )}
+                  </Card>
+                </Col>
+
+                {/* 2. Ảnh biên bản giao nhận PoD */}
+                <Col xs={24} md={8}>
+                  <Card
+                    size="small"
+                    title={<span style={{ color: '#2d5a43', fontSize: 12 }}>2. Ảnh biên bản PoD</span>}
+                    style={{ height: '100%', borderColor: '#b7eb8f', backgroundColor: '#f6ffed' }}
+                  >
+                    <div style={{ fontSize: 12, marginBottom: 6, color: '#595959' }}>
+                      Ảnh chụp khi bàn giao hàng tại kho khách:
+                    </div>
+                    {disputePodLoading ? (
+                      <span style={{ fontSize: 11, color: '#8c8c8c' }}>Đang tải chứng từ PoD...</span>
+                    ) : disputePodProofs && disputePodProofs.length > 0 ? (
+                      <Image.PreviewGroup>
+                        <Space wrap size={6}>
+                          {disputePodProofs.map((proof, idx) => (
+                            <Image
+                              key={proof.id || idx}
+                              src={proof.photoUrl}
+                              width={60}
+                              height={60}
+                              style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #d9f7be' }}
+                            />
+                          ))}
+                        </Space>
+                      </Image.PreviewGroup>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#8c8c8c' }}>Chưa có ảnh PoD trên hệ thống</span>
+                    )}
+                  </Card>
+                </Col>
+
+                {/* 3. Phản biện & Bằng chứng của xưởng */}
+                <Col xs={24} md={8}>
+                  <Card
+                    size="small"
+                    title={<span style={{ color: '#1677ff', fontSize: 12 }}>3. Phản biện của xưởng</span>}
+                    style={{
+                      height: '100%',
+                      borderColor: activeDisputeItem.supplierRebuttalNotes ? '#91caff' : '#ffd591',
+                      backgroundColor: activeDisputeItem.supplierRebuttalNotes ? '#e6f4ff' : '#fffbe6',
+                    }}
+                  >
+                    {activeDisputeItem.supplierRebuttalNotes ? (
+                      <div style={{ fontSize: 12 }}>
+                        <div style={{ color: '#1f1f1f', marginBottom: 4, whiteSpace: 'pre-line' }}>
+                          {activeDisputeItem.supplierRebuttalNotes}
+                        </div>
+                        {(activeDisputeItem.supplierRebuttalAt || activeDisputeItem.supplierRebuttalAtUtc) && (
+                          <div style={{ fontSize: 11, color: '#8c8c8c', marginBottom: 6 }}>
+                            Nộp lúc: {new Date(activeDisputeItem.supplierRebuttalAt || activeDisputeItem.supplierRebuttalAtUtc).toLocaleString('vi-VN')}
+                          </div>
+                        )}
+                        {activeDisputeItem.supplierRebuttalEvidenceUrls && activeDisputeItem.supplierRebuttalEvidenceUrls.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: 11, color: '#8c8c8c', marginBottom: 4 }}>Bằng chứng phản biện:</div>
+                            <Image.PreviewGroup>
+                              <Space wrap size={6}>
+                                {activeDisputeItem.supplierRebuttalEvidenceUrls.map((url, idx) => (
+                                  <Image
+                                    key={idx}
+                                    src={url}
+                                    width={60}
+                                    height={60}
+                                    style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #bae0ff' }}
+                                  />
+                                ))}
+                              </Space>
+                            </Image.PreviewGroup>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: '#d46b08' }}>
+                        <div>Chưa nộp phản biện.</div>
+                        {deadline && (
+                          <div style={{ marginTop: 4, fontSize: 11 }}>
+                            {isDeadlinePassed ? 'Đã quá hạn 48h' : `Hạn: ${new Date(deadline).toLocaleString('vi-VN')}`}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+
+            <Form layout="vertical" style={{ marginTop: 14 }}>
+              <Form.Item label="Hình Thức Giải Quyết Tranh Chấp">
+                <Radio.Group
+                  value={disputeResolutionAction}
+                  disabled={isResolutionLocked || isResolved}
+                  onChange={(e) => setDisputeResolutionAction(e.target.value)}
+                >
+                  <Space direction="vertical">
+                    <Radio value="ReleasePayout">
+                      <strong>Bác bỏ khiếu nại &amp; Giải phóng thanh toán:</strong> Người mua xác nhận sai / ảnh PoD đầy đủ, giải phóng tiền cho NCC.
+                    </Radio>
+                    <Radio value="FullRefund">
+                      <strong>Chấp thuận Hoàn Tiền 100%:</strong> Xác định lỗi do NCC / Hàng vỡ hỏng hoàn toàn, hoàn tiền về ví người mua.
+                    </Radio>
+                    <Radio value="PartialRefund">
+                      <strong>Hoàn tiền một phần (Hòa giải):</strong> Hoàn một phần giá trị cho người mua, phần còn lại giải phóng cho NCC.
+                    </Radio>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+
+              {disputeResolutionAction === 'PartialRefund' && (
+                <Form.Item label="Số Tiền Hoàn Trả Khách Hàng (VND)">
+                  <InputNumber
+                    min={1000}
+                    step={100000}
+                    value={disputeRefundAmount}
+                    disabled={isResolutionLocked || isResolved}
+                    onChange={(v) => setDisputeRefundAmount(v || 0)}
+                    formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(val) => val.replace(/\$\s?|(,*)/g, '')}
+                    style={{ width: '100%' }}
+                  />
+                </Form.Item>
+              )}
+
+              <Form.Item label="Biên Bản &amp; Căn Cứ Phán Quyết">
+                <TextArea
+                  rows={3}
+                  disabled={isResolutionLocked || isResolved}
+                  placeholder="Ghi rõ lý do căn cứ theo ảnh PoD, biên bản giao nhận và giải trình phản biện..."
+                  value={disputeNotes}
+                  onChange={(e) => setDisputeNotes(e.target.value)}
                 />
               </Form.Item>
-            )}
-
-            <Form.Item label="Biên Bản & Căn Cứ Phán Quyết">
-              <TextArea
-                rows={3}
-                placeholder="Ghi rõ lý do căn cứ theo ảnh PoD, biên bản giao nhận và thỏa thuận đơn hàng..."
-                value={disputeNotes}
-                onChange={(e) => setDisputeNotes(e.target.value)}
-              />
-            </Form.Item>
-          </Form>
-        </Modal>
-      )}
+            </Form>
+          </Modal>
+        );
+      })()}
 
       {/* Modal Direct Bulk Order Refund Case Processing */}
       {activeRefundCase && (
@@ -1023,6 +1237,17 @@ export default function TradingOperating({ onNavigate }) {
             <Descriptions.Item label="Số Tiền Yêu Cầu">
               <strong style={{ color: '#cf1322' }}>{(activeRefundCase.requestedAmount || 0).toLocaleString('vi-VN')} ₫</strong>
             </Descriptions.Item>
+            {activeRefundCase.suggestedRefundAmount != null && (
+              <Descriptions.Item label="Mức Hoàn Đề Xuất (D24)">
+                <span style={{ color: '#d4380d', fontWeight: 600 }}>
+                  {activeRefundCase.suggestedRefundAmount.toLocaleString('vi-VN')} ₫
+                  {activeRefundCase.suggestedRefundPercent != null ? ` (${activeRefundCase.suggestedRefundPercent}%)` : ''}
+                </span>
+                {activeRefundCase.suggestionReason && (
+                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>{activeRefundCase.suggestionReason}</div>
+                )}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Lý Do">{activeRefundCase.reason}</Descriptions.Item>
           </Descriptions>
 

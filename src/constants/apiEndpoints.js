@@ -112,6 +112,8 @@ export const API_ENDPOINTS = {
     CONFIRM_DELIVERY: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm`,
     CONFIRM_DELIVERY_RECEIPT: (id) => `/${API_VERSION}/orders/${id}/delivery/confirm-receipt`,
     DELIVERY_DISPUTE: (id) => `/${API_VERSION}/orders/${id}/delivery/dispute`,
+    SUBMIT_DELIVERY_DISPUTE_REBUTTAL: (orderId, disputeId) =>
+      `/${API_VERSION}/suppliers/me/orders/${orderId}/delivery-disputes/${disputeId}/rebuttal`,
     REFUND_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/refund-requests`,
     PAYOUT_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/payout-requests`,
     CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
@@ -204,6 +206,8 @@ export const API_ENDPOINTS = {
     MY_PROFILE: `/${API_VERSION}/suppliers/me`,
     ORDER_POLICY: `/${API_VERSION}/suppliers/me/order-policy`,
     PAYOUT_ACCOUNT: `/${API_VERSION}/suppliers/me/payout-account`,
+    SUBMIT_DISPUTE_REBUTTAL: (orderId, disputeId) =>
+      `/${API_VERSION}/suppliers/me/orders/${orderId}/delivery-disputes/${disputeId}/rebuttal`,
     DOCUMENTS: `/${API_VERSION}/suppliers/me/documents`,
     DOCUMENT: (id) => `/${API_VERSION}/suppliers/me/documents/${id}`,
     DOCUMENT_CONTENT: (id) => `/${API_VERSION}/suppliers/documents/${id}/content`,
