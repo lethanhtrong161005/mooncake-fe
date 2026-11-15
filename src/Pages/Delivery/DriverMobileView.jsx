@@ -587,11 +587,6 @@ export default function DriverMobileView({
                   Thời gian:{' '}
                   {formatDateTime(submittedProof.takenAt || new Date().toISOString())}
                 </div>
-                {submittedProof.tamperProofHash && (
-                  <div className="driver-pod-hash">
-                    SHA-256: {submittedProof.tamperProofHash}
-                  </div>
-                )}
               </div>
             }
             extra={

@@ -33,7 +33,7 @@ import {
 import deliveryService from '../../services/deliveryService';
 import '../../styles/supplier-deliveries.css';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 const STATUS_META = {
   Pending: { text: 'Chờ xếp xe', color: 'default' },
@@ -202,7 +202,7 @@ export default function DeliveryDetailDrawer({
       setVerifyingProofId(proofId);
       const res = await deliveryService.verifyProof(proofId);
       if (res?.isVerified) {
-        message.success('Bằng chứng PoD toàn vẹn (SHA-256 hợp lệ).');
+        message.success('Bằng chứng PoD toàn vẹn (đã xác minh).');
       } else {
         message.warning('Bằng chứng chưa có chữ ký băm hợp lệ.');
       }
@@ -526,7 +526,7 @@ export default function DeliveryDetailDrawer({
                     icon={<SafetyCertificateOutlined />}
                     color={proof.isVerified ? 'success' : 'default'}
                   >
-                    {proof.isVerified ? 'Đã băm SHA-256' : 'Chưa xác minh'}
+                    {proof.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
                   </Tag>
                   {proof.id && (
                     <Button
@@ -607,16 +607,6 @@ export default function DeliveryDetailDrawer({
                 </Descriptions.Item>
                 {proof.notes && (
                   <Descriptions.Item label="Ghi chú">{proof.notes}</Descriptions.Item>
-                )}
-                {proof.tamperProofHash && (
-                  <Descriptions.Item label="Mã băm SHA-256">
-                    <Paragraph
-                      copyable
-                      className="m-0 font-mono text-[11px] break-all text-[#6c625e]"
-                    >
-                      {proof.tamperProofHash}
-                    </Paragraph>
-                  </Descriptions.Item>
                 )}
               </Descriptions>
             </div>
