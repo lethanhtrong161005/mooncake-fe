@@ -45,6 +45,8 @@ import { signalRManager } from '../../services/signalrService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
 import useIsMobile from '../../hooks/useIsMobile';
+import { disputeStatusLabel, disputeIssueTypeLabel } from '../../constants/disputeLabels';
+import { packagingStatusLabel } from '../../constants/orderStatus';
 
 const { TextArea } = Input;
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
@@ -70,6 +72,7 @@ const ORDER_STATUS_MAP = {
   CancellationRequested: { label: 'Đang yêu cầu hủy đơn', color: 'volcano' },
   Cancelled: { label: 'Đã hủy', color: 'default' },
   Expired: { label: 'Đã hết hạn SLA', color: 'default' },
+  Disputed: { label: 'Đang khiếu nại', color: 'red' },
 };
 
 function AutoConfirmBanner({ deadline, className = 'rounded-xl border-blue-200 bg-blue-50/60' }) {
@@ -479,7 +482,7 @@ export default function MyOrders({ onNavigate }) {
           'Cancelled',
           'Expired',
           'Disputed',
-        ].map((value) => ({ value, label: value }))}
+        ].map((value) => ({ value, label: ORDER_STATUS_MAP[value]?.label ?? value }))}
       />
 
       {loadingOrders || loadingContracts ? (
@@ -542,7 +545,7 @@ export default function MyOrders({ onNavigate }) {
           )}
           {orders.map((order) => {
             const statusConfig = ORDER_STATUS_MAP[order.status] || {
-              label: order.status,
+              label: 'Đang xử lý',
               color: 'default',
             };
             const totalQty = order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
@@ -640,7 +643,7 @@ export default function MyOrders({ onNavigate }) {
                     message={
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-bold">
-                          Yêu cầu hủy đơn hàng ({order.pendingCancellationRequest.status === 'Pending' ? 'Đang chờ xử lý' : order.pendingCancellationRequest.status})
+                          Yêu cầu hủy đơn hàng ({order.pendingCancellationRequest.status === 'Pending' ? 'Đang chờ xử lý' : 'Đã xử lý'})
                         </span>
                         <Tag color="volcano" className="m-0 font-semibold">
                           Đề xuất hoàn: {money(order.pendingCancellationRequest.suggestedRefundAmount ?? order.pendingCancellationRequest.proposedRefundAmount)}
@@ -678,7 +681,7 @@ export default function MyOrders({ onNavigate }) {
                     ? `Chờ xưởng phản hồi${deadline ? ` (hạn ${formatDateTime(deadline)})` : ''}`
                     : dispute.status === 'Open'
                       ? 'Đang giải quyết (Xưởng đã nộp phản biện)'
-                      : dispute.status;
+                      : disputeStatusLabel(dispute.status);
 
                   return (
                     <Alert
@@ -690,7 +693,7 @@ export default function MyOrders({ onNavigate }) {
                             Khiếu nại giao hàng · {disputeStatusText}
                           </span>
                           <Tag color={isAwaitingRebuttal ? 'orange' : 'volcano'} className="m-0 font-semibold">
-                            {isAwaitingRebuttal ? 'Chờ xưởng phản biện' : dispute.status}
+                            {disputeStatusLabel(dispute.status)}
                           </Tag>
                         </div>
                       }
@@ -698,7 +701,7 @@ export default function MyOrders({ onNavigate }) {
                         <div className="space-y-2 text-xs mt-1.5">
                           <div>
                             <span className="font-medium text-stone-800">Vấn đề khiếu nại:</span>{' '}
-                            <b>{dispute.issueType}</b> — {dispute.description}
+                            <b>{disputeIssueTypeLabel(dispute.issueType)}</b> — {dispute.description}
                           </div>
 
                           {isAwaitingRebuttal && (
@@ -1525,7 +1528,7 @@ export default function MyOrders({ onNavigate }) {
                 <Descriptions bordered column={2} size="small">
                   <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
                   <Descriptions.Item label="Trạng thái">
-                    <Tag color="blue">{packaging.status}</Tag>
+                    <Tag color="blue">{packagingStatusLabel(packaging.status)}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Quy cách hộp">
                     {packaging.packagingType}
@@ -1561,7 +1564,7 @@ export default function MyOrders({ onNavigate }) {
                             Phiên bản thiết kế #{revision.revisionNumber}
                           </span>
                         }
-                        extra={<Tag color="purple">{revision.status}</Tag>}
+                        extra={<Tag color="purple">{packagingStatusLabel(revision.status)}</Tag>}
                         className="rounded-xl border-stone-200"
                       >
                         <div className="space-y-3">

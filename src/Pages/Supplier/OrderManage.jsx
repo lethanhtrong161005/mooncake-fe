@@ -38,7 +38,8 @@ import {
   TruckOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { ORDER_STATUS_META, orderStatusOptions } from '../../constants/orderStatus';
+import { ORDER_STATUS_META, orderStatusOptions, packagingStatusLabel } from '../../constants/orderStatus';
+import { disputeStatusLabel, disputeIssueTypeLabel } from '../../constants/disputeLabels';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
 import customPackagingService from '../../services/customPackagingService';
@@ -618,7 +619,7 @@ export default function OrderManage({ onNavigate }) {
           <div>
             {order.customPackaging ? (
               <Tag color="geekblue" icon={<CrownOutlined />} className="m-0 text-[11px]">
-                Bao bì: {order.customPackaging.status}
+                Bao bì: {packagingStatusLabel(order.customPackaging.status)}
               </Tag>
             ) : (
               <Tag className="m-0 text-[11px]">Bao bì tiêu chuẩn</Tag>
@@ -862,7 +863,7 @@ export default function OrderManage({ onNavigate }) {
               className="mb-4 rounded-xl border border-amber-300 bg-amber-50/90"
               message={
                 <span className="font-semibold text-amber-900">
-                  Có {awaitingDisputes.length} khiếu nại giao hàng cần phản biện (AwaitingSupplierRebuttal)
+                  Có {awaitingDisputes.length} khiếu nại giao hàng cần phản biện
                 </span>
               }
               description={
@@ -880,14 +881,14 @@ export default function OrderManage({ onNavigate }) {
                         <div className="space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono font-bold text-[#7d1322]">#{ord.orderNumber}</span>
-                            <Tag color="volcano" className="m-0 font-semibold">AwaitingSupplierRebuttal</Tag>
+                            <Tag color="volcano" className="m-0 font-semibold">{disputeStatusLabel('AwaitingSupplierRebuttal')}</Tag>
                             {deadline && (
                               <SlaCountdownBadge deadline={deadline} label="Hạn phản biện 48h" />
                             )}
                           </div>
                           <div className="text-stone-700">
                             <span className="font-semibold text-stone-900">Vấn đề:</span>{' '}
-                            <b>{disp?.issueType}</b> — {disp?.description}
+                            <b>{disputeIssueTypeLabel(disp?.issueType)}</b> — {disp?.description}
                           </div>
                           {disp?.evidenceUrls && disp.evidenceUrls.length > 0 && (
                             <div className="flex items-center gap-1.5 pt-1">
@@ -1286,7 +1287,7 @@ export default function OrderManage({ onNavigate }) {
             <Descriptions bordered column={2} size="small">
               <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color="blue">{packaging.status}</Tag>
+                <Tag color="blue">{packagingStatusLabel(packaging.status)}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Quy cách">{packaging.packagingType}</Descriptions.Item>
               <Descriptions.Item label="Logo">
@@ -1308,7 +1309,7 @@ export default function OrderManage({ onNavigate }) {
                   <span className="font-semibold text-[#231a18]">
                     Phiên bản #{revision.revisionNumber}
                   </span>
-                  <Tag>{revision.status}</Tag>
+                  <Tag>{packagingStatusLabel(revision.status)}</Tag>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <a href={revision.mockupUrl} target="_blank" rel="noreferrer" className="text-[#7d1322]">
@@ -1463,7 +1464,7 @@ export default function OrderManage({ onNavigate }) {
               <span className="font-mono font-semibold text-[#7d1322]">#{rebuttalOrder?.orderNumber}</span>
             </Descriptions.Item>
             <Descriptions.Item label="Vấn đề khách khiếu nại">
-              <b>{rebuttalOrder?.activeDispute?.issueType}</b> — {rebuttalOrder?.activeDispute?.description}
+              <b>{disputeIssueTypeLabel(rebuttalOrder?.activeDispute?.issueType)}</b> — {rebuttalOrder?.activeDispute?.description}
             </Descriptions.Item>
             {rebuttalOrder?.activeDispute?.evidenceUrls?.length > 0 && (
               <Descriptions.Item label="Ảnh bằng chứng từ khách">

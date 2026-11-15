@@ -31,6 +31,7 @@ import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import { adminService } from '../../services/adminService';
 import { contractService } from '../../services/contractService';
 import deliveryService from '../../services/deliveryService';
+import { disputeStatusLabel, disputeIssueTypeLabel } from '../../constants/disputeLabels';
 import orderService from '../../services/orderService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -191,14 +192,20 @@ export default function TradingOperating({ onNavigate }) {
     if (dispute.orderId) {
       setDisputePodLoading(true);
       deliveryService.getByOrder(dispute.orderId)
-        .then((deliveries) => {
-          const list = Array.isArray(deliveries) ? deliveries : [deliveries];
-          const proofs = list
-            .flatMap((d) => d?.proofs || [])
-            .filter(Boolean);
+        .then(async (deliveries) => {
+          const list = (Array.isArray(deliveries) ? deliveries : [deliveries]).filter((d) => d?.id);
+          const proofLists = await Promise.all(
+            list.map((d) => deliveryService.getProofs(d.id).catch(() => d.proofs || [])),
+          );
+          const proofs = proofLists
+            .flatMap((items) => (Array.isArray(items) ? items : []))
+            .filter((p) => typeof p?.photoUrl === 'string' && p.photoUrl.length > 0);
           setDisputePodProofs(proofs);
         })
-        .catch(() => setDisputePodProofs([]))
+        .catch(() => {
+          setDisputePodProofs([]);
+          message.warning('Không tải được ảnh biên bản giao nhận. Hãy mở lại hộp thoại để thử lại.');
+        })
         .finally(() => setDisputePodLoading(false));
     }
   };
@@ -437,7 +444,7 @@ export default function TradingOperating({ onNavigate }) {
           WrongItems: { text: 'Sai quy cách / Mẫu mã', color: 'red' },
           LateDelivery: { text: 'Giao trễ hạn nghiêm trọng', color: 'gold' },
         };
-        const item = map[t] || { text: t, color: 'blue' };
+        const item = { text: disputeIssueTypeLabel(t), color: map[t]?.color || 'blue' };
         return <Tag color={item.color}>{item.text}</Tag>;
       },
     },
@@ -481,10 +488,10 @@ export default function TradingOperating({ onNavigate }) {
             </div>
           );
         }
-        if (st === 'Open') return <Tag color="processing">Đã phản biện / Đang xử lý</Tag>;
+        if (st === 'Open') return <Tag color="processing">{disputeStatusLabel(st)}</Tag>;
         if (st === 'Reported' || st === 'Investigating') return <Tag color="error">Đang Tranh Chấp</Tag>;
         if (st?.startsWith('Resolved')) return <Tag color="success">Đã Xử Lý</Tag>;
-        return <Tag>{st}</Tag>;
+        return <Tag>{disputeStatusLabel(st)}</Tag>;
       },
     },
     {
@@ -560,7 +567,7 @@ export default function TradingOperating({ onNavigate }) {
         if (st === 'PendingAdminReview') return <Tag color="warning">Chờ Admin Duyệt</Tag>;
         if (st === 'Approved' || st === 'Processed') return <Tag color="success">Đã Hoàn Tiền (Sandbox)</Tag>;
         if (st === 'Rejected') return <Tag color="default">Từ Chối</Tag>;
-        return <Tag>{st}</Tag>;
+        return <Tag>{disputeStatusLabel(st)}</Tag>;
       },
     },
     {
@@ -637,7 +644,7 @@ export default function TradingOperating({ onNavigate }) {
         if (st === 'PendingAdminReview') return <Tag color="warning">Chờ Duyệt Giải Ngân</Tag>;
         if (st === 'Approved' || st === 'PaidOutSimulated') return <Tag color="green">Đã Giải Ngân (Sandbox)</Tag>;
         if (st === 'Rejected') return <Tag color="default">Từ Chối</Tag>;
-        return <Tag>{st}</Tag>;
+        return <Tag>{disputeStatusLabel(st)}</Tag>;
       },
     },
     {
@@ -720,7 +727,7 @@ export default function TradingOperating({ onNavigate }) {
                     <Col xs={24} sm={12} md={8} lg={5}>
                       <Card size="small" style={{ borderRadius: 8, background: '#fff1f0' }}>
                         <Statistic
-                          title="Đang Tranh Chấp (Disputed)"
+                          title="Đang Tranh Chấp"
                           value={adminOps.platformDisputedAmount || 0}
                           precision={0}
                           valueStyle={{ color: '#cf1322', fontWeight: 700 }}
@@ -1020,7 +1027,7 @@ export default function TradingOperating({ onNavigate }) {
                 icon={<ClockCircleOutlined />}
                 style={{ marginTop: 8, marginBottom: 12 }}
                 message={lockNotice}
-                description="Khiếu nại đang ở trạng thái AwaitingSupplierRebuttal. Xưởng có thời hạn 48 giờ để nộp phản biện và bằng chứng. Nút phân xử bị khoá cho đến khi xưởng nộp phản biện hoặc thời hạn phản biện kết thúc."
+                description="Xưởng có thời hạn 48 giờ để nộp phản biện và bằng chứng. Nút phân xử bị khoá cho đến khi xưởng nộp phản biện hoặc thời hạn phản biện kết thúc."
               />
             )}
 
@@ -1028,7 +1035,7 @@ export default function TradingOperating({ onNavigate }) {
               <Descriptions.Item label="Mã Đơn">{activeDisputeItem.orderNumber || 'N/A'}</Descriptions.Item>
               <Descriptions.Item label="Trạng Thái">
                 <Tag color={isAwaitingRebuttal ? 'warning' : isResolved ? 'success' : 'processing'}>
-                  {activeDisputeItem.status}
+                  {disputeStatusLabel(activeDisputeItem.status)}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Số Tiền Đã Cọc / Thanh Toán" span={2}>
@@ -1052,7 +1059,7 @@ export default function TradingOperating({ onNavigate }) {
                     style={{ height: '100%', borderColor: '#ffa39e', backgroundColor: '#fff1f0' }}
                   >
                     <div style={{ fontSize: 12, marginBottom: 8 }}>
-                      <div><strong>Vấn đề:</strong> {activeDisputeItem.issueType}</div>
+                      <div><strong>Vấn đề:</strong> {disputeIssueTypeLabel(activeDisputeItem.issueType)}</div>
                       <div style={{ color: '#595959', marginTop: 4 }}>{activeDisputeItem.description}</div>
                     </div>
                     {activeDisputeItem.evidenceUrls && activeDisputeItem.evidenceUrls.length > 0 ? (
