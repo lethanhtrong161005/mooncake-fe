@@ -28,6 +28,25 @@ export const customPackagingService = {
       request,
     ));
   },
+  calculateMockupRevisionInfo(packaging) {
+    const revisions = packaging?.revisions || [];
+    const nextRevisionNumber = revisions.length > 0
+      ? Math.max(...revisions.map((r) => r.revisionNumber || 0)) + 1
+      : 1;
+    const editNumber = Math.max(0, nextRevisionNumber - 1);
+    const freeLimit = packaging?.freeRevisionsLimit ?? 3;
+    const freeRemaining = Math.max(0, (freeLimit + 1) - nextRevisionNumber);
+    const isSurchargeAllowed = nextRevisionNumber >= 5;
+
+    return {
+      nextRevisionNumber,
+      editNumber,
+      freeRemaining,
+      freeLimit,
+      isSurchargeAllowed,
+      displayText: `Lần sửa thứ ${editNumber} (miễn phí còn ${freeRemaining})`,
+    };
+  },
 };
 
 export default customPackagingService;

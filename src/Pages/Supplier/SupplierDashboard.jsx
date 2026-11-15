@@ -39,7 +39,7 @@ import '../../styles/supplier-dashboard.css';
 const { Text } = Typography;
 const { TextArea } = Input;
 
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) => (
   error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.'
 );
@@ -196,7 +196,12 @@ export default function SupplierDashboard({ onNavigate }) {
   const submitRevision = async (values) => {
     setPackagingLoading(true);
     try {
-      await customPackagingService.submitRevision(selectedOrder.id, values);
+      const revInfo = customPackagingService.calculateMockupRevisionInfo(packaging);
+      const payload = {
+        ...values,
+        revisionSurcharge: revInfo.isSurchargeAllowed ? Number(values.revisionSurcharge || 0) : 0,
+      };
+      await customPackagingService.submitRevision(selectedOrder.id, payload);
       message.success('Đã gửi bản phối cảnh mockup cho khách hàng duyệt.');
       const updated = await customPackagingService.get(selectedOrder.id);
       setPackaging(updated);
@@ -604,59 +609,84 @@ export default function SupplierDashboard({ onNavigate }) {
               </div>
             )}
 
-            {['Pending', 'DesignReview', 'RevisionRequested'].includes(packaging.status) && (
-              <div className="sd-mockup-form">
-                <div
-                  style={{
-                    marginBottom: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: '#231a18',
-                  }}
-                >
-                  <CheckCircleOutlined style={{ color: '#9a6b16' }} />
-                  <span>Gửi mẫu mockup mới cho khách hàng duyệt</span>
+            {['Pending', 'DesignReview', 'RevisionRequested'].includes(packaging.status) && (() => {
+              const revInfo = customPackagingService.calculateMockupRevisionInfo(packaging);
+              return (
+                <div className="sd-mockup-form">
+                  <div
+                    style={{
+                      marginBottom: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#231a18' }}>
+                      <CheckCircleOutlined style={{ color: '#9a6b16' }} />
+                      <span>Gửi mẫu mockup mới cho khách hàng duyệt</span>
+                    </div>
+                    <Tag color={revInfo.isSurchargeAllowed ? 'volcano' : 'gold'}>
+                      {revInfo.displayText}
+                    </Tag>
+                  </div>
+                  <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
+                    <Form.Item
+                      name="mockupUrl"
+                      label="Đường dẫn file thiết kế mockup (HTTPS)"
+                      rules={[
+                        { required: true, message: 'Vui lòng nhập URL mockup.' },
+                        { type: 'url', message: 'URL không hợp lệ.' },
+                      ]}
+                    >
+                      <Input placeholder="https://res.cloudinary.com/.../mockup.png" />
+                    </Form.Item>
+                    <Form.Item
+                      name="designFee"
+                      label="Chi phí thiết kế & khuôn ép kim (VNĐ)"
+                      initialValue={0}
+                      rules={[{ required: true }]}
+                    >
+                      <InputNumber min={0} max={100000000} style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item
+                      name="revisionSurcharge"
+                      label="Phụ phí sửa (VNĐ)"
+                      initialValue={0}
+                      extra={
+                        !revInfo.isSurchargeAllowed
+                          ? 'Ô phụ phí chỉ bật khi phiên bản từ #5 trở đi (hết 3 lượt sửa miễn phí).'
+                          : undefined
+                      }
+                    >
+                      <InputNumber
+                        min={0}
+                        max={100000000}
+                        disabled={!revInfo.isSurchargeAllowed}
+                        style={{ width: '100%' }}
+                        placeholder={!revInfo.isSurchargeAllowed ? 'Chỉ bật khi revision #≥5' : 'Nhập phụ phí sửa'}
+                      />
+                    </Form.Item>
+                    <Form.Item name="supplierNotes" label="Ghi chú kỹ thuật gia công">
+                      <TextArea
+                        rows={3}
+                        maxLength={1000}
+                        showCount
+                        placeholder="Mô tả kỹ thuật: Ép kim vàng, khắc laser tên doanh nghiệp..."
+                      />
+                    </Form.Item>
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={packagingLoading}
+                    >
+                      Gửi mockup duyệt
+                    </Button>
+                  </Form>
                 </div>
-                <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
-                  <Form.Item
-                    name="mockupUrl"
-                    label="Đường dẫn file thiết kế mockup (HTTPS)"
-                    rules={[
-                      { required: true, message: 'Vui lòng nhập URL mockup.' },
-                      { type: 'url', message: 'URL không hợp lệ.' },
-                    ]}
-                  >
-                    <Input placeholder="https://res.cloudinary.com/.../mockup.png" />
-                  </Form.Item>
-                  <Form.Item
-                    name="designFee"
-                    label="Chi phí thiết kế & khuôn ép kim (VNĐ)"
-                    initialValue={0}
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber min={0} max={100000000} style={{ width: '100%' }} />
-                  </Form.Item>
-                  <Form.Item name="supplierNotes" label="Ghi chú kỹ thuật gia công">
-                    <TextArea
-                      rows={3}
-                      maxLength={1000}
-                      showCount
-                      placeholder="Mô tả kỹ thuật: Ép kim vàng, khắc laser tên doanh nghiệp..."
-                    />
-                  </Form.Item>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    loading={packagingLoading}
-                  >
-                    Gửi mockup duyệt
-                  </Button>
-                </Form>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </Modal>

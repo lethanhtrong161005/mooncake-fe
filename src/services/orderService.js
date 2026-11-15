@@ -139,6 +139,14 @@ export const orderService = {
   async reportDeliveryDispute(orderId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.DELIVERY_DISPUTE(orderId), payload));
   },
+  async submitDeliveryDisputeRebuttal(orderId, disputeId, payload) {
+    return unwrap(
+      await apiClient.post(
+        API_ENDPOINTS.ORDERS.SUBMIT_DELIVERY_DISPUTE_REBUTTAL(orderId, disputeId),
+        payload,
+      ),
+    );
+  },
   async requestRefund(orderId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.REFUND_REQUESTS(orderId), payload));
   },
