@@ -40,6 +40,7 @@ const STATUS_META = {
   Cancelled: { label: 'Đã hủy', color: 'red' },
   Expired: { label: 'Hết hạn xử lý', color: 'default' },
   Disputed: { label: 'Đang khiếu nại', color: 'red' },
+  AwaitingSupplierRebuttal: { label: 'Chờ xưởng phản biện', color: 'orange' },
 };
 
 const OBLIGATION_STATUS_META = {
@@ -68,6 +69,34 @@ const REFUND_CASE_META = {
   Completed: { label: 'Đã hoàn tiền', color: 'green' },
   Rejected: { label: 'Từ chối', color: 'red' },
 };
+
+function AutoConfirmAlert({ deadline }) {
+  const [hours, setHours] = useState(() => {
+    if (!deadline) return 0;
+    const diffMs = new Date(deadline).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+  });
+
+  useEffect(() => {
+    if (!deadline) return undefined;
+    const interval = setInterval(() => {
+      const diffMs = new Date(deadline).getTime() - Date.now();
+      setHours(Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60))));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (!deadline) return null;
+
+  return (
+    <Alert
+      type="info"
+      showIcon
+      message="Thông báo tự động xác nhận đã nhận hàng (SLA 72h)"
+      description={`Hệ thống sẽ tự xác nhận đã nhận hàng lúc ${formatDateTime(deadline)} (còn ${hours} giờ). Nếu có vấn đề hãy khiếu nại trước thời điểm này.`}
+    />
+  );
+}
 
 /**
  * Shared drawer displaying complete B2B order details, VNPay payment schedule/transactions,
@@ -358,23 +387,128 @@ export default function OrderDetailDrawer({
       ),
       children: (
         <div className="space-y-4">
+          {current?.status === 'Shipped' && (current?.autoConfirmAt || current?.autoConfirmAtUtc) && (
+            <AutoConfirmAlert deadline={current.autoConfirmAt || current.autoConfirmAtUtc} />
+          )}
+
           {current?.cancellationReason && (
             <Alert
               type="error"
               showIcon
-              message="Thông tin hủy đơn"
+              message="Thông báo hủy đơn"
               description={current.cancellationReason}
             />
           )}
 
-          {current?.activeDispute && (
+          {current?.pendingCancellationRequest && (
             <Alert
               type="warning"
               showIcon
-              message={`Khiếu nại giao hàng · ${current.activeDispute.status}`}
-              description={`${current.activeDispute.issueType}: ${current.activeDispute.description}`}
+              message={
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-bold">
+                    Yêu cầu hủy đơn ({current.pendingCancellationRequest.status === 'Pending' ? 'Đang chờ xử lý' : current.pendingCancellationRequest.status})
+                  </span>
+                  <Tag color="volcano" className="m-0 font-semibold">
+                    Đề xuất hoàn: {money(current.pendingCancellationRequest.suggestedRefundAmount ?? current.pendingCancellationRequest.proposedRefundAmount)}
+                    {current.pendingCancellationRequest.suggestedRefundPercent != null ? ` (${current.pendingCancellationRequest.suggestedRefundPercent}%)` : ''}
+                  </Tag>
+                </div>
+              }
+              description={
+                <div className="space-y-1 text-xs mt-1">
+                  <div>
+                    <span className="font-semibold text-stone-700">Người gửi:</span> {current.pendingCancellationRequest.requestedByRole} · <span className="font-semibold text-stone-700">Lý do:</span> {current.pendingCancellationRequest.reason}
+                  </div>
+                  {current.pendingCancellationRequest.suggestionReason && (
+                    <div className="text-stone-600">
+                      <span className="font-semibold text-stone-700">Căn cứ đề xuất:</span> {current.pendingCancellationRequest.suggestionReason}
+                    </div>
+                  )}
+                  {current.pendingCancellationRequest.createdAtUtc && (
+                    <div className="text-stone-400 text-[11px]">
+                      Thời điểm gửi: {formatDateTime(current.pendingCancellationRequest.createdAtUtc)}
+                    </div>
+                  )}
+                </div>
+              }
             />
           )}
+
+          {current?.activeDispute && (() => {
+            const dispute = current.activeDispute;
+            const deadline = dispute.rebuttalDeadlineAtUtc || dispute.rebuttalDeadlineAt;
+            const isAwaitingRebuttal = dispute.status === 'AwaitingSupplierRebuttal';
+            const disputeStatusLabel = isAwaitingRebuttal
+              ? `Chờ xưởng phản hồi${deadline ? ` (hạn ${formatDateTime(deadline)})` : ''}`
+              : dispute.status === 'Open'
+                ? 'Đang giải quyết (Xưởng đã nộp phản biện)'
+                : dispute.status;
+
+            return (
+              <Alert
+                type="warning"
+                showIcon
+                message={
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-bold">Khiếu nại giao hàng · {disputeStatusLabel}</span>
+                    <Tag color={isAwaitingRebuttal ? 'orange' : 'volcano'} className="m-0 font-semibold">
+                      {isAwaitingRebuttal ? 'Chờ xưởng phản biện' : dispute.status}
+                    </Tag>
+                  </div>
+                }
+                description={
+                  <div className="space-y-2 text-xs mt-1">
+                    <div>
+                      <span className="font-semibold text-stone-700">Vấn đề khiếu nại:</span>{' '}
+                      <b>{dispute.issueType}</b> — {dispute.description}
+                    </div>
+
+                    {isAwaitingRebuttal && (
+                      <div className="text-[11px] text-amber-800 italic">
+                        * Xưởng sản xuất có 48 giờ để nộp phản biện và bằng chứng. Ban Quản Trị sẽ đối soát xử lý sau thời hạn này hoặc sau khi xưởng phản biện.
+                      </div>
+                    )}
+
+                    {dispute.supplierRebuttalNotes && (
+                      <div className="p-3 rounded-lg bg-stone-100/90 border border-stone-200 space-y-1.5">
+                        <div className="font-semibold text-stone-800 flex flex-wrap items-center justify-between gap-1">
+                          <span>Nội dung phản biện từ xưởng:</span>
+                          {(dispute.supplierRebuttalAtUtc || dispute.supplierRebuttalAt) && (
+                            <span className="text-[11px] font-normal text-stone-500">
+                              Phản biện lúc: {formatDateTime(dispute.supplierRebuttalAtUtc || dispute.supplierRebuttalAt)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-stone-700 whitespace-pre-line">{dispute.supplierRebuttalNotes}</div>
+                        {Array.isArray(dispute.supplierRebuttalEvidenceUrls) && dispute.supplierRebuttalEvidenceUrls.length > 0 && (
+                          <div className="pt-1">
+                            <span className="text-[11px] font-semibold text-stone-700 block mb-1">
+                              Bằng chứng phản biện ({dispute.supplierRebuttalEvidenceUrls.length} tệp):
+                            </span>
+                            <Image.PreviewGroup>
+                              <div className="flex flex-wrap gap-2">
+                                {dispute.supplierRebuttalEvidenceUrls.map((url, idx) => (
+                                  <Image
+                                    key={url || idx}
+                                    src={url}
+                                    alt={`Bằng chứng phản biện ${idx + 1}`}
+                                    width={60}
+                                    height={60}
+                                    className="rounded-md object-cover border border-stone-200"
+                                  />
+                                ))}
+                              </div>
+                            </Image.PreviewGroup>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                }
+              />
+            );
+          })()}
 
           {current?.proposedDeliveryDate && (
             <Alert
@@ -463,24 +597,44 @@ export default function OrderDetailDrawer({
 
           {(current?.customPackaging || podProofs.length > 0) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {current?.customPackaging && (
-                <div className="rounded-xl border border-[#e8e0d5] bg-white p-4 space-y-2">
-                  <div className="text-sm font-semibold text-stone-800">
-                    Bao bì doanh nghiệp in logo
+              {current?.customPackaging && (() => {
+                const freeUsed = current.customPackaging.freeRevisionsUsed;
+                const freeLimit = current.customPackaging.freeRevisionsLimit ?? 3;
+                const surcharge = Number(current.customPackaging.revisionSurcharge || 0);
+
+                return (
+                  <div className="rounded-xl border border-[#e8e0d5] bg-white p-4 space-y-2">
+                    <div className="text-sm font-semibold text-stone-800">
+                      Bao bì doanh nghiệp in logo
+                    </div>
+                    <div className="text-xs text-stone-600 space-y-1">
+                      <div>
+                        Thương hiệu: <b>{current.customPackaging.companyName}</b>
+                      </div>
+                      <div>
+                        Kiểu hộp: <b>{current.customPackaging.packagingType}</b>
+                      </div>
+                      <div>
+                        Trạng thái duyệt: <Tag color="gold">{current.customPackaging.status}</Tag>
+                      </div>
+                      {freeUsed != null && (
+                        <div>
+                          Lượt sửa mockup miễn phí:{' '}
+                          <Tag color={freeUsed >= freeLimit ? 'volcano' : 'blue'}>
+                            Đã dùng {freeUsed}/{freeLimit} lần sửa miễn phí
+                          </Tag>
+                        </div>
+                      )}
+                      {surcharge > 0 && (
+                        <div>
+                          Phụ phí sửa mockup:{' '}
+                          <b className="text-amber-700">{money(surcharge)}</b>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-xs text-stone-600 space-y-1">
-                    <div>
-                      Thương hiệu: <b>{current.customPackaging.companyName}</b>
-                    </div>
-                    <div>
-                      Kiểu hộp: <b>{current.customPackaging.packagingType}</b>
-                    </div>
-                    <div>
-                      Trạng thái duyệt: <Tag color="gold">{current.customPackaging.status}</Tag>
-                    </div>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {podProofs.length > 0 && (
                 <div className="rounded-xl border border-[#e8e0d5] bg-white p-4 space-y-2">
@@ -704,6 +858,13 @@ export default function OrderDetailDrawer({
                           <span className="text-stone-500 ml-2">Mã GD: {rc.refundReferenceCode}</span>
                         )}
                         <div className="text-stone-600 mt-0.5">{rc.reason}</div>
+                        {rc.suggestedRefundAmount != null && (
+                          <div className="text-[11px] text-stone-500 mt-0.5">
+                            Đề xuất hoàn: <b className="text-stone-800">{money(rc.suggestedRefundAmount)}</b>
+                            {rc.suggestedRefundPercent != null ? ` (${rc.suggestedRefundPercent}%)` : ''}
+                            {rc.suggestionReason ? ` · ${rc.suggestionReason}` : ''}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-[#8c1524] tabular-nums">

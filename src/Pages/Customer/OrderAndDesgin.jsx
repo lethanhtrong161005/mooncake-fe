@@ -65,7 +65,7 @@ const disabledDeliveryDate = (current) => {
   );
 };
 
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) =>
   error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
 
@@ -1056,7 +1056,7 @@ export default function OrderAndDesgin({ onNavigate }) {
 
                       <Upload.Dragger
                         name="logo"
-                        accept="image/*,.svg"
+                        accept=".png,.jpg,.jpeg,.webp"
                         multiple={false}
                         showUploadList={false}
                         beforeUpload={handleUploadLogoFile}

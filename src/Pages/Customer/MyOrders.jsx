@@ -45,9 +45,15 @@ import FilterBar from '../../components/common/FilterBar';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const { TextArea } = Input;
-const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
+const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 const errorMessage = (error) =>
   error?.response?.data?.message || error?.message || 'Không thể xử lý yêu cầu.';
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('vi-VN');
+};
 
 const ORDER_STATUS_MAP = {
   Pending: { label: 'Chờ xưởng duyệt · SLA 12h', color: 'gold' },
@@ -63,6 +69,35 @@ const ORDER_STATUS_MAP = {
   Cancelled: { label: 'Đã hủy', color: 'default' },
   Expired: { label: 'Đã hết hạn SLA', color: 'default' },
 };
+
+function AutoConfirmBanner({ deadline, className = 'rounded-xl border-blue-200 bg-blue-50/60' }) {
+  const [hours, setHours] = useState(() => {
+    if (!deadline) return 0;
+    const diffMs = new Date(deadline).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+  });
+
+  useEffect(() => {
+    if (!deadline) return undefined;
+    const interval = setInterval(() => {
+      const diffMs = new Date(deadline).getTime() - Date.now();
+      setHours(Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60))));
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (!deadline) return null;
+
+  return (
+    <Alert
+      type="info"
+      showIcon
+      message="Thông báo tự động xác nhận nhận hàng (SLA 72h)"
+      description={`Hệ thống sẽ tự xác nhận đã nhận hàng lúc ${formatDateTime(deadline)} (còn ${hours} giờ). Nếu có vấn đề hãy khiếu nại trước thời điểm này.`}
+      className={className}
+    />
+  );
+}
 
 function formatCountdown(targetDateStr) {
   if (!targetDateStr) return null;
@@ -133,7 +168,15 @@ export default function MyOrders({ onNavigate }) {
   }, []);
 
   useEffect(() => {
-    loadCompletedContracts();
+    let ignore = false;
+    Promise.resolve().then(async () => {
+      if (!ignore) {
+        await loadCompletedContracts();
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, [loadCompletedContracts]);
 
   // Modals & Drawers state
@@ -252,7 +295,7 @@ export default function MyOrders({ onNavigate }) {
     }
   };
 
-  const reviewRevision = async (action) => {
+  const executeReviewRevision = async (action) => {
     const revision = packaging?.revisions?.find((item) => item.status === 'DesignReview');
     if (!revision) return;
     if (action === 'RequestRevision' && reviewNotes.trim().length < 10) {
@@ -276,6 +319,31 @@ export default function MyOrders({ onNavigate }) {
     } finally {
       setReviewLoading(false);
     }
+  };
+
+  const handleRequestRevision = () => {
+    if (reviewNotes.trim().length < 10) {
+      message.warning('Vui lòng mô tả nội dung cần chỉnh sửa ít nhất 10 ký tự.');
+      return;
+    }
+
+    const freeUsed = packaging?.freeRevisionsUsed ?? Math.max(0, (packaging?.revisions?.length || 1) - 1);
+    const freeLimit = packaging?.freeRevisionsLimit ?? 3;
+    const isOutOfFree = freeUsed >= freeLimit;
+
+    if (isOutOfFree) {
+      Modal.confirm({
+        title: 'Cảnh báo phụ phí chỉnh sửa mockup',
+        content: `Quý khách đã sử dụng hết ${freeLimit} lần sửa miễn phí (đã dùng ${freeUsed} lần). Xưởng sản xuất có thể tính thêm phụ phí cho các lần chỉnh sửa tiếp theo (từ lần thứ 4 trở đi). Quý khách có chắc chắn muốn gửi yêu cầu sửa không?`,
+        okText: 'Xác nhận yêu cầu sửa',
+        okType: 'danger',
+        cancelText: 'Hủy bỏ',
+        onOk: () => executeReviewRevision('RequestRevision'),
+      });
+      return;
+    }
+
+    executeReviewRevision('RequestRevision');
   };
 
   // Respond to delivery date proposal
@@ -523,6 +591,13 @@ export default function MyOrders({ onNavigate }) {
                       />
                     )}
 
+                    {order.status === 'Shipped' && (order.autoConfirmAt || order.autoConfirmAtUtc) && (
+                      <SlaCountdownBadge
+                        deadline={order.autoConfirmAt || order.autoConfirmAtUtc}
+                        label="Tự xác nhận 72h"
+                      />
+                    )}
+
                     {order.status === 'Shipped' && !hasPodProofs && (
                       <Tag color="gold" className="m-0 text-[11px] font-medium">
                         Đang chờ xưởng tải ảnh PoD
@@ -549,6 +624,130 @@ export default function MyOrders({ onNavigate }) {
                     </b>
                   </div>
                 </div>
+
+                {/* 72h Auto-Confirm Banner for Shipped Orders (D23) */}
+                {order.status === 'Shipped' && (order.autoConfirmAt || order.autoConfirmAtUtc) && (
+                  <AutoConfirmBanner deadline={order.autoConfirmAt || order.autoConfirmAtUtc} />
+                )}
+
+                {/* Pending Cancellation Request Alert with Suggested Refund (D24) */}
+                {order.pendingCancellationRequest && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message={
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-bold">
+                          Yêu cầu hủy đơn hàng ({order.pendingCancellationRequest.status === 'Pending' ? 'Đang chờ xử lý' : order.pendingCancellationRequest.status})
+                        </span>
+                        <Tag color="volcano" className="m-0 font-semibold">
+                          Đề xuất hoàn: {money(order.pendingCancellationRequest.suggestedRefundAmount ?? order.pendingCancellationRequest.proposedRefundAmount)}
+                          {order.pendingCancellationRequest.suggestedRefundPercent != null ? ` (${order.pendingCancellationRequest.suggestedRefundPercent}%)` : ''}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div className="space-y-1 text-xs mt-1">
+                        <div>
+                          <span className="font-medium text-stone-700">Lý do hủy:</span> {order.pendingCancellationRequest.reason}
+                        </div>
+                        {order.pendingCancellationRequest.suggestionReason && (
+                          <div className="text-stone-600">
+                            <span className="font-medium text-stone-700">Căn cứ đề xuất:</span> {order.pendingCancellationRequest.suggestionReason}
+                          </div>
+                        )}
+                        {order.pendingCancellationRequest.createdAtUtc && (
+                          <div className="text-stone-400 text-[11px]">
+                            Thời điểm gửi: {formatDateTime(order.pendingCancellationRequest.createdAtUtc)}
+                          </div>
+                        )}
+                      </div>
+                    }
+                    className="rounded-xl border-amber-200 bg-amber-50/50"
+                  />
+                )}
+
+                {/* Active Dispute Alert & Supplier Rebuttal (BE9, D27) */}
+                {order.activeDispute && (() => {
+                  const dispute = order.activeDispute;
+                  const deadline = dispute.rebuttalDeadlineAtUtc || dispute.rebuttalDeadlineAt;
+                  const isAwaitingRebuttal = dispute.status === 'AwaitingSupplierRebuttal';
+                  const disputeStatusText = isAwaitingRebuttal
+                    ? `Chờ xưởng phản hồi${deadline ? ` (hạn ${formatDateTime(deadline)})` : ''}`
+                    : dispute.status === 'Open'
+                      ? 'Đang giải quyết (Xưởng đã nộp phản biện)'
+                      : dispute.status;
+
+                  return (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message={
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-bold">
+                            Khiếu nại giao hàng · {disputeStatusText}
+                          </span>
+                          <Tag color={isAwaitingRebuttal ? 'orange' : 'volcano'} className="m-0 font-semibold">
+                            {isAwaitingRebuttal ? 'Chờ xưởng phản biện' : dispute.status}
+                          </Tag>
+                        </div>
+                      }
+                      description={
+                        <div className="space-y-2 text-xs mt-1.5">
+                          <div>
+                            <span className="font-medium text-stone-800">Vấn đề khiếu nại:</span>{' '}
+                            <b>{dispute.issueType}</b> — {dispute.description}
+                          </div>
+
+                          {isAwaitingRebuttal && (
+                            <div className="text-[11px] text-amber-800 italic">
+                              * Xưởng sản xuất có 48 giờ để nộp phản biện và bằng chứng đối soát. Quá thời hạn trên hoặc sau khi xưởng phản biện, Ban Quản Trị sẽ xử lý khiếu nại.
+                            </div>
+                          )}
+
+                          {dispute.supplierRebuttalNotes && (
+                            <div className="p-3 rounded-xl bg-stone-100/90 border border-stone-200 space-y-1.5">
+                              <div className="font-semibold text-stone-800 flex flex-wrap items-center justify-between gap-1">
+                                <span>Nội dung phản biện từ xưởng:</span>
+                                {(dispute.supplierRebuttalAtUtc || dispute.supplierRebuttalAt) && (
+                                  <span className="text-[11px] font-normal text-stone-500">
+                                    Thời điểm phản biện: {formatDateTime(dispute.supplierRebuttalAtUtc || dispute.supplierRebuttalAt)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-stone-700 whitespace-pre-line">
+                                {dispute.supplierRebuttalNotes}
+                              </div>
+
+                              {Array.isArray(dispute.supplierRebuttalEvidenceUrls) && dispute.supplierRebuttalEvidenceUrls.length > 0 && (
+                                <div className="pt-1.5">
+                                  <span className="text-[11px] font-semibold text-stone-700 block mb-1">
+                                    Bằng chứng phản biện ({dispute.supplierRebuttalEvidenceUrls.length} tệp):
+                                  </span>
+                                  <Image.PreviewGroup>
+                                    <div className="flex flex-wrap gap-2">
+                                      {dispute.supplierRebuttalEvidenceUrls.map((url, idx) => (
+                                        <Image
+                                          key={url || idx}
+                                          src={url}
+                                          alt={`Bằng chứng phản biện #${idx + 1}`}
+                                          width={64}
+                                          height={64}
+                                          className="rounded-lg object-cover border border-stone-200"
+                                        />
+                                      ))}
+                                    </div>
+                                  </Image.PreviewGroup>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      }
+                      className="rounded-xl border-amber-200 bg-amber-50/50"
+                    />
+                  );
+                })()}
 
                 {/* Proposal Alert if awaiting customer approval */}
                 {order.status === 'AwaitingCustomerDeliveryApproval' &&
@@ -976,6 +1175,10 @@ export default function MyOrders({ onNavigate }) {
                 description="Sau khi Quý khách bấm xác nhận, hệ thống sẽ tự động giải phóng khoản tiền ký quỹ cho xưởng. Nếu phát hiện hư hỏng, quý khách có thể gửi khiếu nại trước thời hạn 48 giờ."
               />
 
+              {podModalOrder?.status === 'Shipped' && (podModalOrder.autoConfirmAt || podModalOrder.autoConfirmAtUtc) && (
+                <AutoConfirmBanner deadline={podModalOrder.autoConfirmAt || podModalOrder.autoConfirmAtUtc} />
+              )}
+
               <Descriptions bordered size="small" column={2}>
                 <Descriptions.Item label="Mã đơn hàng">#{podModalOrder?.orderNumber}</Descriptions.Item>
                 <Descriptions.Item label="Mã chuyến giao / Vận đơn">
@@ -1166,27 +1369,69 @@ export default function MyOrders({ onNavigate }) {
       </Modal>
 
       {/* Modal 5: Request Cancellation Modal */}
-      <Modal
-        title="Yêu cầu hủy đơn hàng"
-        open={Boolean(cancelModalOrder)}
-        onCancel={() => setCancelModalOrder(null)}
-        confirmLoading={cancelSubmitting}
-        onOk={handleRequestCancellation}
-        okText="Gửi yêu cầu hủy"
-        okButtonProps={{ danger: true }}
-      >
-        <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
-          <p>
-            Nhập lý do Quý khách muốn hủy đơn hàng <b>#{cancelModalOrder?.orderNumber}</b>:
-          </p>
-          <TextArea
-            rows={3}
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            placeholder="Lý do hủy đơn..."
-          />
-        </div>
-      </Modal>
+      {(() => {
+        const cancelSuggestion = cancelModalOrder
+          ? orderService.calculateCancellationRefundSuggestion(cancelModalOrder)
+          : { amount: 0, percent: 100, reason: '' };
+        const paidAmount = Number(
+          cancelModalOrder?.paymentSummary?.totalPaidAmount
+          ?? cancelModalOrder?.financialSummary?.capturedAmount
+          ?? 0,
+        );
+
+        return (
+          <Modal
+            title="Yêu cầu hủy đơn hàng"
+            open={Boolean(cancelModalOrder)}
+            onCancel={() => setCancelModalOrder(null)}
+            confirmLoading={cancelSubmitting}
+            onOk={handleRequestCancellation}
+            okText="Gửi yêu cầu hủy"
+            okButtonProps={{ danger: true }}
+            width={540}
+          >
+            <div className="space-y-3 my-3 text-xs sm:text-sm text-stone-700">
+              <p>
+                Quý khách đang yêu cầu hủy đơn hàng <b>#{cancelModalOrder?.orderNumber}</b>:
+              </p>
+
+              {/* Cancellation refund suggestion preview */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-stone-700">Mức hoàn dự kiến:</span>
+                  <span className="font-bold text-[#8c1524] text-sm tabular-nums">
+                    {money(cancelSuggestion.amount)} ({cancelSuggestion.percent}%)
+                  </span>
+                </div>
+                <div>
+                  <span className="font-semibold text-stone-700">Số tiền đã thanh toán:</span>{' '}
+                  <span className="tabular-nums font-medium text-emerald-800">{money(paidAmount)}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-stone-700">Căn cứ đề xuất:</span>{' '}
+                  <span className="text-stone-600">{cancelSuggestion.reason}</span>
+                </div>
+                <div className="text-[11px] text-stone-500 italic pt-1 border-t border-amber-200/60">
+                  * Mức hoàn tiền đề xuất dựa trên chính sách sàn đối với trạng thái đơn hàng. Ban Quản Trị và xưởng sẽ đối soát phê duyệt số tiền hoàn chính thức.
+                </div>
+              </div>
+
+              <div>
+                <span className="font-semibold text-xs text-stone-800 block mb-1">
+                  Nhập lý do Quý khách muốn hủy đơn hàng (tối thiểu 5 ký tự):
+                </span>
+                <TextArea
+                  rows={3}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Lý do hủy đơn..."
+                  style={{ borderRadius: 8 }}
+                />
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {/* Modal 6: Mockup Review Modal */}
       <Modal
@@ -1202,106 +1447,141 @@ export default function MyOrders({ onNavigate }) {
         style={{ borderRadius: 16 }}
       >
         <Spin spinning={reviewLoading}>
-          {packaging && (
-            <div className="space-y-4 pt-2">
-              <Descriptions bordered column={2} size="small">
-                <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
-                <Descriptions.Item label="Trạng thái">
-                  <Tag color="blue">{packaging.status}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Quy cách hộp">
-                  {packaging.packagingType}
-                </Descriptions.Item>
-                <Descriptions.Item label="Thông điệp">
-                  {packaging.specialMessage || '—'}
-                </Descriptions.Item>
-              </Descriptions>
+          {packaging && (() => {
+            const freeUsed = packaging.freeRevisionsUsed ?? Math.max(0, (packaging.revisions?.length || 1) - 1);
+            const freeLimit = packaging.freeRevisionsLimit ?? 3;
+            const isOutOfFreeRevisions = freeUsed >= freeLimit;
+            const totalSurcharge = Number(packaging.revisionSurcharge || 0);
 
-              {packaging.revisions && packaging.revisions.length > 0 ? (
-                <div className="space-y-3 mt-4">
-                  <span className="text-xs font-bold text-stone-700 block">
-                    Các phiên bản mockup từ xưởng:
-                  </span>
-                  {packaging.revisions.map((revision) => (
-                    <Card
-                      key={revision.id}
-                      size="small"
-                      title={
-                        <span className="font-bold text-xs">
-                          Phiên bản thiết kế #{revision.revisionNumber}
-                        </span>
-                      }
-                      extra={<Tag color="purple">{revision.status}</Tag>}
-                      className="rounded-xl border-stone-200"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <a
-                            href={revision.mockupUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-bold text-[#8c1524] underline flex items-center gap-1"
-                          >
-                            <PictureOutlined /> Mở tệp thiết kế độ phân giải cao
-                          </a>
-                          <span className="text-xs font-semibold text-stone-800">
-                            Phí gia công thiết kế: {money(revision.designFee)}
+            return (
+              <div className="space-y-4 pt-2">
+                <Descriptions bordered column={2} size="small">
+                  <Descriptions.Item label="Doanh nghiệp">{packaging.companyName}</Descriptions.Item>
+                  <Descriptions.Item label="Trạng thái">
+                    <Tag color="blue">{packaging.status}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Quy cách hộp">
+                    {packaging.packagingType}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Lượt sửa mockup miễn phí">
+                    <Tag color={isOutOfFreeRevisions ? 'volcano' : 'blue'}>
+                      Đã dùng {freeUsed}/{freeLimit} lần sửa miễn phí
+                    </Tag>
+                  </Descriptions.Item>
+                  {totalSurcharge > 0 && (
+                    <Descriptions.Item label="Phụ phí sửa mockup">
+                      <span className="font-bold text-amber-700 tabular-nums">
+                        {money(totalSurcharge)}
+                      </span>
+                    </Descriptions.Item>
+                  )}
+                  <Descriptions.Item label="Thông điệp">
+                    {packaging.specialMessage || '—'}
+                  </Descriptions.Item>
+                </Descriptions>
+
+                {packaging.revisions && packaging.revisions.length > 0 ? (
+                  <div className="space-y-3 mt-4">
+                    <span className="text-xs font-bold text-stone-700 block">
+                      Các phiên bản mockup từ xưởng:
+                    </span>
+                    {packaging.revisions.map((revision) => (
+                      <Card
+                        key={revision.id}
+                        size="small"
+                        title={
+                          <span className="font-bold text-xs">
+                            Phiên bản thiết kế #{revision.revisionNumber}
                           </span>
-                        </div>
-
-                        {revision.supplierNotes && (
-                          <div className="p-2.5 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-700">
-                            <b>Ghi chú từ xưởng:</b> {revision.supplierNotes}
-                          </div>
-                        )}
-
-                        {revision.status === 'DesignReview' && (
-                          <div className="space-y-2.5 pt-2 border-t border-stone-100">
-                            <span className="text-xs text-stone-600 block">
-                              Nếu cần chỉnh sửa, vui lòng nhập nhận xét chi tiết để nghệ nhân hoàn
-                              thiện:
-                            </span>
-                            <TextArea
-                              value={reviewNotes}
-                              onChange={(event) => setReviewNotes(event.target.value)}
-                              placeholder="Mô tả cụ thể vị trí cần căn chỉnh, màu sắc ép kim, hoa văn nắp hộp..."
-                              rows={3}
-                              style={{ borderRadius: 8 }}
-                            />
-                            <div className="flex items-center justify-end gap-2 pt-1">
-                              <Button
-                                onClick={() => reviewRevision('RequestRevision')}
-                                style={{ borderRadius: 8 }}
-                              >
-                                Yêu cầu chỉnh sửa lại
-                              </Button>
-                              <Button
-                                type="primary"
-                                icon={<CheckCircleOutlined />}
-                                onClick={() => reviewRevision('Approve')}
-                                style={{
-                                  background: '#8c1524',
-                                  borderColor: '#8c1524',
-                                  borderRadius: 8,
-                                }}
-                              >
-                                Duyệt và tiến hành sản xuất
-                              </Button>
+                        }
+                        extra={<Tag color="purple">{revision.status}</Tag>}
+                        className="rounded-xl border-stone-200"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <a
+                              href={revision.mockupUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-bold text-[#8c1524] underline flex items-center gap-1"
+                            >
+                              <PictureOutlined /> Mở tệp thiết kế độ phân giải cao
+                            </a>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-stone-800">
+                                Phí gia công thiết kế: {money(revision.designFee)}
+                              </span>
+                              {Number(revision.revisionSurcharge || 0) > 0 && (
+                                <Tag color="orange" className="m-0 font-semibold text-xs">
+                                  Phụ phí sửa: +{money(revision.revisionSurcharge)}
+                                </Tag>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-xs text-stone-500">
-                  Xưởng đang tiến hành phối cảnh 3D. Bản thiết kế đầu tiên sẽ được tải lên trong
-                  24h.
-                </div>
-              )}
-            </div>
-          )}
+
+                          {revision.supplierNotes && (
+                            <div className="p-2.5 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-700">
+                              <b>Ghi chú từ xưởng:</b> {revision.supplierNotes}
+                            </div>
+                          )}
+
+                          {revision.status === 'DesignReview' && (
+                            <div className="space-y-2.5 pt-2 border-t border-stone-100">
+                              {isOutOfFreeRevisions && (
+                                <Alert
+                                  type="warning"
+                                  showIcon
+                                  message="Đã sử dụng hết lượt sửa mockup miễn phí"
+                                  description={`Quý khách đã sử dụng ${freeUsed}/${freeLimit} lần sửa miễn phí. Xưởng sản xuất có thể tính phụ phí cho yêu cầu chỉnh sửa tiếp theo (từ lần thứ 4 trở đi).`}
+                                  className="rounded-xl border-amber-200 bg-amber-50/70"
+                                />
+                              )}
+                              <span className="text-xs text-stone-600 block">
+                                Nếu cần chỉnh sửa, vui lòng nhập nhận xét chi tiết để nghệ nhân hoàn
+                                thiện:
+                              </span>
+                              <TextArea
+                                value={reviewNotes}
+                                onChange={(event) => setReviewNotes(event.target.value)}
+                                placeholder="Mô tả cụ thể vị trí cần căn chỉnh, màu sắc ép kim, hoa văn nắp hộp..."
+                                rows={3}
+                                style={{ borderRadius: 8 }}
+                              />
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <Button
+                                  onClick={handleRequestRevision}
+                                  style={{ borderRadius: 8 }}
+                                >
+                                  Yêu cầu chỉnh sửa lại
+                                </Button>
+                                <Button
+                                  type="primary"
+                                  icon={<CheckCircleOutlined />}
+                                  onClick={() => executeReviewRevision('Approve')}
+                                  style={{
+                                    background: '#8c1524',
+                                    borderColor: '#8c1524',
+                                    borderRadius: 8,
+                                  }}
+                                >
+                                  Duyệt và tiến hành sản xuất
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-xs text-stone-500">
+                    Xưởng đang tiến hành phối cảnh 3D. Bản thiết kế đầu tiên sẽ được tải lên trong
+                    24h.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </Spin>
       </Modal>
 
