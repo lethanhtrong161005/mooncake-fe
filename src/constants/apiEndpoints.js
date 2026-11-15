@@ -191,6 +191,7 @@ export const API_ENDPOINTS = {
     VNPAY_CREATE_URL: `/${API_VERSION}/payments/vnpay/create-url`,
     ORDER_VNPAY_URL: `/${API_VERSION}/payments/orders/vnpay-url`,
     CONTRACT_VNPAY_URL: `/${API_VERSION}/payments/contracts/vnpay-url`,
+    CONTRACT_MILESTONE_CASH_PAYMENT: (contractId, milestoneId) => `/${API_VERSION}/payments/contracts/${contractId}/milestones/${milestoneId}/cash-payment`,
     BANK_TRANSFER: `/${API_VERSION}/payments/bank-transfer`,
     VNPAY_RETURN: `/${API_VERSION}/payments/vnpay/return-callback`,
     UPLOAD_EVIDENCE: (id) => `/${API_VERSION}/payments/${id}/evidence`,

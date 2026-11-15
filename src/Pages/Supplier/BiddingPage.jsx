@@ -6,6 +6,7 @@ import {
   Drawer,
   Form,
   Grid,
+  Image,
   Input,
   InputNumber,
   Modal,
@@ -23,7 +24,6 @@ import {
   InfoCircleOutlined,
   QuestionCircleOutlined,
   ReloadOutlined,
-  SendOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import RowActionMenu from '../../components/common/RowActionMenu';
@@ -317,13 +317,6 @@ export default function BiddingPage({ onNavigate }) {
             },
           ] : [
             {
-              key: 'bid',
-              label: item.myBid ? 'Sửa báo giá' : 'Nộp báo giá',
-              icon: <SendOutlined />,
-              disabled: item.status !== 'Open' || new Date(item.bidDeadline) <= new Date(),
-              onClick: () => openBid(item),
-            },
-            {
               key: 'decline',
               label: 'Từ chối mời thầu',
               icon: <CloseOutlined />,
@@ -386,6 +379,17 @@ export default function BiddingPage({ onNavigate }) {
               size="middle"
               tableLayout="fixed"
               scroll={{ x: 1005 }}
+              onRow={(item) => {
+                const canBid = item.status === 'Open' && new Date(item.bidDeadline) > new Date();
+                return {
+                  className: canBid ? 'cursor-pointer hover:bg-[#faf7f2]' : undefined,
+                  title: canBid ? 'Nhấn để xem RFQ và nộp hoặc sửa báo giá' : undefined,
+                  onClick: (event) => {
+                    if (!canBid || event.target.closest('button, a, input, .ant-dropdown')) return;
+                    openBid(item);
+                  },
+                };
+              }}
               pagination={{
                 current: rfqPage.query.page,
                 pageSize: rfqPage.query.pageSize,
@@ -441,6 +445,13 @@ export default function BiddingPage({ onNavigate }) {
                 {new Date(selectedRfq.bidDeadline).toLocaleString('vi-VN')}
               </Descriptions.Item>
               <Descriptions.Item label="Ngày giao">{selectedRfq.deliveryDateRequired}</Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ giao hàng">{selectedRfq.deliveryAddress || 'Chưa cung cấp'}</Descriptions.Item>
+              <Descriptions.Item label="Ngân sách dự kiến">
+                {selectedRfq.budgetRangeMin != null || selectedRfq.budgetRangeMax != null
+                  ? `${selectedRfq.budgetRangeMin != null ? money(selectedRfq.budgetRangeMin) : 'Không giới hạn tối thiểu'} – ${selectedRfq.budgetRangeMax != null ? money(selectedRfq.budgetRangeMax) : 'Không giới hạn tối đa'}`
+                  : 'Customer chưa đặt ngân sách'}
+              </Descriptions.Item>
+              {selectedRfq.description && <Descriptions.Item label="Mô tả yêu cầu">{selectedRfq.description}</Descriptions.Item>}
             </Descriptions>
 
             <Form form={form} layout="vertical" onFinish={submitBid}>
@@ -459,6 +470,18 @@ export default function BiddingPage({ onNavigate }) {
                             <span className="rounded border border-[#e4dcd3] bg-white px-2 py-0.5 text-xs tabular-nums text-[#6c625e]">
                               Số lượng: {item.quantity} {item.unit}
                             </span>
+                          </div>
+                          <div className="mb-3 space-y-1 text-sm text-[#6c625e]">
+                            {item.targetPrice != null && <div><strong className="text-[#231a18]">Giá mục tiêu:</strong> {money(item.targetPrice)} / {item.unit || 'đơn vị'}</div>}
+                            {item.specifications && <div><strong className="text-[#231a18]">Quy cách mong muốn:</strong> {item.specifications}</div>}
+                            {item.packagingRequirements && (
+                              <div>
+                                <strong className="text-[#231a18]">Ảnh mẫu bao bì:</strong>
+                                {/^https?:\/\//i.test(item.packagingRequirements) ? (
+                                  <div className="mt-2"><Image src={item.packagingRequirements} alt={`Ảnh bao bì yêu cầu cho ${item.productName}`} width={120} height={90} style={{ objectFit: 'contain', borderRadius: 8 }} /></div>
+                                ) : <span className="ml-1">{item.packagingRequirements}</span>}
+                              </div>
+                            )}
                           </div>
                           <Form.Item {...restField} name={[restField.name, 'rfqItemId']} hidden>
                             <Input />
