@@ -49,13 +49,6 @@ export default function ChatPage({ onNavigate }) {
     loadThreads({ reset: true });
   }, [loadThreads]);
 
-  useEffect(() => {
-    if (!requestedThreadId || threadsLoading) return;
-    const requestedThread = threads.find((thread) => thread.id === requestedThreadId)
-      || (activeDockThread?.id === requestedThreadId ? activeDockThread : null);
-    if (requestedThread && selectedThread?.id !== requestedThread.id) handleSelectThread(requestedThread);
-  }, [threads, threadsLoading, activeDockThread]);
-
   // Handle thread selection
   const handleSelectThread = (thread) => {
     if (selectedThread?.id) {
@@ -66,6 +59,13 @@ export default function ChatPage({ onNavigate }) {
       joinThread(thread.id);
     }
   };
+
+  useEffect(() => {
+    if (!requestedThreadId || threadsLoading) return;
+    const requestedThread = threads.find((thread) => thread.id === requestedThreadId)
+      || (activeDockThread?.id === requestedThreadId ? activeDockThread : null);
+    if (requestedThread && selectedThread?.id !== requestedThread.id) handleSelectThread(requestedThread);
+  }, [threads, threadsLoading, activeDockThread]);
 
   const inboxThreads = activeDockThread?.id === requestedThreadId && !threads.some((thread) => thread.id === activeDockThread.id)
     ? [activeDockThread, ...threads]
