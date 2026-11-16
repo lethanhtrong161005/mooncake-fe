@@ -27,10 +27,13 @@ import {
   SearchOutlined,
   SyncOutlined,
 } from '@ant-design/icons';
-import WorkspaceStats from '../../components/workspace/WorkspaceStats';
 import { orderStatusColor, orderStatusLabel } from '../../constants/orderStatus';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import OrderDetailDrawer from '../../components/orders/OrderDetailDrawer';
+import PackagingImageUpload from '../../components/packaging/PackagingImageUpload';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import SupplierRevenueCharts from '../../components/supplier/SupplierRevenueCharts';
+import { OrderItemsHoverCell, TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import customPackagingService from '../../services/customPackagingService';
 import orderService from '../../services/orderService';
 import usePagedList from '../../hooks/usePagedList';
@@ -84,8 +87,22 @@ export default function SupplierDashboard({ onNavigate }) {
     pendingOrders: 0,
     processingOrders: 0,
     packagingOrders: 0,
+    deliveredOrders: 0,
+    cancelledOrders: 0,
     totalRevenue: 0,
+    directOrderRevenue: 0,
+    directOrderPaidRevenue: 0,
+    activeDirectOrdersCount: 0,
+    contractRevenue: 0,
+    contractPaidRevenue: 0,
+    activeContractsCount: 0,
+    completedContractsCount: 0,
+    refundedAmount: 0,
+    dailyTrend: [],
+    monthlyTrend: [],
   });
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState(null);
 
   const [detailOrder, setDetailOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -95,11 +112,17 @@ export default function SupplierDashboard({ onNavigate }) {
   const [revisionForm] = Form.useForm();
 
   const loadSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    setSummaryError(null);
     try {
       const summary = await orderService.getSupplierDashboardSummary();
       if (summary) setMetrics(summary);
     } catch (error) {
-      message.error(errorMessage(error));
+      const errMsg = errorMessage(error);
+      setSummaryError(errMsg);
+      message.error(errMsg);
+    } finally {
+      setSummaryLoading(false);
     }
   }, [message]);
 
@@ -113,10 +136,19 @@ export default function SupplierDashboard({ onNavigate }) {
     orderService
       .getSupplierDashboardSummary()
       .then((summary) => {
-        if (active && summary) setMetrics(summary);
+        if (!active) return;
+        setSummaryError(null);
+        if (summary) setMetrics(summary);
       })
       .catch((error) => {
-        if (active) message.error(errorMessage(error));
+        if (active) {
+          const errMsg = errorMessage(error);
+          setSummaryError(errMsg);
+          message.error(errMsg);
+        }
+      })
+      .finally(() => {
+        if (active) setSummaryLoading(false);
       });
     return () => {
       active = false;
@@ -217,17 +249,18 @@ export default function SupplierDashboard({ onNavigate }) {
     {
       title: 'Đơn hàng',
       key: 'orderNumber',
-      width: 165,
+      width: 175,
       render: (_, order) => (
-        <div>
-          <button
-            type="button"
-            onClick={() => setDetailOrder(order)}
-            className="sd-order-link"
-            title={order.orderNumber}
-          >
-            #{order.orderNumber}
-          </button>
+        <div className="max-w-[160px]">
+          <Tooltip title={`#${order.orderNumber}`} color="#231a18" placement="topLeft">
+            <button
+              type="button"
+              onClick={() => setDetailOrder(order)}
+              className="sd-order-link"
+            >
+              #{order.orderNumber}
+            </button>
+          </Tooltip>
           <div className="sd-cell-muted">
             {new Date(order.createdAtUtc || order.createdAt).toLocaleString('vi-VN')}
           </div>
@@ -238,52 +271,39 @@ export default function SupplierDashboard({ onNavigate }) {
       title: 'Khách hàng',
       key: 'customer',
       width: 175,
-      render: (_, order) => (
-        <div style={{ minWidth: 0 }}>
-          <div className="sd-customer-name">
-            {order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B'}
-          </div>
-          {order.recipientPhone && (
-            <div className="sd-customer-meta">{order.recipientPhone}</div>
-          )}
-          {order.deliveryAddress && (
-            <Tooltip title={order.deliveryAddress}>
-              <div className="sd-customer-meta">{order.deliveryAddress}</div>
-            </Tooltip>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Sản phẩm B2B',
-      key: 'items',
-      width: 240,
       render: (_, order) => {
-        const items = order.items || [];
-        if (items.length === 0) {
-          return <span className="sd-cell-muted">—</span>;
-        }
-        const visibleItems = items.slice(0, 2);
-        const remaining = items.length - visibleItems.length;
+        const customerName = order.customPackaging?.companyName || order.recipientName || 'Khách hàng B2B';
         return (
-          <div className="sd-items-list">
-            {visibleItems.map((item) => (
-              <div key={item.variantId || item.productId} className="sd-item-row">
-                <span className="sd-item-name">{item.productName}</span>
-                <span className="sd-item-qty">× {item.quantity}</span>
-              </div>
-            ))}
-            {remaining > 0 && (
-              <div className="sd-cell-muted">+{remaining} dòng hàng khác</div>
+          <div className="max-w-[160px]">
+            <TruncatedTooltip text={customerName} className="sd-customer-name" />
+            {order.recipientPhone && (
+              <div className="sd-customer-meta">{order.recipientPhone}</div>
+            )}
+            {order.deliveryAddress && (
+              <TruncatedTooltip text={order.deliveryAddress} className="sd-customer-meta" />
             )}
           </div>
         );
       },
     },
     {
+      title: 'Sản phẩm B2B',
+      key: 'items',
+      width: 240,
+      render: (_, order) => (
+        <OrderItemsHoverCell
+          items={order.items || []}
+          customPackaging={order.customPackaging}
+          packagingStatusLabel={PACKAGING_STATUS_LABEL}
+          showPackagingTag={false}
+          maxWidthClass="max-w-[222px]"
+        />
+      ),
+    },
+    {
       title: 'Bao bì',
       key: 'packaging',
-      width: 140,
+      width: 145,
       render: (_, order) => {
         if (!order.customPackaging) {
           return <span className="sd-cell-muted">Hộp tiêu chuẩn</span>;
@@ -291,6 +311,7 @@ export default function SupplierDashboard({ onNavigate }) {
         const statusText = PACKAGING_STATUS_LABEL[order.customPackaging.status]
           || order.customPackaging.status
           || 'Chờ duyệt';
+        const typeText = order.customPackaging.packagingType || 'Hộp thiết kế';
         return (
           <div className="sd-packaging-cell">
             {order.customPackaging.companyLogoUrl ? (
@@ -316,9 +337,11 @@ export default function SupplierDashboard({ onNavigate }) {
               />
             )}
             <div className="sd-packaging-info">
-              <div className="sd-packaging-type">
-                {order.customPackaging.packagingType || 'Hộp thiết kế'}
-              </div>
+              <TruncatedTooltip
+                text={typeText}
+                tooltipContent={`${typeText} · ${statusText}`}
+                className="sd-packaging-type"
+              />
               <div className="sd-packaging-status">{statusText}</div>
             </div>
           </div>
@@ -330,7 +353,7 @@ export default function SupplierDashboard({ onNavigate }) {
       dataIndex: 'totalAmount',
       key: 'totalAmount',
       align: 'right',
-      width: 115,
+      width: 120,
       render: (val) => (
         <span
           style={{
@@ -361,46 +384,42 @@ export default function SupplierDashboard({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: 130,
+      align: 'center',
+      width: 84,
       render: (_, order) => (
-        <div className="sd-actions">
-          {order.status === 'Pending' && (
-            <>
-              <Button
-                type="primary"
-                size="small"
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-                onClick={() => handleConfirmOrder(order)}
-              >
-                Xác nhận
-              </Button>
-              <Button
-                danger
-                size="small"
-                onClick={() => handleRejectOrder(order)}
-              >
-                Từ chối
-              </Button>
-            </>
-          )}
-          {order.customPackaging && (
-            <Button
-              size="small"
-              icon={<PictureOutlined />}
-              onClick={() => openPackagingModal(order)}
-            >
-              Mockup
-            </Button>
-          )}
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => setDetailOrder(order)}
-          >
-            Chi tiết
-          </Button>
-        </div>
+        <RowActionMenu
+          ariaLabel={`Thao tác đơn ${order.orderNumber}`}
+          actions={[
+            {
+              key: 'detail',
+              label: 'Chi tiết đơn hàng',
+              icon: <EyeOutlined />,
+              onClick: () => setDetailOrder(order),
+            },
+            {
+              key: 'mockup',
+              label: 'Quản lý mockup bao bì',
+              icon: <PictureOutlined />,
+              show: Boolean(order.customPackaging),
+              onClick: () => openPackagingModal(order),
+            },
+            { type: 'divider', show: order.status === 'Pending' },
+            {
+              key: 'confirm',
+              label: 'Xác nhận đơn',
+              icon: <CheckCircleOutlined />,
+              show: order.status === 'Pending',
+              onClick: () => handleConfirmOrder(order),
+            },
+            {
+              key: 'reject',
+              label: 'Từ chối đơn',
+              danger: true,
+              show: order.status === 'Pending',
+              onClick: () => handleRejectOrder(order),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -413,8 +432,8 @@ export default function SupplierDashboard({ onNavigate }) {
       title="Tổng quan nhà cung cấp"
       subtitle="Doanh thu, đơn hàng cần xử lý và yêu cầu bao bì riêng của xưởng."
       extra={
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading}>
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={loadOrders} loading={loading || summaryLoading}>
             Làm mới
           </Button>
           <Button
@@ -446,13 +465,65 @@ export default function SupplierDashboard({ onNavigate }) {
         </div>
       )}
 
-      <WorkspaceStats
-        items={[
-          { key: 'revenue', label: 'Doanh thu nhận đơn', value: money(metrics.totalRevenue), hint: `Từ ${metrics.totalOrders} đơn hàng`, icon: <DollarOutlined />, tone: 'accent' },
-          { key: 'pending', label: 'Đơn chờ xác nhận', value: metrics.pendingOrders, hint: 'Cần xưởng phản hồi', icon: <ClockCircleOutlined />, tone: 'gold', pulse: metrics.pendingOrders > 0 },
-          { key: 'processing', label: 'Đang sản xuất', value: metrics.processingOrders, hint: 'Theo kế hoạch sản xuất', icon: <SyncOutlined />, tone: 'neutral' },
-          { key: 'packaging', label: 'Bao bì & in logo riêng', value: metrics.packagingOrders, hint: 'Cần thiết kế mockup', icon: <PictureOutlined />, tone: 'success' },
-        ]}
+      <section aria-label="Chỉ số vận hành xưởng" className="sd-ribbon">
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <DollarOutlined style={{ color: '#7d1322' }} />
+            Doanh thu ghi nhận (B2B + RFQ)
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#7d1322' }}>
+            {money(metrics.totalRevenue)}
+          </div>
+          <div className="sd-kpi__caption">
+            Đơn B2B: {money(metrics.directOrderRevenue)} ({metrics.activeDirectOrdersCount || 0} đơn)
+            {' · '}
+            HĐ RFQ: {money(metrics.contractRevenue)} ({metrics.activeContractsCount || 0} HĐ)
+          </div>
+          <div className="sd-kpi__caption" style={{ marginTop: 2 }}>
+            Thực thu đã thanh toán: {money((metrics.directOrderPaidRevenue || 0) + (metrics.contractPaidRevenue || 0))}
+            {(metrics.refundedAmount || 0) > 0 && ` · Đã hoàn: ${money(metrics.refundedAmount)}`}
+          </div>
+        </div>
+
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <ClockCircleOutlined style={{ color: '#9a6b16' }} />
+            Đơn chờ xác nhận
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#9a6b16' }}>
+            {metrics.pendingOrders}
+          </div>
+          <div className="sd-kpi__caption">Ưu tiên phản hồi đúng SLA 12h</div>
+        </div>
+
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <SyncOutlined style={{ color: '#2d5a43' }} />
+            Đang sản xuất
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#2d5a43' }}>
+            {metrics.processingOrders}
+          </div>
+          <div className="sd-kpi__caption">Đơn đang triển khai theo lịch giao</div>
+        </div>
+
+        <div className="sd-kpi">
+          <div className="sd-kpi__label">
+            <PictureOutlined style={{ color: '#7d1322' }} />
+            Đơn thiết kế bao bì riêng
+          </div>
+          <div className="sd-kpi__value" style={{ color: '#231a18' }}>
+            {metrics.packagingOrders}
+          </div>
+          <div className="sd-kpi__caption">Hồ sơ hộp in logo doanh nghiệp</div>
+        </div>
+      </section>
+
+      <SupplierRevenueCharts
+        metrics={metrics}
+        loading={summaryLoading}
+        error={summaryError}
+        onRetry={loadSummary}
       />
 
       <section aria-label="Đơn hàng gần đây và gia công bao bì" className="sd-ledger">
@@ -472,13 +543,13 @@ export default function SupplierDashboard({ onNavigate }) {
               aria-label="Tìm mã đơn hoặc người nhận"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: 220 }}
+              className="sd-control-search"
             />
             <Select
               aria-label="Trạng thái"
               value={statusFilter}
               onChange={handleStatusChange}
-              style={{ width: 185 }}
+              className="sd-control-select"
               options={[
                 { value: 'All', label: 'Tất cả trạng thái' },
                 { value: 'Pending', label: 'Chờ xác nhận' },
@@ -490,7 +561,7 @@ export default function SupplierDashboard({ onNavigate }) {
                 { value: 'Cancelled', label: 'Đã hủy' },
               ]}
             />
-            <Button onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}>
+            <Button className="sd-control-btn" onClick={() => onNavigate?.('nha-cung-cap/quan-ly-don-hang')}>
               Mở sổ đơn đầy đủ
             </Button>
           </div>
@@ -502,7 +573,7 @@ export default function SupplierDashboard({ onNavigate }) {
           columns={columns}
           dataSource={orders}
           tableLayout="fixed"
-          scroll={{ x: 1080 }}
+          scroll={{ x: 1020 }}
           pagination={{
             current: query.page,
             pageSize: query.pageSize,
@@ -524,8 +595,8 @@ export default function SupplierDashboard({ onNavigate }) {
 
       <Modal
         title={
-          <Space>
-            <PictureOutlined style={{ color: '#8c1524' }} />
+          <Space wrap>
+            <PictureOutlined style={{ color: '#7d1322' }} />
             <span>Hồ sơ bao bì thiết kế · #{selectedOrder?.orderNumber || ''}</span>
           </Space>
         }
@@ -533,6 +604,7 @@ export default function SupplierDashboard({ onNavigate }) {
         onCancel={() => setPackagingOpen(false)}
         footer={null}
         width={760}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         loading={packagingLoading}
         destroyOnHidden
       >
@@ -554,22 +626,22 @@ export default function SupplierDashboard({ onNavigate }) {
               <Descriptions.Item label="Logo doanh nghiệp">
                 {packaging.companyLogoUrl ? (
                   <Space>
-                    <Image
-                      src={packaging.companyLogoUrl}
-                      alt={`Logo ${packaging.companyName || 'doanh nghiệp'}`}
-                      width={32}
-                      height={32}
-                      style={{ objectFit: 'contain' }}
-                    />
-                    <a href={packaging.companyLogoUrl} target="_blank" rel="noreferrer">
-                      Xem ảnh gốc
-                    </a>
+                    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white p-1">
+                      <Image
+                        src={packaging.companyLogoUrl}
+                        alt={`Logo ${packaging.companyName || 'doanh nghiệp'}`}
+                        width={56}
+                        height={56}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </div>
+                    <span className="text-xs text-stone-500">Nhấp ảnh để phóng to</span>
                   </Space>
                 ) : (
                   'Chưa tải lên'
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Thông điệp nắp hộp" span={2}>
+              <Descriptions.Item label="Thông điệp nắp hộp" span={{ xs: 1, sm: 2 }}>
                 {packaging.specialMessage || '—'}
               </Descriptions.Item>
             </Descriptions>
@@ -582,16 +654,20 @@ export default function SupplierDashboard({ onNavigate }) {
                       <strong>Phiên bản mockup {revision.revisionNumber}</strong>
                       <Tag color="purple" style={{ margin: 0 }}>{revision.status}</Tag>
                     </div>
-                    <div>
-                      <a
-                        href={revision.mockupUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: '#7d1322', fontWeight: 600 }}
-                      >
-                        Mở bản vẽ mockup 3D/2D
-                      </a>
-                      <span style={{ margin: '0 8px', color: '#6c625e' }}>·</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+                      {revision.mockupUrl ? (
+                        <div className="overflow-hidden rounded-lg border border-stone-200 bg-white p-1">
+                          <Image
+                            src={revision.mockupUrl}
+                            alt={`Bản vẽ mockup phiên bản ${revision.revisionNumber}`}
+                            width={120}
+                            height={80}
+                            style={{ objectFit: 'cover', borderRadius: 6 }}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-stone-400">Chưa có ảnh mockup</span>
+                      )}
                       <span>
                         Phí thiết kế: <strong>{money(revision.designFee)}</strong>
                       </span>
@@ -634,13 +710,21 @@ export default function SupplierDashboard({ onNavigate }) {
                   <Form form={revisionForm} layout="vertical" onFinish={submitRevision}>
                     <Form.Item
                       name="mockupUrl"
-                      label="Đường dẫn file thiết kế mockup (HTTPS)"
+                      label="Ảnh thiết kế mockup 3D/2D"
                       rules={[
-                        { required: true, message: 'Vui lòng nhập URL mockup.' },
-                        { type: 'url', message: 'URL không hợp lệ.' },
+                        { required: true, message: 'Vui lòng tải lên ảnh thiết kế mockup.' },
                       ]}
                     >
-                      <Input placeholder="https://res.cloudinary.com/.../mockup.png" />
+                      <PackagingImageUpload
+                        uploader={(file) => customPackagingService.uploadMockup(file)}
+                        dragTitle="Kéo thả hoặc nhấp để tải ảnh mockup lên"
+                        dragHint="PNG, JPG, WEBP, SVG · Tối đa 10MB"
+                        previewAlt="Bản vẽ mockup đã tải lên"
+                        successText="Đã tải lên bản vẽ mockup"
+                        removeText="Xóa"
+                        previewWidth={96}
+                        previewHeight={64}
+                      />
                     </Form.Item>
                     <Form.Item
                       name="designFee"

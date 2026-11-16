@@ -93,11 +93,12 @@ export default function Notification({ onNavigate }) {
 
   const activityContent = (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Radio.Group
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
           buttonStyle="solid"
+          className="flex flex-wrap gap-1.5"
         >
           <Radio.Button value="all">Tất cả</Radio.Button>
           <Radio.Button value="order">Đơn hàng</Radio.Button>
@@ -105,7 +106,7 @@ export default function Notification({ onNavigate }) {
           <Radio.Button value="rfq">Báo giá</Radio.Button>
           <Radio.Button value="payment">Thanh toán</Radio.Button>
         </Radio.Group>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refreshGeneral} loading={generalLoading}>
             Làm mới
           </Button>
@@ -126,11 +127,9 @@ export default function Notification({ onNavigate }) {
         renderItem={(item) => (
           <List.Item
             key={item.id}
+            className="mb-2.5 flex-col items-start gap-2 rounded-lg px-3.5 py-3 sm:flex-row sm:items-center sm:px-5 sm:py-4"
             style={{
-              padding: '16px 20px',
               backgroundColor: item.isRead ? '#ffffff' : '#fcf8f6',
-              borderRadius: 8,
-              marginBottom: 10,
               border: item.isRead ? '1px solid #f0f0f0' : '1px solid #ffd8bf',
               cursor: 'pointer',
               transition: 'background-color 0.2s',
@@ -178,9 +177,9 @@ export default function Notification({ onNavigate }) {
       {resource.error && <Alert type="error" title={resource.error} style={{ marginBottom: 12 }} />}
       {mutation.error && <Alert type="error" title={mutation.error} style={{ marginBottom: 12 }} />}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Text>Chưa đọc: <strong>{resource.data?.unreadCount || 0}</strong></Text>
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refreshVerif}>
             Làm mới
           </Button>
@@ -247,14 +246,15 @@ export default function Notification({ onNavigate }) {
           </List.Item>
         )}
       />
-      <Pagination
-        current={page}
-        pageSize={20}
-        total={resource.data?.totalCount || 0}
-        showSizeChanger={false}
-        onChange={setPage}
-        style={{ marginTop: 16, textAlign: 'right' }}
-      />
+      <div className="mt-4 text-center sm:text-right">
+        <Pagination
+          current={page}
+          pageSize={20}
+          total={resource.data?.totalCount || 0}
+          showSizeChanger={false}
+          onChange={setPage}
+        />
+      </div>
     </div>
   );
 

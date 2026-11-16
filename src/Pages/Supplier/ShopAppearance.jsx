@@ -200,9 +200,9 @@ function AppearanceEditor({ data, onSaved, onDirtyChange, onNavigate }) {
       </section>
 
       {/* Split Atelier Workbench */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Zone: Control Inspector */}
-        <aside className="rounded-2xl border border-[#e4dcd3] bg-white p-6 xl:col-span-4">
+        <aside className="rounded-2xl border border-[#e4dcd3] bg-white p-4 sm:p-6 lg:col-span-5 xl:col-span-4">
           <div className="border-b border-[#efe9e1] pb-4">
             <h2 className="m-0 font-serif text-xl font-semibold tracking-tight text-[#231a18]">
               Mẫu &amp; thông số giao diện
@@ -275,7 +275,7 @@ function AppearanceEditor({ data, onSaved, onDirtyChange, onNavigate }) {
               {/* Active Color Palette Swatch Strip */}
               <div
                 aria-label="Xem trước tổ hợp màu hiện tại"
-                className="mb-4 flex items-center justify-between rounded-xl border border-[#e4dcd3] bg-[#faf7f2] px-3.5 py-2.5"
+                className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#e4dcd3] bg-[#faf7f2] px-3.5 py-2.5"
               >
                 <div className="flex items-center gap-1.5">
                   {[
@@ -357,7 +357,7 @@ function AppearanceEditor({ data, onSaved, onDirtyChange, onNavigate }) {
         {/* Right Zone: Live Storefront Stage */}
         <section
           aria-labelledby="live-preview-heading"
-          className="flex flex-col rounded-2xl border border-[#e4dcd3] bg-white p-5 sm:p-6 xl:col-span-8"
+          className="flex flex-col rounded-2xl border border-[#e4dcd3] bg-white p-4 sm:p-6 lg:col-span-7 xl:col-span-8"
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#efe9e1] pb-4">
             <div>
@@ -423,7 +423,7 @@ function AppearanceEditor({ data, onSaved, onDirtyChange, onNavigate }) {
 
             <div
               className={`shop-live-preview mx-auto transition-all duration-200 ${
-                viewportMode === 'mobile' ? 'max-w-[390px]' : 'w-full'
+                viewportMode === 'mobile' ? 'shop-live-preview--mobile max-w-[390px]' : 'w-full'
               }`}
             >
               <ShopRenderer

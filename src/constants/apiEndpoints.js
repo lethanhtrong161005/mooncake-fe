@@ -96,6 +96,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_PAGED: `/${API_VERSION}/orders/mine/paged`,
     SUPPLIER_LIST: `/${API_VERSION}/orders/supplier`,
     SUPPLIER_PAGED: `/${API_VERSION}/orders/supplier/paged`,
+    SUPPLIER_DASHBOARD_SUMMARY: `/${API_VERSION}/orders/supplier/dashboard-summary`,
     CONFIRM: (id) => `/${API_VERSION}/orders/${id}/confirm`,
     REJECT: (id) => `/${API_VERSION}/orders/${id}/reject`,
     PROPOSE_DELIVERY_DATE: (id) => `/${API_VERSION}/orders/${id}/propose-delivery-date`,
@@ -114,6 +115,7 @@ export const API_ENDPOINTS = {
     DELIVERY_DISPUTE: (id) => `/${API_VERSION}/orders/${id}/delivery/dispute`,
     SUBMIT_DELIVERY_DISPUTE_REBUTTAL: (orderId, disputeId) =>
       `/${API_VERSION}/suppliers/me/orders/${orderId}/delivery-disputes/${disputeId}/rebuttal`,
+    DISPUTE_UPLOAD_EVIDENCE: `/${API_VERSION}/orders/disputes/upload-evidence`,
     REFUND_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/refund-requests`,
     PAYOUT_REQUESTS: (id) => `/${API_VERSION}/orders/${id}/payout-requests`,
     CUSTOM_PACKAGING: (id) => `/${API_VERSION}/orders/${id}/custom-packaging`,
@@ -132,6 +134,8 @@ export const API_ENDPOINTS = {
     PROCESS_REFUND_CASE: (refundCaseId) => `/${API_VERSION}/admin/orders/refund-cases/${refundCaseId}/process`,
     PROCESS_PAYOUT_REQUEST: (payoutRequestId) => `/${API_VERSION}/admin/orders/payout-requests/${payoutRequestId}/process`,
     RESOLVE_DELIVERY_DISPUTE: (disputeId) => `/${API_VERSION}/admin/orders/delivery-disputes/${disputeId}/resolve`,
+    UPLOAD_REFUND_PROOF: `/${API_VERSION}/admin/orders/refund-proof/upload`,
+    UPLOAD_PAYOUT_PROOF: `/${API_VERSION}/admin/orders/payout-proof/upload`,
   },
 
   // Packaging Templates
@@ -194,6 +198,7 @@ export const API_ENDPOINTS = {
     VNPAY_CREATE_URL: `/${API_VERSION}/payments/vnpay/create-url`,
     ORDER_VNPAY_URL: `/${API_VERSION}/payments/orders/vnpay-url`,
     CONTRACT_VNPAY_URL: `/${API_VERSION}/payments/contracts/vnpay-url`,
+    CONTRACT_MILESTONE_CASH_PAYMENT: (contractId, milestoneId) => `/${API_VERSION}/payments/contracts/${contractId}/milestones/${milestoneId}/cash-payment`,
     BANK_TRANSFER: `/${API_VERSION}/payments/bank-transfer`,
     VNPAY_RETURN: `/${API_VERSION}/payments/vnpay/return-callback`,
     UPLOAD_EVIDENCE: (id) => `/${API_VERSION}/payments/${id}/evidence`,

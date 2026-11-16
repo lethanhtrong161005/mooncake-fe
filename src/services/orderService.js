@@ -39,14 +39,27 @@ export const orderService = {
     }));
   },
   async getSupplierDashboardSummary() {
-    const result = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_LIST));
-    const orders = Array.isArray(result) ? result : result?.items || [];
+    const data = unwrap(await apiClient.get(API_ENDPOINTS.ORDERS.SUPPLIER_DASHBOARD_SUMMARY));
+    const directOrderRevenue = Number(data?.directOrderRevenue ?? 0);
+    const contractRevenue = Number(data?.contractRevenue ?? 0);
     return {
-      totalOrders: orders.length,
-      pendingOrders: orders.filter((order) => order.status === 'Pending').length,
-      processingOrders: orders.filter((order) => ['Confirmed', 'Processing'].includes(order.status)).length,
-      packagingOrders: orders.filter((order) => Boolean(order.customPackaging)).length,
-      totalRevenue: orders.reduce((total, order) => total + Number(order.totalAmount || 0), 0),
+      totalOrders: Number(data?.totalOrders ?? 0),
+      pendingOrders: Number(data?.pendingOrders ?? 0),
+      processingOrders: Number(data?.processingOrders ?? 0),
+      packagingOrders: Number(data?.packagingOrders ?? 0),
+      totalRevenue: Number(data?.totalRevenue ?? (directOrderRevenue + contractRevenue)),
+      directOrderRevenue,
+      directOrderPaidRevenue: Number(data?.directOrderPaidRevenue ?? 0),
+      activeDirectOrdersCount: Number(data?.activeDirectOrdersCount ?? 0),
+      contractRevenue,
+      contractPaidRevenue: Number(data?.contractPaidRevenue ?? 0),
+      activeContractsCount: Number(data?.activeContractsCount ?? 0),
+      completedContractsCount: Number(data?.completedContractsCount ?? 0),
+      refundedAmount: Number(data?.refundedAmount ?? 0),
+      deliveredOrders: Number(data?.deliveredOrders ?? 0),
+      cancelledOrders: Number(data?.cancelledOrders ?? 0),
+      dailyTrend: Array.isArray(data?.dailyTrend) ? data.dailyTrend : [],
+      monthlyTrend: Array.isArray(data?.monthlyTrend) ? data.monthlyTrend : [],
     };
   },
   async getFinancialLedgerPage(orderId, params = {}, signal) {
@@ -147,6 +160,13 @@ export const orderService = {
       ),
     );
   },
+  async uploadDisputeEvidence(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.DISPUTE_UPLOAD_EVIDENCE, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }));
+  },
   async requestRefund(orderId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.REFUND_REQUESTS(orderId), payload));
   },
@@ -190,6 +210,20 @@ export const orderService = {
   },
   async resolveAdminDeliveryDispute(disputeId, payload) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ADMIN_ORDERS.RESOLVE_DELIVERY_DISPUTE(disputeId), payload));
+  },
+  async uploadAdminRefundProof(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap(await apiClient.post(API_ENDPOINTS.ADMIN_ORDERS.UPLOAD_REFUND_PROOF, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }));
+  },
+  async uploadAdminPayoutProof(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return unwrap(await apiClient.post(API_ENDPOINTS.ADMIN_ORDERS.UPLOAD_PAYOUT_PROOF, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }));
   },
   async getMyPayoutAccount() {
     return this.getMySupplierPayoutAccount();

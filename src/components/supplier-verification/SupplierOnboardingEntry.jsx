@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Alert, Button, Checkbox, Steps } from 'antd';
+import { Alert, Button, Checkbox, Grid, Steps } from 'antd';
 import { ShopOutlined } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import supplierService from '../../services/supplierService';
@@ -7,6 +7,7 @@ import { verificationError } from '../../constants/supplierVerification';
 import SupplierVerificationPanel from './SupplierVerificationPanel';
 
 export default function SupplierOnboardingEntry({ onNavigate }) {
+  const screens = Grid.useBreakpoint();
   const { user, refreshCurrentUser } = useAuth();
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -60,6 +61,7 @@ export default function SupplierOnboardingEntry({ onNavigate }) {
         <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-4">
           <Steps
             size="small"
+            direction={screens.sm ? 'horizontal' : 'vertical'}
             current={0}
             items={[
               { title: 'Đăng ký nhà cung cấp' },

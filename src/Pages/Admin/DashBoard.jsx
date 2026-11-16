@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Row,
   Col,
@@ -22,16 +22,28 @@ import {
   ThunderboltOutlined,
   FilePdfOutlined,
   EyeOutlined,
+  ReloadOutlined,
   RollbackOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import AdminDashboardCharts from '../../components/admin/AdminDashboardCharts';
 import AiAnalyticsPanel from '../../components/ai/AiAnalyticsPanel';
 import paymentService from '../../services/paymentService';
 import adminService from '../../services/adminService';
 import reportService from '../../services/reportService';
 import DisputeResolutionModal from '../../components/admin/DisputeResolutionModal';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 
 const { Text } = Typography;
+
+const formatCompactVnd = (value) => {
+  const num = Number(value || 0);
+  if (num >= 1_000_000_000) {
+    return `${(num / 1_000_000_000).toFixed(2).replace(/\.00$/, '')} tỷ ₫`;
+  }
+  return `${num.toLocaleString('vi-VN')} ₫`;
+};
 
 export default function DashBoard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('campaign');
@@ -55,15 +67,22 @@ export default function DashBoard({ onNavigate }) {
   const [topSuppliers, setTopSuppliers] = useState([]);
   const [loadingTopSuppliers, setLoadingTopSuppliers] = useState(false);
   const [dashboardMetrics, setDashboardMetrics] = useState(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  const [metricsError, setMetricsError] = useState(null);
 
-  const loadDashboardMetrics = async () => {
+  const loadDashboardMetrics = useCallback(async () => {
+    setLoadingMetrics(true);
+    setMetricsError(null);
     try {
       const data = await reportService.getDashboardMetrics();
       setDashboardMetrics(data);
     } catch (err) {
+      setMetricsError(err?.response?.data?.message || err?.message || 'Lỗi kết nối API');
       console.warn('Dashboard metrics load error:', err);
+    } finally {
+      setLoadingMetrics(false);
     }
-  };
+  }, []);
 
   const loadTopSuppliers = async () => {
     try {
@@ -131,15 +150,71 @@ export default function DashBoard({ onNavigate }) {
   };
 
   useEffect(() => {
-    loadEscrowSummary();
-    loadDisputes();
-    loadFunnel();
-    loadTopSuppliers();
-    loadDashboardMetrics();
+    let active = true;
+    paymentService
+      .getEscrowSummary()
+      .then((data) => { if (active) setEscrowSummary(data); })
+      .catch((err) => { console.warn('Escrow summary load error:', err); })
+      .finally(() => { if (active) setLoadingEscrow(false); });
+
+    adminService
+      .getDisputes()
+      .then((data) => {
+        if (active) setDisputes(Array.isArray(data) ? data : data?.items || []);
+      })
+      .catch((err) => { console.warn('Disputes load error:', err); })
+      .finally(() => { if (active) setLoadingDisputes(false); });
+
+    reportService
+      .getConversionFunnel()
+      .then((data) => { if (active) setFunnelData(data); })
+      .catch((err) => { console.warn('Funnel load error:', err); });
+
+    reportService
+      .getTopSuppliers()
+      .then((data) => {
+        if (active) setTopSuppliers(Array.isArray(data) ? data : data?.items || []);
+      })
+      .catch((err) => { console.warn('Top suppliers load error:', err); })
+      .finally(() => { if (active) setLoadingTopSuppliers(false); });
+
+    reportService
+      .getDashboardMetrics()
+      .then((data) => {
+        if (!active) return;
+        setMetricsError(null);
+        setDashboardMetrics(data);
+      })
+      .catch((err) => {
+        if (active) {
+          setMetricsError(err?.response?.data?.message || err?.message || 'Lỗi kết nối API');
+          console.warn('Dashboard metrics load error:', err);
+        }
+      })
+      .finally(() => {
+        if (active) setLoadingMetrics(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
+  const handleRefreshAll = async () => {
+    await Promise.all([
+      loadDashboardMetrics(),
+      loadTopSuppliers(),
+      loadDisputes(),
+      loadFunnel(),
+      loadEscrowSummary(),
+    ]);
+  };
+
   const pendingCount = dashboardMetrics?.pendingSuppliersCount ?? 0;
-  const pendingDisputes = disputes.filter((d) => d.status === 'Pending').length;
+  const pendingContractDisputes = disputes.filter((d) => d.status === 'Pending').length;
+  const pendingDisputes = Math.max(
+    pendingContractDisputes,
+    Number(dashboardMetrics?.pendingDisputesCount ?? 0),
+  );
 
   const handleRefund = async () => {
     if (!refundReason.trim()) {
@@ -179,10 +254,23 @@ export default function DashBoard({ onNavigate }) {
       title: 'Nhà cung cấp / xưởng',
       dataIndex: 'shopName',
       key: 'shopName',
+      width: 245,
       render: (text, record) => (
-        <div>
-          <div style={{ fontWeight: 600, color: '#1f1f1f' }}>{text || record.name}</div>
-          {record.taxCode && <div style={{ fontSize: 11, color: '#888' }}>MST: {record.taxCode}</div>}
+        <div className="max-w-[230px]">
+          <TruncatedTooltip
+            text={text || record.name}
+            tooltipContent={
+              record.taxCode
+                ? `${text || record.name} (MST: ${record.taxCode})`
+                : (text || record.name)
+            }
+            className="font-semibold text-[#1f1f1f]"
+          />
+          {record.taxCode && (
+            <div className="truncate font-mono text-[11px] text-[#888]">
+              MST: {record.taxCode}
+            </div>
+          )}
         </div>
       ),
     },
@@ -191,16 +279,18 @@ export default function DashBoard({ onNavigate }) {
       dataIndex: 'ordersCount',
       key: 'ordersCount',
       align: 'right',
-      render: (val) => val ?? 0,
+      width: 110,
+      render: (val) => <span className="tabular-nums">{val ?? 0}</span>,
     },
     {
       title: 'Doanh số GMV',
       dataIndex: 'gmv',
       key: 'gmv',
       align: 'right',
+      width: 155,
       render: (gmv) => (
-        <span style={{ fontWeight: 600, color: '#8c1524' }}>
-          {typeof gmv === 'number' ? `${Number(gmv).toLocaleString('vi-VN')} ₫` : gmv || '0 ₫'}
+        <span className="whitespace-nowrap font-semibold tabular-nums text-[#7d1322]">
+          {typeof gmv === 'number' ? `${Number(gmv).toLocaleString('vi-VN')} ₫` : gmv || '0 ₫'}
         </span>
       ),
     },
@@ -208,8 +298,9 @@ export default function DashBoard({ onNavigate }) {
       title: 'Giao đúng hạn',
       dataIndex: 'onTimeRate',
       key: 'onTimeRate',
+      width: 135,
       render: (rate) => (
-        <div style={{ width: 120 }}>
+        <div style={{ width: 115 }}>
           <Progress percent={rate ?? 100} size="small" strokeColor={(rate ?? 100) >= 95 ? '#2e7d32' : '#faad14'} />
         </div>
       ),
@@ -218,8 +309,9 @@ export default function DashBoard({ onNavigate }) {
       title: 'Điểm uy tín',
       dataIndex: 'score',
       key: 'score',
+      width: 115,
       render: (score) => (
-        <Tag color="gold" style={{ fontWeight: 700 }}>
+        <Tag color="gold" className="m-0 whitespace-nowrap font-bold">
           {score ?? 100}/100 ★
         </Tag>
       ),
@@ -227,15 +319,20 @@ export default function DashBoard({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'action',
-      render: () => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => onNavigate?.('admin/dieu-khien')}
-        >
-          Chi tiết
-        </Button>
+      align: 'center',
+      width: 84,
+      render: (_, record) => (
+        <RowActionMenu
+          ariaLabel={`Thao tác xưởng ${record.shopName || record.name || ''}`}
+          actions={[
+            {
+              key: 'detail',
+              label: 'Xem chi tiết xưởng',
+              icon: <EyeOutlined />,
+              onClick: () => onNavigate?.('admin/dieu-khien'),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -245,38 +342,58 @@ export default function DashBoard({ onNavigate }) {
       title: 'Mã hợp đồng',
       dataIndex: 'contractNo',
       key: 'contractNo',
-      render: (text) => <span style={{ fontWeight: 600, color: '#7d1322' }}>{text}</span>,
+      width: 145,
+      render: (text) => (
+        <div className="max-w-[130px]">
+          <TruncatedTooltip text={text} className="font-mono text-xs font-semibold text-[#7d1322]" />
+        </div>
+      ),
     },
     {
       title: 'Bên mua',
       dataIndex: 'buyer',
       key: 'buyer',
+      width: 155,
+      render: (text) => (
+        <div className="max-w-[140px]">
+          <TruncatedTooltip text={text} className="font-medium text-[#231a18]" />
+        </div>
+      ),
     },
     {
       title: 'Bên bán',
       dataIndex: 'seller',
       key: 'seller',
+      width: 155,
+      render: (text) => (
+        <div className="max-w-[140px]">
+          <TruncatedTooltip text={text} className="text-[#4b423e]" />
+        </div>
+      ),
     },
     {
       title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       key: 'totalValue',
       align: 'right',
-      render: (val) => <span style={{ fontWeight: 600 }}>{val}</span>,
+      width: 130,
+      render: (val) => <span className="whitespace-nowrap font-semibold tabular-nums">{val}</span>,
     },
     {
       title: 'Cọc M1',
       dataIndex: 'depositM1',
       key: 'depositM1',
       align: 'right',
-      render: (val) => <span style={{ color: '#7d1322', fontWeight: 600 }}>{val}</span>,
+      width: 120,
+      render: (val) => <span className="whitespace-nowrap font-semibold tabular-nums text-[#7d1322]">{val}</span>,
     },
     {
       title: 'Ký quỹ',
       dataIndex: 'escrowStatus',
       key: 'escrowStatus',
+      width: 125,
       render: (status) => (
-        <Tag color={status.includes('Đã nhận') ? 'success' : 'warning'}>
+        <Tag color={status.includes('Đã nhận') ? 'success' : 'warning'} className="m-0 whitespace-nowrap">
           {status}
         </Tag>
       ),
@@ -285,23 +402,30 @@ export default function DashBoard({ onNavigate }) {
       title: 'Tiến độ',
       dataIndex: 'milestone',
       key: 'milestone',
-      render: (m) => <Tag color="blue">{m}</Tag>,
+      width: 95,
+      render: (m) => <Tag color="blue" className="m-0 whitespace-nowrap">{m}</Tag>,
     },
     {
       title: 'Thao tác',
       key: 'actions',
+      align: 'center',
+      width: 78,
       render: (_, record) => (
-        <Button
-          size="small"
-          danger
-          icon={<RollbackOutlined />}
-          onClick={() => {
-            setSelectedRecord(record);
-            setRefundModalOpen(true);
-          }}
-        >
-          Hoàn tiền
-        </Button>
+        <RowActionMenu
+          ariaLabel={`Thao tác hợp đồng ${record.contractNo}`}
+          actions={[
+            {
+              key: 'refund',
+              label: 'Hoàn tiền ký quỹ',
+              icon: <RollbackOutlined />,
+              danger: true,
+              onClick: () => {
+                setSelectedRecord(record);
+                setRefundModalOpen(true);
+              },
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -311,31 +435,54 @@ export default function DashBoard({ onNavigate }) {
       title: 'Mã hợp đồng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
-      render: (text) => <span style={{ fontWeight: 600, color: '#7d1322' }}>{text}</span>,
+      width: 150,
+      render: (text) => (
+        <div className="max-w-[135px]">
+          <TruncatedTooltip text={text} className="font-mono text-xs font-semibold text-[#7d1322]" />
+        </div>
+      ),
     },
     {
       title: 'Bên khiếu nại',
       dataIndex: 'customerName',
       key: 'customerName',
+      width: 165,
+      render: (text) => (
+        <div className="max-w-[150px]">
+          <TruncatedTooltip text={text} className="font-medium text-[#231a18]" />
+        </div>
+      ),
     },
     {
       title: 'Nhà cung cấp',
       dataIndex: 'supplierName',
       key: 'supplierName',
+      width: 165,
+      render: (text) => (
+        <div className="max-w-[150px]">
+          <TruncatedTooltip text={text} className="text-[#4b423e]" />
+        </div>
+      ),
     },
     {
       title: 'Lý do tranh chấp',
       dataIndex: 'disputeReason',
       key: 'disputeReason',
-      ellipsis: true,
+      width: 225,
+      render: (text) => (
+        <div className="max-w-[210px]">
+          <TruncatedTooltip text={text} lines={2} className="text-xs leading-snug text-[#4b423e]" />
+        </div>
+      ),
     },
     {
       title: 'Tiền ký quỹ',
       dataIndex: 'heldEscrowAmount',
       key: 'heldEscrowAmount',
       align: 'right',
+      width: 135,
       render: (val) => (
-        <span style={{ fontWeight: 600, color: '#9a6b16' }}>
+        <span className="whitespace-nowrap font-semibold tabular-nums text-[#9a6b16]">
           {Number(val || 0).toLocaleString('vi-VN')} ₫
         </span>
       ),
@@ -344,8 +491,9 @@ export default function DashBoard({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 120,
       render: (status) => (
-        <Tag color={status === 'Pending' ? 'orange' : 'green'}>
+        <Tag color={status === 'Pending' ? 'orange' : 'green'} className="m-0 whitespace-nowrap">
           {status === 'Pending' ? 'Chờ phân xử' : 'Đã giải quyết'}
         </Tag>
       ),
@@ -353,22 +501,32 @@ export default function DashBoard({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'actions',
+      align: 'center',
+      width: 84,
       render: (_, record) => (
-        record.status === 'Pending' ? (
-          <Button
-            size="small"
-            type="primary"
-            danger
-            onClick={() => {
-              setSelectedDispute(record);
-              setDisputeModalOpen(true);
-            }}
-          >
-            Phân xử
-          </Button>
-        ) : (
-          <Tag color="default">Đã đóng</Tag>
-        )
+        <RowActionMenu
+          ariaLabel={`Thao tác tranh chấp ${record.contractNumber || ''}`}
+          actions={[
+            {
+              key: 'arbitrate',
+              label: 'Phân xử tranh chấp',
+              icon: <SafetyCertificateOutlined />,
+              danger: true,
+              show: record.status === 'Pending',
+              onClick: () => {
+                setSelectedDispute(record);
+                setDisputeModalOpen(true);
+              },
+            },
+            {
+              key: 'closed',
+              label: 'Hồ sơ đã đóng',
+              icon: <FileDoneOutlined />,
+              disabled: true,
+              show: record.status !== 'Pending',
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -381,8 +539,13 @@ export default function DashBoard({ onNavigate }) {
       title="Dashboard Điều Hành Toàn Nền Tảng"
       subtitle="Theo dõi ký quỹ escrow, năng lực xưởng bánh và dòng hợp đồng B2B mùa Trung Thu."
       extra={
-        <Space>
-          <Button icon={<FilePdfOutlined />}>Xuất báo cáo PDF</Button>
+        <Space wrap>
+          <Button icon={<ReloadOutlined />} onClick={handleRefreshAll} loading={loadingMetrics}>
+            Làm mới
+          </Button>
+          <Button icon={<FilePdfOutlined />} onClick={handleExportCsv} loading={exporting}>
+            Xuất báo cáo CSV
+          </Button>
           <Button
             type="primary"
             icon={<ThunderboltOutlined />}
@@ -417,7 +580,10 @@ export default function DashBoard({ onNavigate }) {
             Tổng GMV mùa vụ
           </div>
           <div className="mt-2 font-serif text-2xl font-semibold tabular-nums text-[#7d1322]">
-            {dashboardMetrics?.totalGmv ? `${(dashboardMetrics.totalGmv / 1e9).toFixed(1)} tỷ ₫` : '0 ₫'}
+            {formatCompactVnd(dashboardMetrics?.totalGmv)}
+          </div>
+          <div className="text-xs tabular-nums text-[#6c625e]">
+            Hoa hồng 3%: {Number(dashboardMetrics?.platformRevenue ?? 0).toLocaleString('vi-VN')} ₫
           </div>
         </div>
 
@@ -448,9 +614,7 @@ export default function DashBoard({ onNavigate }) {
             {dashboardMetrics?.activeContractsCount ?? 0}
           </div>
           <div className="text-xs tabular-nums text-[#6c625e]">
-            {dashboardMetrics?.totalContractsGmv
-              ? `${(dashboardMetrics.totalContractsGmv / 1e9).toFixed(1)} tỷ ₫`
-              : '0 ₫'}
+            {formatCompactVnd(dashboardMetrics?.totalContractsGmv)}
           </div>
         </div>
 
@@ -473,6 +637,14 @@ export default function DashBoard({ onNavigate }) {
         </div>
       </section>
 
+      {/* Executive Charts */}
+      <AdminDashboardCharts
+        metrics={dashboardMetrics}
+        loading={loadingMetrics}
+        error={metricsError}
+        onRetry={loadDashboardMetrics}
+      />
+
 
       {/* Main Tabs Area */}
       <section className="rounded-lg border border-[#e4dcd3] bg-white px-5 pb-5 pt-2">
@@ -485,7 +657,7 @@ export default function DashBoard({ onNavigate }) {
               label: 'Bảng xếp hạng xưởng bánh',
               children: (
                 <div>
-                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                     <Text strong>Nhà cung cấp dẫn đầu doanh số và tỷ lệ giao đúng hạn</Text>
                     <Button type="primary" size="small" onClick={() => onNavigate?.('admin/dieu-khien')}>
                       Xem tất cả nhà cung cấp
@@ -497,6 +669,7 @@ export default function DashBoard({ onNavigate }) {
                     loading={loadingTopSuppliers}
                     pagination={false}
                     size="middle"
+                    scroll={{ x: 'max-content' }}
                   />
                 </div>
               ),
@@ -526,6 +699,7 @@ export default function DashBoard({ onNavigate }) {
                     loading={loadingDisputes}
                     pagination={{ pageSize: 5 }}
                     size="middle"
+                    scroll={{ x: 'max-content' }}
                   />
                 </div>
               ),
@@ -646,6 +820,7 @@ export default function DashBoard({ onNavigate }) {
                     pagination={false}
                     size="middle"
                     loading={loadingEscrow}
+                    scroll={{ x: 'max-content' }}
                   />
                 </div>
               ),

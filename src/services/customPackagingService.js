@@ -13,6 +13,9 @@ export const customPackagingService = {
     });
     return unwrap(res)?.data ?? unwrap(res);
   },
+  async uploadMockup(file) {
+    return this.uploadLogo(file);
+  },
   async create(orderId, request) {
     return unwrap(await apiClient.post(API_ENDPOINTS.ORDERS.CUSTOM_PACKAGING(orderId), request));
   },

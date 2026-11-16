@@ -33,6 +33,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
@@ -199,25 +200,41 @@ export default function ContractManage({ onNavigate }) {
       key: 'contractNumber',
       width: 140,
       render: (no) => (
-        <span className="font-mono text-sm font-semibold text-[#7d1322]">{no}</span>
+        <div className="max-w-[150px]">
+          <TruncatedTooltip
+            text={no}
+            className="font-mono text-sm font-semibold text-[#7d1322]"
+          />
+        </div>
       ),
     },
     {
       title: 'Tiêu đề / ghi chú',
       dataIndex: 'title',
       key: 'title',
-      width: 260,
-      ellipsis: true,
-      render: (t) => (
-        <span className="font-medium text-[#231a18]" title={t}>{t || 'Hợp đồng đơn hàng RFQ'}</span>
-      ),
+      width: 240,
+      render: (t, record) => {
+        const titleText = t || 'Hợp đồng đơn hàng RFQ';
+        const fullNote = record?.termsAndConditions
+          ? `${titleText} — ${record.termsAndConditions}`
+          : titleText;
+        return (
+          <div className="max-w-[225px]">
+            <TruncatedTooltip
+              text={titleText}
+              tooltipContent={fullNote}
+              className="font-medium text-sm text-[#231a18]"
+            />
+          </div>
+        );
+      },
     },
     {
       title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       key: 'totalValue',
       align: 'right',
-      width: 150,
+      width: 130,
       render: (amt) => (
         <span className="font-semibold tabular-nums text-[#7d1322] whitespace-nowrap">
           {money(amt)}
@@ -228,7 +245,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Hạn giao hàng',
       dataIndex: 'deliveryDeadline',
       key: 'deliveryDeadline',
-      width: 120,
+      width: 105,
       render: (d) => (
         <span className="text-xs tabular-nums text-[#6c625e] whitespace-nowrap">{d || '—'}</span>
       ),
@@ -266,7 +283,7 @@ export default function ContractManage({ onNavigate }) {
       key: 'status',
       width: 130,
       render: (st) => (
-        <Tag color={statusMap[st]?.[0] || 'default'}>
+        <Tag color={statusMap[st]?.[0] || 'default'} className="m-0 whitespace-nowrap">
           {statusMap[st]?.[1] || st}
         </Tag>
       ),
@@ -385,6 +402,7 @@ export default function ContractManage({ onNavigate }) {
               rowKey="id"
               loading={loading}
               size="middle"
+              tableLayout="fixed"
               pagination={{
                 current: contractPage.query.page,
                 pageSize: contractPage.query.pageSize,
@@ -409,7 +427,7 @@ export default function ContractManage({ onNavigate }) {
           open={milestonesModalOpen}
           onCancel={() => setMilestonesModalOpen(false)}
           footer={(
-            <Space>
+            <Space wrap>
               {contractDetails?.status === 'Active' && (
                 <>
                   <Button
@@ -441,7 +459,8 @@ export default function ContractManage({ onNavigate }) {
               <Button onClick={() => setMilestonesModalOpen(false)}>Đóng</Button>
             </Space>
           )}
-          width={840}
+          width={760}
+          style={{ maxWidth: 'calc(100vw - 24px)' }}
           destroyOnHidden
         >
           {contractDetails && (
@@ -669,7 +688,8 @@ export default function ContractManage({ onNavigate }) {
         confirmLoading={actionLoading}
         okText="Gửi đơn xin gia hạn"
         cancelText="Hủy"
-        okButtonProps={{ style: { backgroundColor: '#8c1524', borderColor: '#8c1524' } }}
+        okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Alert
@@ -715,7 +735,8 @@ export default function ContractManage({ onNavigate }) {
         confirmLoading={actionLoading}
         okText="Nộp báo cáo tiến độ"
         cancelText="Hủy"
-        okButtonProps={{ style: { backgroundColor: '#8c1524', borderColor: '#8c1524' } }}
+        okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        style={{ maxWidth: 'calc(100vw - 24px)' }}
         destroyOnHidden
       >
         <Form form={progressForm} layout="vertical">

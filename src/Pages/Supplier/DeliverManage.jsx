@@ -24,6 +24,7 @@ import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
 import DeliveryDetailDrawer from '../../components/delivery/DeliveryDetailDrawer';
 import SharePoDLinkModal from '../../components/delivery/SharePoDLinkModal';
 import FilterBar from '../../components/common/FilterBar';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import usePagedList from '../../hooks/usePagedList';
 import contractService from '../../services/contractService';
 import deliveryService from '../../services/deliveryService';
@@ -153,49 +154,54 @@ export default function DeliverManage({ onNavigate }) {
       title: 'Chuyến giao & Đợt',
       dataIndex: 'deliveryNumber',
       key: 'deliveryNumber',
-      width: '15%',
-      render: (text, r) => (
-        <div>
-          <button
-            type="button"
-            className="dm-delivery-link"
-            onClick={() => handleOpenDetail(r)}
-          >
-            {text || r.deliveryCode || 'DEL-N/A'}
-          </button>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <Tag color="purple" className="m-0 text-[11px]">
-              {r.batchNumber ? `Đợt ${r.batchNumber}${r.totalBatches ? `/${r.totalBatches}` : ''}` : 'Đợt 1'}
-            </Tag>
-            <span className="dm-cell-muted">
-              {r.deliveryType === 'SelfArranged' ? 'Xe xưởng' : 'Đơn vị VC'}
-            </span>
+      width: 175,
+      render: (text, r) => {
+        const code = text || r.deliveryCode || 'DEL-N/A';
+        return (
+          <div className="max-w-[160px]">
+            <Tooltip title={code} color="#231a18" placement="topLeft">
+              <button
+                type="button"
+                className="dm-delivery-link"
+                onClick={() => handleOpenDetail(r)}
+              >
+                {code}
+              </button>
+            </Tooltip>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Tag color="purple" className="m-0 text-[11px]">
+                {r.batchNumber ? `Đợt ${r.batchNumber}${r.totalBatches ? `/${r.totalBatches}` : ''}` : 'Đợt 1'}
+              </Tag>
+              <span className="dm-cell-muted">
+                {r.deliveryType === 'SelfArranged' ? 'Xe xưởng' : 'Đơn vị VC'}
+              </span>
+            </div>
+            {r.createdAt && (
+              <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
+            )}
           </div>
-          {r.createdAt && (
-            <div className="dm-cell-muted">{formatDateTime(r.createdAt)}</div>
-          )}
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Đơn hàng / Hợp đồng',
       key: 'reference',
-      width: '16%',
-      render: (_, r) => (
-        <div>
-          <div className="dm-ref-code" title={r.orderNumber || r.contractNumber || ''}>
-            {r.orderNumber || r.contractNumber || r.contractNo || 'Chuyến giao B2B'}
+      width: 190,
+      render: (_, r) => {
+        const refCode = r.orderNumber || r.contractNumber || r.contractNo || 'Chuyến giao B2B';
+        const customerName = r.customerName || 'Khách hàng doanh nghiệp';
+        return (
+          <div className="max-w-[175px]">
+            <TruncatedTooltip text={refCode} className="dm-ref-code" />
+            <TruncatedTooltip text={customerName} className="dm-cell-muted" />
           </div>
-          <div className="dm-cell-muted truncate">
-            {r.customerName || 'Khách hàng doanh nghiệp'}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Tài xế & Nhận chuyến',
       key: 'driver',
-      width: '18%',
+      width: 230,
       render: (_, r) => (
         <div className="space-y-1">
           {r.driverName ? (
@@ -230,48 +236,50 @@ export default function DeliverManage({ onNavigate }) {
     {
       title: 'Điểm nhận & đại diện',
       key: 'destination',
-      width: '18%',
-      render: (_, r) => (
-        <div>
-          <Tooltip title={r.toAddress}>
-            <div className="dm-address-main">
-              {r.toAddress || 'Kho nhận'}
+      width: 250,
+      render: (_, r) => {
+        const addressText = r.toAddress || 'Kho nhận';
+        const contactText = `${r.recipientName || 'Thủ kho'}${r.recipientPhone ? ` (${r.recipientPhone})` : ''}`;
+        return (
+          <div className="max-w-[235px]">
+            <TruncatedTooltip text={addressText} className="dm-address-main" />
+            <div className="dm-cell-muted flex items-center gap-1 min-w-0">
+              <UserOutlined className="shrink-0 text-[#9a6b16]" />
+              <div className="min-w-0 flex-1">
+                <TruncatedTooltip text={contactText} />
+              </div>
             </div>
-          </Tooltip>
-          <div className="dm-cell-muted flex items-center gap-1">
-            <UserOutlined className="shrink-0 text-[#9a6b16]" />
-            <span className="truncate">
-              {r.recipientName || 'Thủ kho'}
-              {r.recipientPhone ? ` (${r.recipientPhone})` : ''}
-            </span>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Lịch giao & vận đơn',
       dataIndex: 'scheduledDate',
       key: 'scheduledDate',
-      width: '13%',
-      render: (d, r) => (
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18]">
-            <ClockCircleOutlined className="text-[#9a6b16]" />
-            <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+      width: 160,
+      render: (d, r) => {
+        const tracking = r.trackingCode || 'Xe xưởng';
+        return (
+          <div className="max-w-[145px]">
+            <div className="inline-flex items-center gap-1.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
+              <ClockCircleOutlined className="text-[#9a6b16]" />
+              <span>{d || r.expectedDate || 'Đang cập nhật'}</span>
+            </div>
+            <div>
+              <Tooltip title={tracking} color="#231a18" placement="topLeft">
+                <span className="dm-tracking-pill">{tracking}</span>
+              </Tooltip>
+            </div>
           </div>
-          <div>
-            <span className="dm-tracking-pill" title={r.trackingCode || 'Xe xưởng'}>
-              {r.trackingCode || 'Xe xưởng'}
-            </span>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: 'Trạng thái & PoD',
       dataIndex: 'status',
       key: 'status',
-      width: '10%',
+      width: 145,
       render: (status, r) => {
         const config = STATUS_TAG_MAP[status] || { text: status, color: 'default' };
         return (
@@ -410,7 +418,7 @@ export default function DeliverManage({ onNavigate }) {
                 showSizeChanger: true,
                 pageSizeOptions: [10, 20, 50, 100],
               }}
-              scroll={{ x: 960 }}
+              scroll={{ x: 1300 }}
             />
           </div>
         </section>

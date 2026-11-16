@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Card,
   Tabs,
   Form,
   Input,
@@ -11,32 +10,39 @@ import {
   Switch,
   Space,
   message,
-  Typography,
-  Alert,
   Row,
   Col,
   Modal,
-  Popconfirm,
-  Tooltip,
+  Empty,
 } from 'antd';
 import {
-  SettingOutlined,
-  SaveOutlined,
-  AppstoreOutlined,
-  SkinOutlined,
   PlusOutlined,
   ReloadOutlined,
   EditOutlined,
-  DeleteOutlined,
-  CheckCircleOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import productService from '../../services/productService';
 import shopService from '../../services/shopService';
 import apiClient from '../../services/apiClient';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 
-const { Title, Text, Paragraph } = Typography;
+const POSITIVE_REPUTATION_RULES = [
+  { label: 'Hoàn thành đúng hạn milestone giao hàng', points: '+10 điểm' },
+  { label: 'Đánh giá chất lượng 5 sao từ khách hàng', points: '+3 điểm' },
+  { label: 'Đánh giá chất lượng 4 sao từ khách hàng', points: '+1 điểm' },
+  { label: 'Đạt chứng nhận ISO 22000 hoặc OCOP mới', points: '+15 điểm' },
+  { label: 'Không phát sinh tranh chấp suốt 3 mùa vụ liên tiếp', points: '+20 điểm' },
+];
+
+const PENALTY_REPUTATION_RULES = [
+  { label: 'Hoàn thành trễ hạn milestone khi chưa gia hạn', points: '-5 điểm' },
+  { label: 'Vi phạm điều khoản hợp đồng B2B đã ký', points: '-20 điểm' },
+  { label: 'Đánh giá chất lượng 1–2 sao từ khách hàng', points: '-2 điểm' },
+  { label: 'Khiếu nại giao nhận PoD thất thoát hoặc hư hỏng', points: '-10 điểm' },
+  { label: 'Thu hồi giấy phép xưởng hoặc đình chỉ hoạt động', points: '-50 điểm' },
+];
 
 export default function SystemControll({ onNavigate }) {
   const [categories, setCategories] = useState([]);
@@ -83,7 +89,7 @@ export default function SystemControll({ onNavigate }) {
           list.map((t, idx) => ({
             ...t,
             key: t.id || `${idx}`,
-            badge: t.isPremium ? 'PREMIUM' : 'TIÊU CHUẨN',
+            badge: t.isPremium ? 'Premium' : 'Tiêu chuẩn',
             status: t.isActive ?? true,
           }))
         );
@@ -104,11 +110,10 @@ export default function SystemControll({ onNavigate }) {
       if (Array.isArray(list) && list.length > 0) {
         setDepositRules(list);
       } else {
-        // Sensible default rules if empty
         setDepositRules([
           {
             id: 'rule-standard',
-            name: 'Quy tắc cọc M1 tiêu chuẩn (Đơn hàng dưới 1 tỷ)',
+            name: 'Quy tắc cọc M1 tiêu chuẩn (đơn dưới 1 tỷ)',
             depositPercentage: 30,
             isMandatory: true,
             minContractValue: 0,
@@ -116,7 +121,7 @@ export default function SystemControll({ onNavigate }) {
           },
           {
             id: 'rule-vvip',
-            name: 'Quy tắc cọc M1 đơn hàng lớn (Trên 1 tỷ VNĐ)',
+            name: 'Quy tắc cọc M1 đơn hàng lớn (từ 1 tỷ VNĐ)',
             depositPercentage: 40,
             isMandatory: true,
             minContractValue: 1000000000,
@@ -125,11 +130,10 @@ export default function SystemControll({ onNavigate }) {
         ]);
       }
     } catch {
-      // Fallback defaults
       setDepositRules([
         {
           id: 'rule-standard',
-          name: 'Quy tắc cọc M1 tiêu chuẩn (Đơn hàng dưới 1 tỷ)',
+          name: 'Quy tắc cọc M1 tiêu chuẩn (đơn dưới 1 tỷ)',
           depositPercentage: 30,
           isMandatory: true,
           minContractValue: 0,
@@ -137,7 +141,7 @@ export default function SystemControll({ onNavigate }) {
         },
         {
           id: 'rule-vvip',
-          name: 'Quy tắc cọc M1 đơn hàng lớn (Trên 1 tỷ VNĐ)',
+          name: 'Quy tắc cọc M1 đơn hàng lớn (từ 1 tỷ VNĐ)',
           depositPercentage: 40,
           isMandatory: true,
           minContractValue: 1000000000,
@@ -150,8 +154,13 @@ export default function SystemControll({ onNavigate }) {
   }, []);
 
   useEffect(() => {
-    loadSystemData();
-    loadDepositRules();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      loadSystemData();
+      loadDepositRules();
+    });
+    return () => { active = false; };
   }, [loadSystemData, loadDepositRules]);
 
   // Open Create/Edit Deposit Rule
@@ -196,11 +205,10 @@ export default function SystemControll({ onNavigate }) {
         await apiClient.post('/v1/admin/contract-deposit-rules', payload);
       }
 
-      message.success('Đã lưu quy tắc đặt cọc hợp đồng thành công!');
+      message.success('Đã lưu quy tắc đặt cọc hợp đồng thành công.');
       setRuleModalOpen(false);
       await loadDepositRules();
     } catch {
-      // Local optimistic update
       if (editingRule) {
         setDepositRules((prev) =>
           prev.map((r) => (r.id === editingRule.id ? { ...r, ...values } : r))
@@ -211,7 +219,7 @@ export default function SystemControll({ onNavigate }) {
           { id: `rule-${Date.now()}`, ...values },
         ]);
       }
-      message.success('Đã cập nhật quy tắc đặt cọc thành công!');
+      message.success('Đã cập nhật quy tắc đặt cọc thành công.');
       setRuleModalOpen(false);
     } finally {
       setSavingRule(false);
@@ -230,7 +238,7 @@ export default function SystemControll({ onNavigate }) {
         status: true,
       };
       setCategories((prev) => [...prev, newCat]);
-      message.success(`Đã thêm danh mục "${newCat.name}" thành công!`);
+      message.success(`Đã thêm danh mục "${newCat.name}" thành công.`);
       setCatModalOpen(false);
       catForm.resetFields();
     } finally {
@@ -248,60 +256,139 @@ export default function SystemControll({ onNavigate }) {
 
   const depositColumns = [
     {
-      title: 'Tên Quy Tắc',
+      title: 'Tên quy tắc',
       dataIndex: 'name',
       key: 'name',
-      render: (t) => <Text strong style={{ color: '#8c1524' }}>{t}</Text>,
+      width: 240,
+      render: (t) => (
+        <div className="max-w-[225px]">
+          <TruncatedTooltip text={t} className="font-medium text-[#7d1322]" />
+        </div>
+      ),
     },
     {
-      title: 'Tỷ Lệ Cọc M1',
+      title: 'Tỷ lệ cọc M1',
       dataIndex: 'depositPercentage',
       key: 'depositPercentage',
-      render: (pct) => <Tag color="gold" style={{ fontSize: 13, fontWeight: 700 }}>{pct}%</Tag>,
+      align: 'center',
+      width: 115,
+      render: (pct) => (
+        <Tag style={{ backgroundColor: '#fdf8ec', borderColor: '#e8d49c', color: '#9a6b16', fontWeight: 600, marginInlineEnd: 0 }}>
+          <span className="tabular-nums">{pct}%</span>
+        </Tag>
+      ),
     },
     {
-      title: 'Ngưỡng Giá Trị HĐ Tối Thiểu',
+      title: 'Ngưỡng giá trị tối thiểu',
       dataIndex: 'minContractValue',
       key: 'minContractValue',
-      render: (val) => val ? `${Number(val).toLocaleString('vi-VN')} ₫` : 'Không giới hạn',
+      width: 175,
+      render: (val) => (
+        <span className="tabular-nums text-[#231a18] whitespace-nowrap">
+          {val ? `${Number(val).toLocaleString('vi-VN')} ₫` : 'Không giới hạn'}
+        </span>
+      ),
     },
     {
-      title: 'Thời Hạn Nộp Cọc',
+      title: 'Thời hạn nộp cọc',
       dataIndex: 'paymentDeadlineHours',
       key: 'paymentDeadlineHours',
-      render: (hrs) => `${hrs} giờ (${Math.round(hrs / 24)} ngày)`,
+      width: 155,
+      render: (hrs) => (
+        <span className="tabular-nums text-[#574d49] whitespace-nowrap">
+          {hrs} giờ ({Math.round(hrs / 24)} ngày)
+        </span>
+      ),
     },
     {
-      title: 'Bắt Buộc',
+      title: 'Áp dụng',
       dataIndex: 'isMandatory',
       key: 'isMandatory',
-      render: (m) => (m !== false ? <Tag color="success">Bắt buộc</Tag> : <Tag color="default">Tùy chọn</Tag>),
+      width: 110,
+      render: (m) =>
+        m !== false ? (
+          <Tag style={{ backgroundColor: '#edf5ef', borderColor: '#c5dccb', color: '#2d5a43', marginInlineEnd: 0 }}>
+            Bắt buộc
+          </Tag>
+        ) : (
+          <Tag style={{ backgroundColor: '#faf7f2', borderColor: '#e4dcd3', color: '#6c625e', marginInlineEnd: 0 }}>
+            Tùy chọn
+          </Tag>
+        ),
     },
     {
-      title: 'Thao Tác',
+      title: 'Thao tác',
       key: 'action',
+      align: 'center',
+      width: 84,
       render: (_, r) => (
-        <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenRuleModal(r)}>
-          Sửa quy tắc
-        </Button>
+        <RowActionMenu
+          ariaLabel={`Thao tác quy tắc ${r.name}`}
+          actions={[
+            {
+              key: 'edit',
+              label: 'Chỉnh sửa quy tắc',
+              icon: <EditOutlined />,
+              onClick: () => handleOpenRuleModal(r),
+            },
+          ]}
+        />
       ),
     },
   ];
 
   const categoryColumns = [
-    { title: 'Mã', dataIndex: 'id', key: 'id', width: 120 },
-    { title: 'Tên Danh Mục', dataIndex: 'name', key: 'name', render: (t) => <strong>{t}</strong> },
     {
-      title: 'Đường Dẫn Slug',
+      title: 'Mã',
+      dataIndex: 'id',
+      key: 'id',
+      width: 115,
+      render: (id) => (
+        <div className="max-w-[100px]">
+          <TruncatedTooltip
+            text={String(id).slice(0, 12)}
+            tooltipContent={String(id)}
+            className="font-mono text-xs text-[#6c625e]"
+          />
+        </div>
+      ),
+    },
+    {
+      title: 'Tên danh mục',
+      dataIndex: 'name',
+      key: 'name',
+      width: 225,
+      render: (t) => (
+        <div className="max-w-[210px]">
+          <TruncatedTooltip text={t} className="font-medium text-[#231a18]" />
+        </div>
+      ),
+    },
+    {
+      title: 'Đường dẫn',
       dataIndex: 'slug',
       key: 'slug',
-      render: (s) => <span style={{ color: '#888' }}>/{s}</span>,
+      width: 195,
+      render: (s) => (
+        <div className="max-w-[180px]">
+          <TruncatedTooltip text={`/${s}`} className="font-mono text-xs text-[#6c625e]" />
+        </div>
+      ),
     },
-    { title: 'Số Sản Phẩm', dataIndex: 'count', key: 'count', align: 'right' },
     {
-      title: 'Hiển Thị',
+      title: 'Số sản phẩm',
+      dataIndex: 'count',
+      key: 'count',
+      align: 'right',
+      width: 115,
+      render: (count) => <span className="tabular-nums text-[#231a18]">{count ?? 0}</span>,
+    },
+    {
+      title: 'Hiển thị',
       dataIndex: 'status',
       key: 'status',
+      align: 'center',
+      width: 100,
       render: (st, r) => (
         <Switch
           checked={st}
@@ -313,25 +400,71 @@ export default function SystemControll({ onNavigate }) {
   ];
 
   const templateColumns = [
-    { title: 'Mã Template', dataIndex: 'code', key: 'code', width: 140, render: (c, r) => c || r.id },
-    { title: 'Tên Mẫu Giao Diện', dataIndex: 'name', key: 'name', render: (t) => <strong>{t}</strong> },
     {
-      title: 'Bố Cục',
+      title: 'Mã mẫu',
+      dataIndex: 'code',
+      key: 'code',
+      width: 155,
+      render: (c, r) => (
+        <div className="max-w-[140px]">
+          <TruncatedTooltip text={c || r.id} className="font-mono text-xs text-[#574d49]" />
+        </div>
+      ),
+    },
+    {
+      title: 'Tên mẫu giao diện',
+      dataIndex: 'name',
+      key: 'name',
+      width: 240,
+      render: (t) => (
+        <div className="max-w-[225px]">
+          <TruncatedTooltip text={t} className="font-medium text-[#231a18]" />
+        </div>
+      ),
+    },
+    {
+      title: 'Bố cục',
       dataIndex: 'currentRevision',
       key: 'rendererKey',
-      render: (rev) => rev?.rendererKey || 'heritage',
+      width: 135,
+      render: (rev) => (
+        <div className="max-w-[120px]">
+          <TruncatedTooltip text={rev?.rendererKey || 'heritage'} className="font-mono text-xs text-[#6c625e]" />
+        </div>
+      ),
     },
     {
-      title: 'Phân Loại',
+      title: 'Phân loại',
       dataIndex: 'badge',
       key: 'badge',
-      render: (b) => <Tag color="gold">{b}</Tag>,
+      width: 115,
+      render: (b) => (
+        <Tag
+          style={
+            b === 'Premium'
+              ? { backgroundColor: '#fdf8ec', borderColor: '#e8d49c', color: '#9a6b16', marginInlineEnd: 0 }
+              : { backgroundColor: '#faf7f2', borderColor: '#e4dcd3', color: '#574d49', marginInlineEnd: 0 }
+          }
+        >
+          {b}
+        </Tag>
+      ),
     },
     {
-      title: 'Trạng Thái',
+      title: 'Trạng thái',
       dataIndex: 'isActive',
       key: 'isActive',
-      render: (st) => (st !== false ? <Tag color="green">Đang hiển thị</Tag> : <Tag color="default">Đã ẩn</Tag>),
+      width: 135,
+      render: (st) =>
+        st !== false ? (
+          <Tag style={{ backgroundColor: '#edf5ef', borderColor: '#c5dccb', color: '#2d5a43', marginInlineEnd: 0 }}>
+            Đang hiển thị
+          </Tag>
+        ) : (
+          <Tag style={{ backgroundColor: '#faf7f2', borderColor: '#e4dcd3', color: '#6c625e', marginInlineEnd: 0 }}>
+            Đã ẩn
+          </Tag>
+        ),
     },
   ];
 
@@ -340,29 +473,28 @@ export default function SystemControll({ onNavigate }) {
       role="Admin"
       activeKey="admin/kiem-soat-he-thong"
       onNavigate={onNavigate}
-      title="Kiểm Soát Hệ Thống, Catalog & Quy Tắc Nền Tảng"
-      subtitle="Thiết lập tham số ký quỹ M1, quy tắc tính điểm uy tín và quản lý danh mục phân cấp"
+      title="Hệ thống, danh mục & quy tắc nền tảng"
+      subtitle="Thiết lập tỷ lệ đặt cọc ký quỹ, quy chuẩn điểm uy tín và danh mục sản phẩm."
     >
-      <Card bordered={false} style={{ borderRadius: 10 }}>
+      <section className="rounded-lg border border-[#e4dcd3] bg-white px-4 py-2 sm:px-5 sm:py-3">
         <Tabs
           defaultActiveKey="deposit-rules"
           items={[
             {
               key: 'deposit-rules',
-              label: '💰 Quy Tắc Đặt Cọc Hợp Đồng (Deposit M1 Rules)',
+              label: 'Quy tắc đặt cọc hợp đồng',
               children: (
-                <div>
-                  <Alert
-                    message="Bảo vệ dòng tiền qua cơ chế Đặt cọc bắt buộc (Module 6 - Escrow Protection)"
-                    description="Sau khi ký hợp đồng điện tử, bên Mua phải đặt cọc đúng tỷ lệ phần trăm được cấu hình dưới đây vào tài khoản ký quỹ Escrow của sàn thì hợp đồng mới chuyển sang trạng thái Active và xưởng mới bắt đầu sản xuất."
-                    type="info"
-                    showIcon
-                    style={{ marginBottom: 20 }}
-                  />
+                <div className="space-y-4 pb-2">
+                  <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-4 py-3 text-[13px] leading-relaxed text-[#574d49]">
+                    <span className="font-medium text-[#231a18]">Cơ chế ký quỹ bắt buộc: </span>
+                    Sau khi ký hợp đồng điện tử, bên mua đặt cọc theo tỷ lệ cấu hình dưới đây vào tài khoản ký quỹ sàn trước khi xưởng sản xuất.
+                  </div>
 
-                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong style={{ fontSize: 16 }}>Bảng Quy Tắc Đặt Cọc Áp Dụng Toàn Sàn</Text>
-                    <Space>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="m-0 font-serif text-base font-semibold text-[#231a18]">
+                      Bảng quy tắc đặt cọc áp dụng toàn sàn
+                    </h2>
+                    <Space size="small" wrap>
                       <Button icon={<ReloadOutlined />} onClick={loadDepositRules} loading={loadingRules}>
                         Làm mới
                       </Button>
@@ -370,9 +502,9 @@ export default function SystemControll({ onNavigate }) {
                         type="primary"
                         icon={<PlusOutlined />}
                         onClick={() => handleOpenRuleModal(null)}
-                        style={{ background: '#8c1524', borderColor: '#8c1524' }}
+                        style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                       >
-                        Thêm Quy Tắc Cọc
+                        Thêm quy tắc cọc
                       </Button>
                     </Space>
                   </div>
@@ -381,56 +513,63 @@ export default function SystemControll({ onNavigate }) {
                     columns={depositColumns}
                     dataSource={depositRules}
                     rowKey="id"
+                    size="middle"
                     loading={loadingRules}
+                    scroll={{ x: 'max-content' }}
                     pagination={false}
+                    locale={{
+                      emptyText: (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={<span className="text-[#6c625e]">Chưa có quy tắc đặt cọc nào</span>}
+                        />
+                      ),
+                    }}
                   />
                 </div>
               ),
             },
             {
               key: 'reputation-rules',
-              label: '⭐ Quy Tắc Tính Điểm Uy Tín (Reputation Engine)',
+              label: 'Quy tắc điểm uy tín',
               children: (
-                <div style={{ maxWidth: 900 }}>
-                  <Alert
-                    message="Cơ chế cộng trừ điểm uy tín tự động (Module 8 - Reputation Engine)"
-                    description="Mọi biến động điểm được ghi nhận chính xác vào bảng reputation_logs kèm mã đối chiếu hợp đồng hoặc đánh giá. Điểm uy tín quyết định huy hiệu tín nhiệm và thứ hạng ưu tiên trong kết quả tìm kiếm và mở thầu RFQ."
-                    type="success"
-                    showIcon
-                    style={{ marginBottom: 20 }}
-                  />
+                <div className="space-y-4 pb-2 max-w-4xl">
+                  <div className="rounded-lg border border-[#e4dcd3] bg-[#faf7f2] px-4 py-3 text-[13px] leading-relaxed text-[#574d49]">
+                    <span className="font-medium text-[#231a18]">Nguyên tắc ghi nhận: </span>
+                    Mọi biến động điểm đều lưu vết kèm mã đối chiếu hợp đồng hoặc đánh giá, ảnh hưởng trực tiếp tới thứ hạng tìm kiếm và mở thầu RFQ.
+                  </div>
 
-                  <Row gutter={[20, 20]}>
+                  <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
-                      <Card
-                        size="small"
-                        title={<span style={{ color: '#237804', fontWeight: 700 }}>✅ Tiêu Chí Cộng Điểm Thành Tích (+)</span>}
-                        style={{ borderColor: '#b7eb8f', background: '#f6ffed' }}
-                      >
-                        <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 2.2 }}>
-                          <li>Hoàn thành đúng hạn milestone giao hàng: <strong style={{ color: '#2e7d32' }}>+10 điểm</strong></li>
-                          <li>Đánh giá chất lượng 5 sao (★) từ khách hàng: <strong style={{ color: '#2e7d32' }}>+3 điểm</strong></li>
-                          <li>Đánh giá chất lượng 4 sao (★) từ khách hàng: <strong style={{ color: '#2e7d32' }}>+1 điểm</strong></li>
-                          <li>Đạt chuẩn chứng nhận ISO 22000 / OCOP mới: <strong style={{ color: '#2e7d32' }}>+15 điểm</strong></li>
-                          <li>Không có tranh chấp giao dịch suốt 3 mùa vụ liên tiếp: <strong style={{ color: '#2e7d32' }}>+20 điểm</strong></li>
+                      <div className="rounded-lg border border-[#e4dcd3] bg-white overflow-hidden h-full">
+                        <div className="border-b border-[#e4dcd3] bg-[#faf7f2] px-4 py-3">
+                          <h3 className="m-0 text-sm font-semibold text-[#2d5a43]">Tiêu chí cộng điểm thành tích</h3>
+                        </div>
+                        <ul className="divide-y divide-[#f0eae2] m-0 p-0 list-none">
+                          {POSITIVE_REPUTATION_RULES.map((item) => (
+                            <li key={item.label} className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]">
+                              <span className="text-[#231a18]">{item.label}</span>
+                              <span className="font-semibold text-[#2d5a43] tabular-nums whitespace-nowrap">{item.points}</span>
+                            </li>
+                          ))}
                         </ul>
-                      </Card>
+                      </div>
                     </Col>
 
                     <Col xs={24} md={12}>
-                      <Card
-                        size="small"
-                        title={<span style={{ color: '#cf1322', fontWeight: 700 }}>⚠️ Tiêu Chí Trừ Điểm Vi Phạm (-)</span>}
-                        style={{ borderColor: '#ffa39e', background: '#fff1f0' }}
-                      >
-                        <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 2.2 }}>
-                          <li>Hoàn thành trễ hạn milestone mà không gia hạn: <strong style={{ color: '#cf1322' }}>-5 điểm</strong></li>
-                          <li>Vi phạm điều khoản hợp đồng B2B đã ký: <strong style={{ color: '#cf1322' }}>-20 điểm</strong></li>
-                          <li>Đánh giá chất lượng 1-2 sao từ khách hàng: <strong style={{ color: '#cf1322' }}>-2 điểm</strong></li>
-                          <li>Bị khách hàng khiếu nại PoD thất thoát / hư hỏng: <strong style={{ color: '#cf1322' }}>-10 điểm</strong></li>
-                          <li>Bị sàn thu hồi giấy phép xưởng hoặc đình chỉ: <strong style={{ color: '#cf1322' }}>-50 điểm</strong></li>
+                      <div className="rounded-lg border border-[#e4dcd3] bg-white overflow-hidden h-full">
+                        <div className="border-b border-[#e4dcd3] bg-[#faf7f2] px-4 py-3">
+                          <h3 className="m-0 text-sm font-semibold text-[#7d1322]">Tiêu chí khấu trừ vi phạm</h3>
+                        </div>
+                        <ul className="divide-y divide-[#f0eae2] m-0 p-0 list-none">
+                          {PENALTY_REPUTATION_RULES.map((item) => (
+                            <li key={item.label} className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]">
+                              <span className="text-[#231a18]">{item.label}</span>
+                              <span className="font-semibold text-[#7d1322] tabular-nums whitespace-nowrap">{item.points}</span>
+                            </li>
+                          ))}
                         </ul>
-                      </Card>
+                      </div>
                     </Col>
                   </Row>
                 </div>
@@ -438,66 +577,98 @@ export default function SystemControll({ onNavigate }) {
             },
             {
               key: 'categories',
-              label: '🥮 Danh Mục Bánh Phân Cấp',
+              label: 'Danh mục bánh',
               children: (
-                <div>
-                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text type="secondary">Quản lý các nhóm bánh trung thu hiển thị trên thanh tìm kiếm và bộ lọc trang chủ.</Text>
+                <div className="space-y-4 pb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-[13px] text-[#6c625e]">
+                      Quản lý nhóm bánh trung thu hiển thị trên thanh tìm kiếm và bộ lọc trang chủ.
+                    </span>
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
                       onClick={() => setCatModalOpen(true)}
-                      style={{ background: '#8c1524', borderColor: '#8c1524' }}
+                      style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                     >
-                      Thêm Danh Mục Mới
+                      Thêm danh mục mới
                     </Button>
                   </div>
-                  <Table columns={categoryColumns} dataSource={categories} loading={loading} pagination={false} />
+                  <Table
+                    columns={categoryColumns}
+                    dataSource={categories}
+                    size="middle"
+                    loading={loading}
+                    scroll={{ x: 'max-content' }}
+                    pagination={false}
+                    locale={{
+                      emptyText: (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={<span className="text-[#6c625e]">Chưa có danh mục nào</span>}
+                        />
+                      ),
+                    }}
+                  />
                 </div>
               ),
             },
             {
               key: 'templates',
-              label: '🎨 Kho Template Giao Diện Gian Hàng',
+              label: 'Kho mẫu giao diện',
               children: (
-                <div>
-                  <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text type="secondary">
-                      Các mẫu theme thương hiệu dành cho gian hàng xưởng bánh. Quản lý chi tiết token và preview tại trang chuyên dụng.
-                    </Text>
+                <div className="space-y-4 pb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-[13px] text-[#6c625e]">
+                      Các mẫu thương hiệu dành cho gian hàng xưởng bánh. Chỉnh sửa token màu và bố cục tại trang quản lý chuyên dụng.
+                    </span>
                     <Button
                       type="primary"
                       icon={<ArrowRightOutlined />}
                       onClick={() => onNavigate?.('admin/mau-gian-hang')}
-                      style={{ background: '#8c1524', borderColor: '#8c1524' }}
+                      style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
                     >
-                      Mở Trang Quản Lý Mẫu Template Chi Tiết
+                      Mở trang quản lý mẫu
                     </Button>
                   </div>
-                  <Table columns={templateColumns} dataSource={shopTemplates} loading={loading} pagination={false} />
+                  <Table
+                    columns={templateColumns}
+                    dataSource={shopTemplates}
+                    size="middle"
+                    loading={loading}
+                    scroll={{ x: 'max-content' }}
+                    pagination={false}
+                    locale={{
+                      emptyText: (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={<span className="text-[#6c625e]">Chưa có mẫu giao diện nào</span>}
+                        />
+                      ),
+                    }}
+                  />
                 </div>
               ),
             },
           ]}
         />
-      </Card>
+      </section>
 
       {/* Modal Add / Edit Deposit Rule */}
       <Modal
-        title={editingRule ? 'Chỉnh Sửa Quy Tắc Đặt Cọc' : 'Thêm Quy Tắc Đặt Cọc M1 Mới'}
+        title={editingRule ? 'Chỉnh sửa quy tắc đặt cọc' : 'Thêm quy tắc đặt cọc mới'}
         open={ruleModalOpen}
         onCancel={() => !savingRule && setRuleModalOpen(false)}
         confirmLoading={savingRule}
         onOk={() => ruleForm.submit()}
-        okText="Lưu Quy Tắc"
+        okText="Lưu quy tắc"
         cancelText="Đóng"
-        okButtonProps={{ style: { backgroundColor: '#8c1524', borderColor: '#8c1524' } }}
-        destroyOnClose
+        okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        destroyOnHidden
       >
         <Form form={ruleForm} layout="vertical" onFinish={handleSaveRule} disabled={savingRule}>
           <Form.Item
             name="name"
-            label="Tên Quy Tắc Đặt Cọc"
+            label="Tên quy tắc đặt cọc"
             rules={[{ required: true, message: 'Vui lòng nhập tên quy tắc.' }]}
           >
             <Input placeholder="Ví dụ: Quy tắc cọc hợp đồng tiêu chuẩn" maxLength={255} />
@@ -507,7 +678,7 @@ export default function SystemControll({ onNavigate }) {
             <Col span={12}>
               <Form.Item
                 name="depositPercentage"
-                label="Tỷ Lệ Đặt Cọc M1 (%)"
+                label="Tỷ lệ đặt cọc M1 (%)"
                 rules={[{ required: true, message: 'Nhập tỷ lệ cọc từ 1-100%.' }]}
               >
                 <InputNumber min={1} max={100} addonAfter="%" style={{ width: '100%' }} />
@@ -516,7 +687,7 @@ export default function SystemControll({ onNavigate }) {
             <Col span={12}>
               <Form.Item
                 name="paymentDeadlineHours"
-                label="Thời Hạn Nộp Cọc (Giờ)"
+                label="Thời hạn nộp cọc (giờ)"
                 rules={[{ required: true, message: 'Nhập thời hạn nộp cọc.' }]}
               >
                 <InputNumber min={1} max={720} addonAfter="giờ" style={{ width: '100%' }} />
@@ -526,7 +697,7 @@ export default function SystemControll({ onNavigate }) {
 
           <Form.Item
             name="minContractValue"
-            label="Ngưỡng Giá Trị Hợp Đồng Tối Thiểu (VNĐ)"
+            label="Ngưỡng giá trị hợp đồng tối thiểu (VNĐ)"
           >
             <InputNumber
               min={0}
@@ -538,33 +709,33 @@ export default function SystemControll({ onNavigate }) {
             />
           </Form.Item>
 
-          <Form.Item name="isMandatory" label="Bắt Buộc Ký Quỹ Escrow Trước Khi Sản Xuất" valuePropName="checked">
-            <Switch defaultChecked />
+          <Form.Item name="isMandatory" label="Bắt buộc ký quỹ trước khi sản xuất" valuePropName="checked">
+            <Switch />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Modal Add Category */}
       <Modal
-        title="Thêm Danh Mục Bánh Mới"
+        title="Thêm danh mục bánh mới"
         open={catModalOpen}
         onCancel={() => !savingCat && setCatModalOpen(false)}
         confirmLoading={savingCat}
         onOk={() => catForm.submit()}
-        okText="Thêm Danh Mục"
+        okText="Thêm danh mục"
         cancelText="Đóng"
-        okButtonProps={{ style: { backgroundColor: '#8c1524', borderColor: '#8c1524' } }}
-        destroyOnClose
+        okButtonProps={{ style: { backgroundColor: '#7d1322', borderColor: '#7d1322' } }}
+        destroyOnHidden
       >
         <Form form={catForm} layout="vertical" onFinish={handleSaveCategory} disabled={savingCat}>
           <Form.Item
             name="name"
-            label="Tên Danh Mục"
+            label="Tên danh mục"
             rules={[{ required: true, message: 'Vui lòng nhập tên danh mục.' }]}
           >
-            <Input placeholder="Ví dụ: Bánh Trung Thu OCOP Truyền Thống" />
+            <Input placeholder="Ví dụ: Bánh trung thu OCOP truyền thống" />
           </Form.Item>
-          <Form.Item name="slug" label="Đường Dẫn Slug (Tùy chọn)">
+          <Form.Item name="slug" label="Đường dẫn slug (tùy chọn)">
             <Input placeholder="Ví dụ: banh-trung-thu-ocop" />
           </Form.Item>
         </Form>

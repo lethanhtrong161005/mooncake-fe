@@ -6,6 +6,7 @@ import {
   Divider,
   Drawer,
   Empty,
+  Grid,
   Image,
   Spin,
   Table,
@@ -26,6 +27,7 @@ import {
   disputeIssueTypeLabel,
   disputeStatusLabel as toDisputeStatusLabel,
 } from '../../constants/disputeLabels';
+import { parseBankSnapshot } from '../../utils/formatters';
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 
@@ -69,9 +71,13 @@ const PAYMENT_TX_STATUS_META = {
 };
 
 const REFUND_CASE_META = {
+  Pending: { label: 'Chờ chuyển hoàn', color: 'gold' },
+  PendingAdminReview: { label: 'Chờ chuyển hoàn', color: 'gold' },
+  Processing: { label: 'Đang xử lý', color: 'processing' },
   Requested: { label: 'Chờ duyệt', color: 'gold' },
   Approved: { label: 'Đã duyệt', color: 'blue' },
-  Processed: { label: 'Đã hoàn (Sandbox)', color: 'green' },
+  CompletedSimulated: { label: 'Đã hoàn tiền', color: 'green' },
+  Processed: { label: 'Đã hoàn tiền', color: 'green' },
   Completed: { label: 'Đã hoàn tiền', color: 'green' },
   Rejected: { label: 'Từ chối', color: 'red' },
 };
@@ -104,6 +110,14 @@ function AutoConfirmAlert({ deadline }) {
   );
 }
 
+const PAYOUT_REQUEST_META = {
+  Pending: { label: 'Chờ chuyển khoản', color: 'gold' },
+  PendingAdminReview: { label: 'Chờ chuyển khoản', color: 'gold' },
+  Approved: { label: 'Đã giải ngân', color: 'green' },
+  PaidOutSimulated: { label: 'Đã giải ngân', color: 'green' },
+  Rejected: { label: 'Từ chối', color: 'red' },
+};
+
 /**
  * Shared drawer displaying complete B2B order details, VNPay payment schedule/transactions,
  * and paginated financial escrow ledger history for both customer and supplier roles.
@@ -115,6 +129,7 @@ export default function OrderDetailDrawer({
   onClose,
   onOpenPaymentSchedule,
 }) {
+  const screens = Grid.useBreakpoint();
   const [manualRefreshing, setManualRefreshing] = useState(false);
   const [snapshot, setSnapshot] = useState({
     orderId: null,
@@ -529,7 +544,7 @@ export default function OrderDetailDrawer({
             bordered
             size="small"
             column={{ xs: 1, sm: 2 }}
-            styles={{ label: { backgroundColor: '#faf7f2', fontWeight: 600, width: 150 } }}
+            styles={{ label: { backgroundColor: '#faf7f2', fontWeight: 600, width: screens.sm ? 150 : 112 } }}
           >
             <Descriptions.Item label="Người nhận">{current?.recipientName || '—'}</Descriptions.Item>
             <Descriptions.Item label="Số điện thoại">{current?.recipientPhone || '—'}</Descriptions.Item>
@@ -545,11 +560,11 @@ export default function OrderDetailDrawer({
             <Descriptions.Item label="Ngày tạo đơn">
               {formatDateTime(current?.createdAtUtc)}
             </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ nhận hàng" span={2}>
+            <Descriptions.Item label="Địa chỉ nhận hàng" span={{ xs: 1, sm: 2 }}>
               {current?.deliveryAddress || '—'}
             </Descriptions.Item>
             {current?.notes && (
-              <Descriptions.Item label="Ghi chú đơn" span={2}>
+              <Descriptions.Item label="Ghi chú đơn" span={{ xs: 1, sm: 2 }}>
                 {current.notes}
               </Descriptions.Item>
             )}
@@ -642,10 +657,22 @@ export default function OrderDetailDrawer({
                 const surcharge = Number(current.customPackaging.revisionSurcharge || 0);
 
                 return (
-                  <div className="rounded-xl border border-[#e8e0d5] bg-white p-4 space-y-2">
+                  <div className="rounded-xl border border-[#e8e0d5] bg-white p-4 space-y-2.5">
                     <div className="text-sm font-semibold text-stone-800">
                       Bao bì doanh nghiệp in logo
                     </div>
+                    <div className="flex items-start gap-3">
+                      {current.customPackaging.companyLogoUrl && (
+                        <div className="shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-[#faf9f6] p-1">
+                          <Image
+                            src={current.customPackaging.companyLogoUrl}
+                            alt={`Logo ${current.customPackaging.companyName || 'doanh nghiệp'}`}
+                            width={56}
+                            height={56}
+                            style={{ objectFit: 'contain' }}
+                          />
+                        </div>
+                      )}
                     <div className="text-xs text-stone-600 space-y-1">
                       <div>
                         Thương hiệu: <b>{current.customPackaging.companyName}</b>
@@ -670,6 +697,7 @@ export default function OrderDetailDrawer({
                           <b className="text-amber-700">{money(surcharge)}</b>
                         </div>
                       )}
+                    </div>
                     </div>
                   </div>
                 );
@@ -714,7 +742,7 @@ export default function OrderDetailDrawer({
           {role === 'customer'
             && Number(resolvedPayment?.remainingAmount || 0) > 0
             && onOpenPaymentSchedule && (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-[#e8d5b7] bg-[#fffaf0] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e8d5b7] bg-[#fffaf0] px-4 py-3">
                 <span className="text-xs sm:text-sm text-stone-700">
                   Còn <b>{money(resolvedPayment.remainingAmount)}</b> chưa thanh toán theo lịch trình.
                 </span>
@@ -819,7 +847,7 @@ export default function OrderDetailDrawer({
       children: (
         <div className="space-y-4">
           {resolvedFinance && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
               <div className="rounded-xl border border-stone-200 bg-white p-3">
                 <div className="text-[11px] text-stone-500">Đã thu vào hệ thống</div>
                 <div className="text-sm font-bold text-stone-900 tabular-nums mt-0.5">
@@ -886,33 +914,118 @@ export default function OrderDetailDrawer({
               <div className="space-y-2">
                 {resolvedFinance.refundCases.map((rc) => {
                   const rcMeta = REFUND_CASE_META[rc.status] || { label: rc.status, color: 'default' };
+                  const bankInfo = parseBankSnapshot(rc.customerBankSnapshotJson);
                   return (
                     <div
                       key={rc.id}
-                      className="rounded-xl border border-stone-200 bg-white p-3 flex flex-wrap items-center justify-between gap-2 text-xs"
+                      className="rounded-xl border border-stone-200 bg-white p-3 space-y-2 text-xs"
                     >
-                      <div>
-                        <span className="font-mono font-semibold text-stone-900">{rc.caseNumber}</span>
-                        {rc.refundReferenceCode && (
-                          <span className="text-stone-500 ml-2">Mã GD: {rc.refundReferenceCode}</span>
-                        )}
-                        <div className="text-stone-600 mt-0.5">{rc.reason}</div>
-                        {rc.suggestedRefundAmount != null && (
-                          <div className="text-[11px] text-stone-500 mt-0.5">
-                            Đề xuất hoàn: <b className="text-stone-800">{money(rc.suggestedRefundAmount)}</b>
-                            {rc.suggestedRefundPercent != null ? ` (${rc.suggestedRefundPercent}%)` : ''}
-                            {rc.suggestionReason ? ` · ${rc.suggestionReason}` : ''}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-[#8c1524] tabular-nums">
-                          {money(rc.approvedAmount || rc.requestedAmount)}
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-mono font-semibold text-stone-900">{rc.caseNumber}</span>
+                          {rc.refundReferenceCode && (
+                            <span className="text-stone-500 ml-2">Mã GD: {rc.refundReferenceCode}</span>
+                          )}
+                          <div className="text-stone-600 mt-0.5">{rc.reason}</div>
+                          {rc.suggestedRefundAmount != null && (
+                            <div className="text-[11px] text-stone-500 mt-0.5">
+                              Đề xuất hoàn: <b className="text-stone-800">{money(rc.suggestedRefundAmount)}</b>
+                              {rc.suggestedRefundPercent != null ? ` (${rc.suggestedRefundPercent}%)` : ''}
+                              {rc.suggestionReason ? ` · ${rc.suggestionReason}` : ''}
+                            </div>
+                          )}
+                          {bankInfo && (
+                            <div className="mt-1.5 rounded-lg bg-[#faf9f6] border border-stone-200/80 px-2.5 py-1.5 text-[11px] text-stone-700">
+                              <span className="font-semibold">TK nhận hoàn tiền:</span>{' '}
+                              {bankInfo.bankName} · <span className="font-mono font-semibold">{bankInfo.accountNumber}</span> · {bankInfo.accountHolderName}
+                            </div>
+                          )}
                         </div>
-                        <Tag color={rcMeta.color} className="m-0 mt-1">
-                          {rcMeta.label}
-                        </Tag>
+                        <div className="text-right">
+                          <div className="font-bold text-[#8c1524] tabular-nums">
+                            {money(rc.approvedAmount || rc.requestedAmount)}
+                          </div>
+                          <Tag color={rcMeta.color} className="m-0 mt-1">
+                            {rcMeta.label}
+                          </Tag>
+                        </div>
                       </div>
+                      {rc.transferProofImageUrl && (
+                        <div className="flex items-center gap-3 pt-2 border-t border-stone-100">
+                          <Image
+                            src={rc.transferProofImageUrl}
+                            alt={`Chứng từ hoàn tiền ${rc.caseNumber}`}
+                            width={72}
+                            height={54}
+                            className="rounded-lg object-cover border border-stone-200"
+                          />
+                          <div className="text-[11px] text-stone-600">
+                            <div className="font-semibold text-emerald-800">Ảnh minh chứng chuyển khoản hoàn tiền</div>
+                            <div>Nhấp vào ảnh để xem rõ biên lai giao dịch.</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(resolvedFinance?.payoutRequests || []).length > 0 && (
+            <div>
+              <div className="text-sm font-semibold text-stone-800 mb-2">
+                Yêu cầu giải ngân cho xưởng bánh
+              </div>
+              <div className="space-y-2">
+                {resolvedFinance.payoutRequests.map((pr) => {
+                  const prMeta = PAYOUT_REQUEST_META[pr.status] || { label: pr.status, color: 'default' };
+                  const bankInfo = parseBankSnapshot(pr.bankSnapshotJson);
+                  return (
+                    <div
+                      key={pr.id}
+                      className="rounded-xl border border-stone-200 bg-white p-3 space-y-2 text-xs"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-mono font-semibold text-stone-900">{pr.requestNumber}</span>
+                          {pr.payoutReferenceCode && (
+                            <span className="text-stone-500 ml-2">Mã GD: {pr.payoutReferenceCode}</span>
+                          )}
+                          {pr.adminNotes && (
+                            <div className="text-stone-600 mt-0.5">{pr.adminNotes}</div>
+                          )}
+                          {bankInfo && (
+                            <div className="mt-1.5 rounded-lg bg-[#faf9f6] border border-stone-200/80 px-2.5 py-1.5 text-[11px] text-stone-700">
+                              <span className="font-semibold">TK thụ hưởng NCC:</span>{' '}
+                              {bankInfo.bankName} · <span className="font-mono font-semibold">{bankInfo.accountNumber}</span> · {bankInfo.accountHolderName}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-[#2d5a43] tabular-nums">
+                            {money(pr.amount)}
+                          </div>
+                          <Tag color={prMeta.color} className="m-0 mt-1">
+                            {prMeta.label}
+                          </Tag>
+                        </div>
+                      </div>
+                      {pr.transferProofImageUrl && (
+                        <div className="flex items-center gap-3 pt-2 border-t border-stone-100">
+                          <Image
+                            src={pr.transferProofImageUrl}
+                            alt={`Chứng từ giải ngân ${pr.requestNumber}`}
+                            width={72}
+                            height={54}
+                            className="rounded-lg object-cover border border-stone-200"
+                          />
+                          <div className="text-[11px] text-stone-600">
+                            <div className="font-semibold text-emerald-800">Ảnh chứng từ chuyển khoản giải ngân (PoD)</div>
+                            <div>Nhấp vào ảnh để xem rõ biên lai giao dịch.</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -946,14 +1059,14 @@ export default function OrderDetailDrawer({
           Làm mới
         </Button>
       }
-      width={860}
+      width={screens.lg ? 860 : screens.sm ? 640 : '100%'}
       open={open}
       onClose={onClose}
       destroyOnHidden
-      styles={{ body: { backgroundColor: '#faf9f6', padding: 20 } }}
+      styles={{ wrapper: { maxWidth: '100vw' }, body: { backgroundColor: '#faf9f6', padding: screens.sm ? 20 : 14 } }}
     >
       <Spin spinning={loading}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="rounded-xl bg-white border border-stone-200 p-3">
             <div className="text-[11px] text-stone-500">Tổng đơn hàng</div>
             <div className="text-base font-bold text-[#8c1524] tabular-nums mt-0.5">

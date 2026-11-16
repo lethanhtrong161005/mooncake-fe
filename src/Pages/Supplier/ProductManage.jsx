@@ -7,7 +7,6 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Select,
   Space,
   Switch,
@@ -29,6 +28,8 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import productService from '../../services/productService';
 
 const PAGE_SIZE = 10;
@@ -362,10 +363,11 @@ export default function ProductManage({ onNavigate }) {
       title: 'Sản phẩm',
       dataIndex: 'name',
       key: 'name',
+      width: 395,
       render: (name, row) => {
         const categoryName = categoryMap.get(row.categoryId);
         return (
-          <div className="flex items-start gap-3.5">
+          <div className="flex items-start gap-3.5 max-w-[375px]">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e4dcd3] bg-[#faf7f2]">
               {row.primaryImageUrl ? (
                 <Image
@@ -380,12 +382,16 @@ export default function ProductManage({ onNavigate }) {
                 <PictureOutlined className="text-lg text-[#b3a69e]" />
               )}
             </div>
-            <div className="min-w-0">
-              <div className="font-semibold text-[#231a18] text-sm leading-snug">
-                {name}
-              </div>
+            <div className="min-w-0 flex-1">
+              <TruncatedTooltip
+                text={name}
+                className="font-semibold text-[#231a18] text-sm leading-snug"
+              />
               {categoryName && (
-                <div className="mt-0.5 text-xs text-[#9a6b16]">{categoryName}</div>
+                <TruncatedTooltip
+                  text={categoryName}
+                  className="mt-0.5 text-xs text-[#9a6b16]"
+                />
               )}
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] tabular-nums text-[#6c625e]">
                 <span>{row.variantCount} biến thể</span>
@@ -401,8 +407,9 @@ export default function ProductManage({ onNavigate }) {
     {
       title: 'Giá B2B',
       key: 'price',
+      width: 185,
       render: (_, row) => (
-        <span className="font-semibold tabular-nums text-sm text-[#8c1524]">
+        <span className="font-semibold tabular-nums text-sm text-[#7d1322] whitespace-nowrap">
           {row.minPrice === row.maxPrice
             ? `${money(row.minPrice)} ₫`
             : `${money(row.minPrice)} – ${money(row.maxPrice)} ₫`}
@@ -413,12 +420,14 @@ export default function ProductManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'effectiveStatus',
       key: 'effectiveStatus',
+      width: 120,
       render: statusTag,
     },
     {
       title: 'Cập nhật',
       dataIndex: 'updatedAtUtc',
       key: 'updatedAtUtc',
+      width: 110,
       render: (value) => (
         <span className="tabular-nums text-xs text-[#6c625e]">
           {value ? new Date(value).toLocaleDateString('vi-VN') : 'Chưa rõ'}
@@ -428,29 +437,36 @@ export default function ProductManage({ onNavigate }) {
     {
       title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: 220,
+      align: 'center',
+      width: 90,
       render: (_, row) => (
-        <Space size="small">
-          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>
-            Sửa
-          </Button>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => publish(row, row.effectiveStatus === 'Inactive')}
-          >
-            {row.effectiveStatus === 'Inactive' ? 'Đăng bán' : 'Ẩn'}
-          </Button>
-          <Popconfirm title="Xoá sản phẩm này?" onConfirm={() => remove(row)}>
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              aria-label={`Xoá ${row.name}`}
-            />
-          </Popconfirm>
-        </Space>
+        <RowActionMenu
+          ariaLabel={`Thao tác sản phẩm ${row.name}`}
+          actions={[
+            {
+              key: 'edit',
+              label: 'Chỉnh sửa sản phẩm',
+              icon: <EditOutlined />,
+              onClick: () => openEdit(row),
+            },
+            {
+              key: 'toggle',
+              label: row.effectiveStatus === 'Inactive' ? 'Đăng bán sản phẩm' : 'Ẩn sản phẩm',
+              icon: <EyeOutlined />,
+              onClick: () => publish(row, row.effectiveStatus === 'Inactive'),
+            },
+            { type: 'divider' },
+            {
+              key: 'delete',
+              label: 'Xoá sản phẩm',
+              icon: <DeleteOutlined />,
+              danger: true,
+              confirmTitle: `Xoá sản phẩm "${row.name}"?`,
+              confirmOkText: 'Xoá',
+              onClick: () => remove(row),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -466,7 +482,7 @@ export default function ProductManage({ onNavigate }) {
       title="Sản phẩm và biến thể"
       subtitle="Quản lý catalog B2B, SKU, tồn kho và trạng thái xuất bản của gian hàng."
       extra={
-        <Space>
+        <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={triggerReload} loading={loading}>
             Tải lại
           </Button>
@@ -497,8 +513,8 @@ export default function ProductManage({ onNavigate }) {
         >
           {/* Search & Filter Toolbar */}
           <div className="rounded-xl border border-[#ebe3da] bg-[#faf7f2] p-3.5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-              <div className="md:col-span-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+              <div className="sm:col-span-2 lg:col-span-3">
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
@@ -510,7 +526,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="md:col-span-3">
+              <div className="lg:col-span-3">
                 <Select
                   value={categoryFilter}
                   onChange={(value) => {
@@ -526,7 +542,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div className="lg:col-span-2">
                 <Select
                   value={statusFilter}
                   onChange={(value) => {
@@ -539,7 +555,7 @@ export default function ProductManage({ onNavigate }) {
                 />
               </div>
 
-              <div className="flex min-w-0 items-center gap-2 md:col-span-4">
+              <div className="flex min-w-0 items-center gap-2 sm:col-span-2 lg:col-span-4">
                 <Select
                   value={sortBy}
                   onChange={(value) => {
@@ -576,13 +592,15 @@ export default function ProductManage({ onNavigate }) {
           </div>
 
           {/* Product Ledger Table */}
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4">
             <Table
               rowKey="productId"
               loading={loading}
               columns={columns}
               dataSource={items}
               size="middle"
+              tableLayout="fixed"
+              scroll={{ x: 900 }}
               locale={{
                 emptyText: (
                   <Empty
@@ -634,6 +652,7 @@ export default function ProductManage({ onNavigate }) {
         }
         open={open}
         width={920}
+        style={{ maxWidth: 'calc(100vw - 24px)', top: 16 }}
         destroyOnHidden
         onCancel={() => setOpen(false)}
         onOk={() => form.submit()}
@@ -682,7 +701,7 @@ export default function ProductManage({ onNavigate }) {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-5">
+          <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2 lg:grid-cols-5">
             <Form.Item name="basePrice" label="Giá cơ bản" rules={[{ required: true }]}>
               <InputNumber min={0} precision={0} className="w-full" addonAfter="₫" />
             </Form.Item>
@@ -745,8 +764,8 @@ export default function ProductManage({ onNavigate }) {
                         key={field.key}
                         className="rounded-xl border border-[#e4dcd3] bg-white p-3.5"
                       >
-                        <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-12">
-                          <div className="sm:col-span-4">
+                        <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2 lg:grid-cols-12">
+                          <div className="sm:col-span-2 lg:col-span-4">
                             <Form.Item
                               {...field}
                               name={[field.name, 'name']}
@@ -756,7 +775,7 @@ export default function ProductManage({ onNavigate }) {
                               <Input placeholder="Thập cẩm 200g" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'sku']}
@@ -766,7 +785,7 @@ export default function ProductManage({ onNavigate }) {
                               <Input placeholder="SKU-01" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'priceAdjustment']}
@@ -776,7 +795,7 @@ export default function ProductManage({ onNavigate }) {
                               <InputNumber className="w-full" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'initialStockQty']}
@@ -786,7 +805,7 @@ export default function ProductManage({ onNavigate }) {
                               <InputNumber min={0} className="w-full" />
                             </Form.Item>
                           </div>
-                          <div className="sm:col-span-2">
+                          <div className="lg:col-span-2">
                             <Form.Item
                               {...field}
                               name={[field.name, 'weightGram']}

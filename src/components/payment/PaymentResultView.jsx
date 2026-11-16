@@ -98,10 +98,14 @@ export default function PaymentResultView({ onNavigate }) {
   }
 
   const isSignatureSuccess = Boolean(verificationResult?.isSuccess);
+  const paymentStatus = verificationResult?.paymentStatus;
   const isConfirmedByIpn =
     isSignatureSuccess &&
-    (verificationResult?.paymentStatus === 'Completed' || Boolean(verificationResult?.paidAt));
-  const isAwaitingIpn = isSignatureSuccess && !isConfirmedByIpn;
+    (paymentStatus === 'Completed' || Boolean(verificationResult?.paidAt));
+  const isExpiredOrCancelled =
+    isSignatureSuccess &&
+    (paymentStatus === 'Failed' || paymentStatus === 'Cancelled' || paymentStatus === 'Refunded');
+  const isAwaitingIpn = isSignatureSuccess && !isConfirmedByIpn && !isExpiredOrCancelled;
 
   const resultStatus = isConfirmedByIpn ? 'success' : isAwaitingIpn ? 'info' : 'error';
 
@@ -125,15 +129,19 @@ export default function PaymentResultView({ onNavigate }) {
                 ? 'Thanh Toán Đã Được Xác Nhận!'
                 : isAwaitingIpn
                 ? 'Đang Chờ Xác Nhận IPN Từ VNPay'
+                : isExpiredOrCancelled
+                ? 'Giao Dịch Đã Hết Hạn Hoặc Đã Hủy'
                 : 'Giao Dịch Chưa Hoàn Tất'}
             </h1>
           }
           subTitle={
             <p className="text-stone-500 text-sm max-w-md mx-auto">
               {isConfirmedByIpn
-                ? 'Giao dịch đã được cổng VNPay đối soát IPN thành công và ghi nhận vào hệ thống.'
+                ? 'Giao dịch đã được cổng VNPay đối soát thành công và ghi nhận vào hệ thống.'
                 : isAwaitingIpn
                 ? 'Chữ ký Return URL hợp lệ. Hệ thống chỉ ghi nhận hoàn tất thanh toán sau khi nhận thông báo IPN chính thức từ máy chủ VNPay.'
+                : isExpiredOrCancelled
+                ? 'Chữ ký VNPay hợp lệ nhưng phiên thanh toán hoặc đơn hàng này đã hết hạn hoặc bị hủy trước đó. Vui lòng kiểm tra trạng thái đơn hàng.'
                 : 'Thanh toán bị hủy hoặc chữ ký không hợp lệ. Quý khách vui lòng kiểm tra lại hoặc thực hiện thanh toán lại.'}
             </p>
           }
@@ -196,9 +204,11 @@ export default function PaymentResultView({ onNavigate }) {
                 className="text-xs px-2.5 py-0.5 font-semibold"
               >
                 {isConfirmedByIpn
-                  ? 'ĐÃ XÁC NHẬN IPN'
+                  ? 'ĐÃ XÁC NHẬN'
                   : isAwaitingIpn
                   ? 'CHỜ ĐỐI SOÁT IPN'
+                  : isExpiredOrCancelled
+                  ? 'HẾT HẠN / ĐÃ HỦY'
                   : 'THẤT BẠI'}
               </Tag>
             </div>
@@ -233,11 +243,13 @@ export default function PaymentResultView({ onNavigate }) {
                 </span>
               </div>
               <div>
-                <span className="text-stone-500 block">Thời gian xác nhận IPN:</span>
+                <span className="text-stone-500 block">Thời gian xác nhận:</span>
                 <span className="text-stone-800">
                   {verificationResult?.paidAt
                     ? new Date(verificationResult.paidAt).toLocaleString('vi-VN')
-                    : 'Đang chờ IPN từ VNPay'}
+                    : isAwaitingIpn
+                    ? 'Đang chờ IPN từ VNPay'
+                    : 'Chưa ghi nhận'}
                 </span>
               </div>
             </div>

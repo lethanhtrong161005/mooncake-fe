@@ -38,7 +38,6 @@ import {
   TruckOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
@@ -50,6 +49,8 @@ import { useChat } from '../../hooks/useChat';
 import ContractSignModal from '../../components/contracts/ContractSignModal';
 import ContractFulfillmentTable from '../../components/contracts/ContractFulfillmentTable';
 import { renderMilestoneStatusTag } from '../../components/contracts/milestoneUtils';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import '../../styles/journey-pages.css';
 
 const { Paragraph, Text, Title } = Typography;
@@ -104,13 +105,20 @@ function ContractTerms({ value }) {
           {
             title: 'Sản phẩm và yêu cầu',
             dataIndex: 'ProductName',
-            render: (name, item) => <Space direction="vertical" size={2}>
-              <Text strong>{name || 'Sản phẩm'}</Text>
-              {item.Description && <Text type="secondary">{item.Description}</Text>}
-              {item.Specifications && <Text type="secondary">Quy cách: {item.Specifications}</Text>}
-              {item.PackagingRequirements && <Text type="secondary">Đóng gói: {item.PackagingRequirements}</Text>}
-              {item.Notes && <Text type="secondary">Ghi chú: {item.Notes}</Text>}
-            </Space>,
+            width: 280,
+            render: (name, item) => (
+              <div className="max-w-[265px] space-y-0.5 text-xs">
+                <TruncatedTooltip text={name || 'Sản phẩm'} className="font-semibold text-[#231a18]" />
+                {item.Description && <TruncatedTooltip text={item.Description} className="text-[#6c625e]" />}
+                {item.Specifications && (
+                  <TruncatedTooltip text={`Quy cách: ${item.Specifications}`} className="text-[#6c625e]" />
+                )}
+                {item.PackagingRequirements && (
+                  <TruncatedTooltip text={`Đóng gói: ${item.PackagingRequirements}`} className="text-[#6c625e]" />
+                )}
+                {item.Notes && <TruncatedTooltip text={`Ghi chú: ${item.Notes}`} className="text-[#6c625e]" />}
+              </div>
+            ),
           },
           { title: 'Số lượng', render: (_, item) => `${item.Quantity ?? 0} ${item.Unit || ''}` },
           { title: 'Đơn giá', dataIndex: 'UnitPrice', align: 'right', render: money },
@@ -391,6 +399,34 @@ export default function ContractsAndMilestone({ onNavigate }) {
     }
   };
 
+  const handleRecordCashMilestonePayment = (milestone) => {
+    if (!selected || milestone.sequenceNumber !== 3 || !finalMilestoneReadyForSettlement) return;
+    Modal.confirm({
+      title: 'Xác nhận đã thanh toán tiền mặt?',
+      content: `Xác nhận bạn đã trả ${money(milestone.amount)} tiền mặt cho supplier. Sau khi xác nhận, mốc M3 sẽ được ghi nhận là đã thanh toán và bạn có thể tiếp tục nghiệm thu.`,
+      okText: 'Đã thanh toán tiền mặt',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        setPayingMilestoneId(milestone.id);
+        try {
+          await paymentService.recordCashMilestonePayment(selected.id, milestone.id);
+          const [details, paymentData] = await Promise.all([
+            contractService.get(selected.id),
+            paymentService.listMine(),
+          ]);
+          setContractDetails(details);
+          setPayments(paymentData || []);
+          message.success('Đã ghi nhận thanh toán tiền mặt cho mốc M3.');
+          await load();
+        } catch (error) {
+          message.error(errorMessage(error));
+        } finally {
+          setPayingMilestoneId(null);
+        }
+      },
+    });
+  };
+
   const submitRejectMilestone = async () => {
     if (!rejectReason.trim()) {
       message.warning('Vui lòng nhập lý do từ chối để xưởng bánh khắc phục.');
@@ -520,71 +556,95 @@ export default function ContractsAndMilestone({ onNavigate }) {
     {
       title: 'Hợp đồng',
       dataIndex: 'contractNumber',
-      render: (value, item) => (
-        <Space orientation="vertical" size={0}>
-          <Text strong style={{ color: '#8c1524' }}>{value}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {item.title || 'Hợp đồng từ báo giá RFQ'}
-          </Text>
-        </Space>
-      ),
+      width: 260,
+      render: (value, item) => {
+        const titleText = item.title || 'Hợp đồng từ báo giá RFQ';
+        return (
+          <div className="max-w-[245px]">
+            <TruncatedTooltip
+              text={value}
+              tooltipContent={`${value} — ${titleText}`}
+              className="font-mono text-sm font-semibold text-[#8c1524]"
+            />
+            <TruncatedTooltip
+              text={titleText}
+              tooltipContent={`${value} — ${titleText}`}
+              className="text-xs text-[#6c625e]"
+            />
+          </div>
+        );
+      },
     },
     {
       title: 'Tổng giá trị',
       dataIndex: 'totalValue',
       align: 'right',
-      render: money,
+      width: 140,
+      render: (val) => (
+        <span className="whitespace-nowrap font-semibold tabular-nums text-[#231a18]">
+          {money(val)}
+        </span>
+      ),
     },
     {
       title: 'Hạn giao',
       dataIndex: 'deliveryDeadline',
-      render: (value) => value || '—',
+      width: 115,
+      render: (value) => (
+        <span className="whitespace-nowrap text-xs tabular-nums text-[#574d49]">
+          {value || '—'}
+        </span>
+      ),
     },
     {
       title: 'Các bước xác nhận',
+      width: 245,
       render: (_, item) => {
         const supplierSigned = Boolean(item.signedBySupplierAt || item.isSignedBySupplier);
         const customerSigned = Boolean(item.signedByCustomerAt || item.isSignedByCustomer);
         return (
-          <Space direction="vertical" size={2}>
-            {supplierSigned ? (
-              <Tag color="success" icon={<CheckCircleOutlined />}>
-                Xưởng đã ký lúc {item.signedBySupplierAt ? dayjs(item.signedBySupplierAt).format('HH:mm DD/MM/YYYY') : 'thành công'}
-              </Tag>
-            ) : (
-              <Tag color="processing" icon={<ClockCircleOutlined />}>Đang chờ xưởng ký</Tag>
-            )}
-            {customerSigned ? (
-              <Tag color="success" icon={<CheckCircleOutlined />}>
-                Bạn đã ký lúc {item.signedByCustomerAt ? dayjs(item.signedByCustomerAt).format('HH:mm DD/MM/YYYY') : 'thành công'}
-              </Tag>
-            ) : (
-              <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ bạn ký</Tag>
-            )}
+          <div className="max-w-[230px] space-y-1">
+            {supplierSigned
+              ? <Tag color="success" icon={<CheckCircleOutlined />} className="m-0">Xưởng đã ký</Tag>
+              : <Tag color="processing" className="m-0">Đang chờ xưởng ký</Tag>}
+            {customerSigned
+              ? <Tag color="success" icon={<CheckCircleOutlined />} className="m-0">Bạn đã ký</Tag>
+              : <Tag color="warning" className="m-0">Chờ bạn ký</Tag>}
             {item.status === 'PendingDeposit' && (
-              <Tag color="gold">Chờ bạn xác nhận điều khoản và thanh toán M1</Tag>
+              <Tooltip title="Bạn cần xác nhận điều khoản và thanh toán M1" color="#231a18" placement="topLeft">
+                <Tag color="warning" className="m-0 max-w-[225px] truncate align-bottom">
+                  Xác nhận điều khoản & thanh toán M1
+                </Tag>
+              </Tooltip>
             )}
-          </Space>
+          </div>
         );
       },
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
+      width: 180,
       render: (value) => (
-        <Tag color={statusMap[value]?.[0] || 'default'}>
+        <Tag color={statusMap[value]?.[0] || 'default'} className="m-0 whitespace-nowrap">
           {statusMap[value]?.[1] || value}
         </Tag>
       ),
     },
     {
       title: 'Thao tác',
+      align: 'center',
+      width: 84,
       render: (_, item) => (
-        <Space wrap size="small">
-          {item.status === 'Draft' && (
-            <Button
-              size="small"
-              onClick={async () => {
+        <RowActionMenu
+          ariaLabel={`Thao tác hợp đồng ${item.contractNumber}`}
+          actions={[
+            {
+              key: 'submit',
+              label: 'Gửi ký hợp đồng',
+              icon: <FileDoneOutlined />,
+              show: item.status === 'Draft',
+              onClick: async () => {
                 setActionLoading(true);
                 try {
                   await contractService.submitForSignature(item.id);
@@ -595,73 +655,47 @@ export default function ContractsAndMilestone({ onNavigate }) {
                 } finally {
                   setActionLoading(false);
                 }
-              }}
-            >
-              Gửi ký
-            </Button>
-          )}
-
-          {item.status === 'PendingSignature' && (
-            !(item.signedByCustomerAt || item.isSignedByCustomer) ? (
-              <Button
-                type="primary"
-                size="small"
-                style={{ background: '#8c1524', borderColor: '#8c1524' }}
-                icon={<SafetyCertificateOutlined />}
-                onClick={() => openSignModal(item)}
-              >
-                Ký hợp đồng
-              </Button>
-            ) : (
-              <Tag color="success" icon={<CheckCircleOutlined />}>Bạn đã ký (Chờ xưởng)</Tag>
-            )
-          )}
-
-          {item.status === 'PendingDeposit' && (
-            <Button
-              type="primary"
-              size="small"
-              icon={<DollarOutlined />}
-              loading={actionLoading}
-              disabled={!paymentByContract.get(item.id)?.milestoneId}
-              onClick={() => openPaymentReview(item)}
-            >
-              Xem hợp đồng & xác nhận thanh toán
-            </Button>
-          )}
-
-          {['Active', 'CompletedOnTime', 'CompletedLate', 'Disputed', 'Breached'].includes(item.status) && (
-            <Button
-              size="small"
-              icon={<OrderedListOutlined />}
-              onClick={() => viewMilestones(item)}
-            >
-              Tiến độ & Mốc
-            </Button>
-          )}
-
-          {item.status === 'Active' && (
-            <>
-              <Button
-                type="primary"
-                size="small"
-                icon={<FileDoneOutlined />}
-                onClick={() => openFinalAcceptance(item)}
-              >
-                Nghiệm thu dứt điểm
-              </Button>
-              <Button
-                type="text"
-                danger
-                size="small"
-                icon={<AlertOutlined />}
-                onClick={() => openDispute(item)}
-              >
-                Khiếu nại
-              </Button>
-            </>
-          )}
-        </Space>
+              },
+            },
+            {
+              key: 'sign',
+              label: 'Ký hợp đồng',
+              icon: <SafetyCertificateOutlined />,
+              show: item.status === 'PendingSignature' && !(item.signedByCustomerAt || item.isSignedByCustomer),
+              onClick: () => openSignModal(item),
+            },
+            {
+              key: 'pay',
+              label: 'Xem hợp đồng & xác nhận thanh toán',
+              icon: <DollarOutlined />,
+              show: item.status === 'PendingDeposit',
+              disabled: actionLoading || !paymentByContract.get(item.id)?.milestoneId,
+              onClick: () => openPaymentReview(item),
+            },
+            {
+              key: 'milestones',
+              label: 'Tiến độ & mốc nghiệm thu',
+              icon: <OrderedListOutlined />,
+              show: ['Active', 'CompletedOnTime', 'CompletedLate', 'Disputed', 'Breached'].includes(item.status),
+              onClick: () => viewMilestones(item),
+            },
+            {
+              key: 'accept',
+              label: 'Nghiệm thu dứt điểm',
+              icon: <FileDoneOutlined />,
+              show: item.status === 'Active',
+              onClick: () => openFinalAcceptance(item),
+            },
+            {
+              key: 'dispute',
+              label: 'Khiếu nại hợp đồng',
+              icon: <AlertOutlined />,
+              danger: true,
+              show: item.status === 'Active',
+              onClick: () => openDispute(item),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -724,7 +758,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
               loading={loading}
               dataSource={filteredContracts}
               columns={columns}
-              scroll={{ x: 1100 }}
+              scroll={{ x: 1024 }}
               locale={{ emptyText: filteredContracts.length === 0 && contracts.length > 0
                 ? 'Không tìm thấy hợp đồng phù hợp.'
                 : <div className="journey-empty"><FileDoneOutlined /><strong>Chưa có hợp đồng</strong><p>Khi bạn chọn một báo giá, hợp đồng sẽ xuất hiện tại đây để theo dõi.</p><Button onClick={() => onNavigate?.('so-sanh-bao-gia')}>Xem yêu cầu báo giá</Button></div> }}
@@ -751,25 +785,43 @@ export default function ContractsAndMilestone({ onNavigate }) {
             dataSource={payments}
             locale={{ emptyText: 'Chưa có giao dịch thanh toán nào.' }}
             columns={[
-              { title: 'Mã giao dịch', dataIndex: 'paymentNumber', key: 'paymentNumber' },
+              {
+                title: 'Mã giao dịch',
+                dataIndex: 'paymentNumber',
+                key: 'paymentNumber',
+                width: 185,
+                render: (val) => (
+                  <div className="max-w-[170px]">
+                    <TruncatedTooltip text={val} className="font-mono text-xs font-medium text-[#231a18]" />
+                  </div>
+                ),
+              },
               {
                 title: 'Hợp đồng / đơn hàng',
                 key: 'reference',
-                render: (_, payment) => payment.contractId
-                  ? <span>Hợp đồng · {contracts.find((contract) => contract.id === payment.contractId)?.contractNumber || payment.contractId.slice(0, 8)}</span>
-                  : <span>{payment.orderId ? `Đơn hàng · ${payment.orderId.slice(0, 8)}` : '—'}</span>,
+                width: 225,
+                render: (_, payment) => {
+                  const refText = payment.contractId
+                    ? `Hợp đồng · ${contracts.find((contract) => contract.id === payment.contractId)?.contractNumber || payment.contractId.slice(0, 8)}`
+                    : (payment.orderId ? `Đơn hàng · ${payment.orderId.slice(0, 8)}` : '—');
+                  return (
+                    <div className="max-w-[210px]">
+                      <TruncatedTooltip text={refText} className="text-[#4b423e]" />
+                    </div>
+                  );
+                },
               },
-              { title: 'Số tiền', dataIndex: 'amount', key: 'amount', align: 'right', render: money },
-              { title: 'Phương thức', dataIndex: 'method', key: 'method', render: (method) => method === 'VNPay' ? 'VNPay' : method },
+              { title: 'Số tiền', dataIndex: 'amount', key: 'amount', align: 'right', width: 135, render: (v) => <span className="whitespace-nowrap font-semibold tabular-nums">{money(v)}</span> },
+              { title: 'Phương thức', dataIndex: 'method', key: 'method', width: 110, render: (method) => method === 'VNPay' ? 'VNPay' : method },
               {
-                title: 'Trạng thái', dataIndex: 'status', key: 'status',
-                render: (status) => <Tag color={paymentStatusMap[status]?.[0] || 'default'}>{paymentStatusMap[status]?.[1] || status}</Tag>,
+                title: 'Trạng thái', dataIndex: 'status', key: 'status', width: 135,
+                render: (status) => <Tag color={paymentStatusMap[status]?.[0] || 'default'} className="m-0 whitespace-nowrap">{paymentStatusMap[status]?.[1] || status}</Tag>,
               },
               {
-                title: 'Thời gian', key: 'time',
+                title: 'Thời gian', key: 'time', width: 165,
                 render: (_, payment) => {
                   const value = payment.paidAt || payment.createdAt || payment.expiresAt;
-                  return value ? new Date(value).toLocaleString('vi-VN') : '—';
+                  return <span className="whitespace-nowrap text-xs tabular-nums text-[#574d49]">{value ? new Date(value).toLocaleString('vi-VN') : '—'}</span>;
                 },
               },
             ]}
@@ -797,6 +849,13 @@ export default function ContractsAndMilestone({ onNavigate }) {
       >
         {selected && <>
           <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Xưởng đã xác nhận hợp đồng. Bạn có thể chọn thanh toán cọc M1 hoặc nạp toàn bộ giá trị hợp đồng vào ký quỹ ngay từ đầu." />
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message="Lưu ý về hoàn tiền"
+            description="Sau khi bạn xác nhận hợp đồng và thanh toán, khoản tiền đã thanh toán sẽ không được hoàn lại. Vui lòng kiểm tra kỹ hợp đồng và lựa chọn thanh toán trước khi tiếp tục."
+          />
           <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã hợp đồng">{selected.contractNumber}</Descriptions.Item>
             <Descriptions.Item label="Tên hợp đồng">{selected.title || 'Hợp đồng RFQ'}</Descriptions.Item>
@@ -811,7 +870,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
             {selected.milestones.map((milestone) => <Card key={milestone.id} size="small" style={{ marginTop: 8 }}>
               <Space orientation="vertical" size={2}>
                 <Text strong>{milestone.sequenceNumber}. {milestone.name}</Text>
-                <Text>{money(milestone.amount)} · Hạn: {milestone.dueDate || 'Theo tiến độ hợp đồng'} · {milestone.description || ''}</Text>
+                <Text>{money(milestone.amount)} · Hạn: {milestone.dueDate || 'Theo tiến độ hợp đồng'} · {milestone.description === 'Mandatory deposit required to activate the contract.' ? 'Khoản đặt cọc bắt buộc để kích hoạt hợp đồng.' : milestone.description || ''}</Text>
               </Space>
             </Card>)}
           </div>}
@@ -829,7 +888,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
             {paymentChoice === 'full' && <Alert type="info" showIcon style={{ marginTop: 12 }} message="Toàn bộ tiền được giữ trong ký quỹ. Supplier vẫn cần hoàn thành từng mốc và customer nghiệm thu trước khi tiền được giải ngân theo tiến độ." />}
           </div>
           <Checkbox checked={paymentTermsConfirmed} onChange={(event) => setPaymentTermsConfirmed(event.target.checked)} style={{ marginTop: 18 }}>
-            Tôi đã đọc, hiểu và xác nhận các thông tin, điều khoản hợp đồng và lựa chọn thanh toán ở trên.
+            Tôi đã đọc và hiểu điều khoản hợp đồng, lựa chọn thanh toán và chính sách không hoàn tiền sau khi xác nhận hợp đồng và thanh toán.
           </Checkbox>
         </>}
       </Modal>
@@ -1023,14 +1082,26 @@ export default function ContractsAndMilestone({ onNavigate }) {
                                           {alreadyPaid ? (
                                             <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
                                           ) : canPay ? (
-                                            <Button
-                                              size="small"
-                                              icon={<DollarOutlined />}
-                                              loading={payingMilestoneId === milestone.id}
-                                              onClick={() => handlePayMilestone(milestone)}
-                                            >
-                                              Thanh toán mốc {money(milestone.amount)}
-                                            </Button>
+                                            <>
+                                              <Button
+                                                size="small"
+                                                icon={<DollarOutlined />}
+                                                loading={payingMilestoneId === milestone.id}
+                                                onClick={() => handlePayMilestone(milestone)}
+                                              >
+                                                Thanh toán mốc {money(milestone.amount)}
+                                              </Button>
+                                              {milestone.sequenceNumber === 3 && (
+                                                <Button
+                                                  size="small"
+                                                  icon={<CheckCircleOutlined />}
+                                                  loading={payingMilestoneId === milestone.id}
+                                                  onClick={() => handleRecordCashMilestonePayment(milestone)}
+                                                >
+                                                  Đã thanh toán tiền mặt
+                                                </Button>
+                                              )}
+                                            </>
                                           ) : null}
                                         </Space>
 

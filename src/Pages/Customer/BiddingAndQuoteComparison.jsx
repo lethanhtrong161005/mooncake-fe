@@ -1,9 +1,9 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Button, Card, Col, DatePicker, Descriptions, Drawer, Form, Input,
   InputNumber, Modal, Pagination, Row, Select, Space, Spin, Table, Tag, Tooltip, Typography, message,
 } from 'antd';
-import { FileProtectOutlined, PlusOutlined, QuestionCircleOutlined, ReloadOutlined, SolutionOutlined, TeamOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, EditOutlined, FileProtectOutlined, PlusOutlined, QuestionCircleOutlined, ReloadOutlined, SolutionOutlined, TeamOutlined } from '@ant-design/icons';
 import CustomerHeader from '../../components/layout/CustomerHeader';
 import CustomerBreadcrumbBar from '../../components/layout/CustomerBreadcrumbBar';
 import CustomerFooter from '../../components/layout/CustomerFooter';
@@ -11,6 +11,9 @@ import rfqService from '../../services/rfqService';
 import contractService from '../../services/contractService';
 import usePagedList from '../../hooks/usePagedList';
 import FilterBar from '../../components/common/FilterBar';
+import RowActionMenu from '../../components/common/RowActionMenu';
+import PackagingImageUpload from '../../components/packaging/PackagingImageUpload';
+import { TruncatedTooltip } from '../../components/common/TableCellHelpers';
 import dayjs from 'dayjs';
 import { signalRManager } from '../../services/signalrService';
 import '../../styles/rfq-page.css';
@@ -87,6 +90,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const rfqs = rfqPage.items;
   const loading = rfqPage.loading;
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingRfq, setEditingRfq] = useState(null);
   const [compareOpen, setCompareOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selectedRfq, setSelectedRfq] = useState(null);
@@ -99,7 +103,31 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const [form] = Form.useForm();
   const [inviteForm] = Form.useForm();
   const openCreate = () => {
+    setEditingRfq(null);
     form.resetFields();
+    form.setFieldsValue({ items: [{ unit: 'Hộp', quantity: 100 }] });
+    setCreateOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditingRfq(item);
+    form.setFieldsValue({
+      title: item.title,
+      description: item.description || '',
+      deliveryAddress: item.deliveryAddress,
+      deliveryDateRequired: item.deliveryDateRequired ? dayjs(item.deliveryDateRequired) : null,
+      bidDeadline: item.bidDeadline ? dayjs(item.bidDeadline) : null,
+      budgetRangeMin: item.budgetRangeMin,
+      budgetRangeMax: item.budgetRangeMax,
+      items: (item.items || []).map((rfqItem) => ({
+        productName: rfqItem.productName,
+        quantity: rfqItem.quantity,
+        unit: rfqItem.unit,
+        targetPrice: rfqItem.targetPrice,
+        specifications: rfqItem.specifications ? rfqItem.specifications.split(' · ').filter(Boolean) : [],
+        packagingRequirements: rfqItem.packagingRequirements || '',
+      })),
+    });
     setCreateOpen(true);
   };
 
@@ -130,7 +158,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const createRfq = async (values) => {
     setActionLoading(true);
     try {
-      const draft = await rfqService.create({
+      const request = {
         title: values.title,
         description: values.description || null,
         deliveryAddress: values.deliveryAddress,
@@ -140,7 +168,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
         bidDeadline: values.bidDeadline.toDate().toISOString(),
         items: values.items.map((item) => ({
           productName: item.productName,
-          description: item.description || null,
+          description: null,
           quantity: item.quantity,
           unit: item.unit,
           targetPrice: item.targetPrice || null,
@@ -148,12 +176,19 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
             ? item.specifications.join(' · ') || null
             : item.specifications || null,
           packagingRequirements: item.packagingRequirements || null,
-          needsCustomPackaging: Boolean(item.needsCustomPackaging),
+          needsCustomPackaging: Boolean(item.packagingRequirements),
         })),
-      });
-      await rfqService.publish(draft.id);
-      message.success(`Đã phát hành ${draft.rfqNumber}.`);
+      };
+      if (editingRfq) {
+        await rfqService.update(editingRfq.id, request);
+        message.success(`Đã cập nhật ${editingRfq.rfqNumber}.`);
+      } else {
+        const draft = await rfqService.create(request);
+        await rfqService.publish(draft.id);
+        message.success(`Đã phát hành ${draft.rfqNumber}.`);
+      }
       setCreateOpen(false);
+      setEditingRfq(null);
       await loadRfqs();
     } catch (error) {
       message.error(errorMessage(error));
@@ -208,6 +243,28 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     }
   };
 
+  const cancelRfq = (item) => {
+    Modal.confirm({
+      title: 'Kết thúc yêu cầu báo giá?',
+      content: `RFQ ${item.rfqNumber} sẽ được đánh dấu đã hủy và supplier sẽ không thể tiếp tục gửi báo giá.`,
+      okText: 'Kết thúc RFQ',
+      cancelText: 'Quay lại',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          await rfqService.cancel(item.id, 'Customer không còn nhu cầu đặt RFQ.');
+          message.success('Đã kết thúc RFQ.');
+          await loadRfqs();
+        } catch (error) {
+          message.error(errorMessage(error));
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
   const acceptBid = async (bid) => {
     setActionLoading(true);
     try {
@@ -256,28 +313,134 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
   const bestBidId = useMemo(() => bids.filter((bid) => !bid.isExpired && bid.status === 'Submitted')
     .sort((left, right) => Number(left.totalPrice) - Number(right.totalPrice))[0]?.id, [bids]);
   const supplierForBid = (bid) => supplierProfiles.find((supplier) => supplier.supplierProfileId === bid.supplierId);
-  const renderActions = (item) => <Space wrap className="rfq-page__row-actions">
-    {item.status === 'Open' && <Button icon={<TeamOutlined />} onClick={() => openInvite(item)}>Mời xưởng</Button>}
-    <Button type="primary" icon={<SolutionOutlined />} disabled={!item.bidCount} onClick={() => openCompare(item)}>So sánh</Button>
-    {contracts.some((contract) => contract.rfqId === item.id) && <Button
-      icon={<FileProtectOutlined />}
-      onClick={() => onNavigate?.('hop-dong-tien-do')}
-    >Xem hợp đồng</Button>}
-  </Space>;
+  const renderActions = (item) => (
+    <RowActionMenu
+      ariaLabel={`Thao tác RFQ ${item.rfqNumber || ''}`}
+      actions={[
+        {
+          key: 'invite',
+          label: 'Mời xưởng báo giá',
+          icon: <TeamOutlined />,
+          show: item.status === 'Open',
+          onClick: () => openInvite(item),
+        },
+        {
+          key: 'edit',
+          label: 'Sửa RFQ',
+          icon: <EditOutlined />,
+          show: ['Draft', 'Open'].includes(item.status) && !item.awardedBidId && !item.bidCount,
+          onClick: () => openEdit(item),
+        },
+        {
+          key: 'compare',
+          label: 'So sánh báo giá',
+          icon: <SolutionOutlined />,
+          disabled: !item.bidCount,
+          onClick: () => openCompare(item),
+        },
+        {
+          key: 'contract',
+          label: 'Xem hợp đồng',
+          icon: <FileProtectOutlined />,
+          show: contracts.some((contract) => contract.rfqId === item.id),
+          onClick: () => onNavigate?.('hop-dong-tien-do'),
+        },
+        {
+          key: 'cancel',
+          label: 'Kết thúc RFQ',
+          icon: <CloseCircleOutlined />,
+          danger: true,
+          show: !['Awarded', 'InNegotiation', 'Cancelled'].includes(item.status) && !item.awardedBidId,
+          onClick: () => cancelRfq(item),
+        },
+      ]}
+    />
+  );
   const columns = [
     {
-      title: 'Yêu cầu', dataIndex: 'title', key: 'title',
-      render: (value, item) => <div className="rfq-page__request-cell">
-        <span className="rfq-page__request-number">{item.rfqNumber}</span>
-        <strong>{value}</strong>
-        <span>{item.items?.length || 0} mặt hàng</span>
-      </div>,
+      title: 'Yêu cầu',
+      dataIndex: 'title',
+      key: 'title',
+      width: 340,
+      render: (value, item) => {
+        const itemsSummary = item.items?.length
+          ? item.items.map((entry) => `${entry.productName || 'Mặt hàng'} (×${entry.quantity})`).join(', ')
+          : null;
+        const hoverDetail = (
+          <div className="max-w-[320px] space-y-1 text-xs">
+            <div className="font-semibold text-amber-200">{item.rfqNumber}</div>
+            <div className="font-medium text-white">{value}</div>
+            {item.description && <div className="text-stone-300">{item.description}</div>}
+            {itemsSummary && (
+              <div className="border-t border-white/15 pt-1 text-stone-200">
+                Mặt hàng: {itemsSummary}
+              </div>
+            )}
+          </div>
+        );
+
+        return (
+          <div className="rfq-page__request-cell max-w-[320px]">
+            <TruncatedTooltip
+              text={item.rfqNumber}
+              tooltipContent={hoverDetail}
+              className="rfq-page__request-number"
+            />
+            <TruncatedTooltip
+              text={value}
+              tooltipContent={hoverDetail}
+              className="font-semibold text-[#231a18]"
+            />
+            <span>{item.items?.length || 0} mặt hàng</span>
+          </div>
+        );
+      },
     },
-    { title: 'Ngân sách dự kiến', key: 'budget', render: (_, item) => <span className="rfq-page__budget">{item.budgetRangeMin || item.budgetRangeMax ? `${money(item.budgetRangeMin)} – ${money(item.budgetRangeMax)}` : 'Chưa đặt ngân sách'}</span> },
-    { title: 'Hạn nhận báo giá', dataIndex: 'bidDeadline', key: 'bidDeadline', render: formatDeadline },
-    { title: 'Báo giá', dataIndex: 'bidCount', key: 'bidCount', align: 'center', render: (value) => <span className="rfq-page__bid-count">{value || 0}</span> },
-    { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: (value) => <Tag color={statusColor[value]}>{statusLabel[value] || value}</Tag> },
-    { title: 'Thao tác', key: 'actions', render: (_, item) => renderActions(item) },
+    {
+      title: 'Ngân sách dự kiến',
+      key: 'budget',
+      width: 195,
+      render: (_, item) => (
+        <span className="rfq-page__budget whitespace-nowrap">
+          {item.budgetRangeMin || item.budgetRangeMax
+            ? `${money(item.budgetRangeMin)} – ${money(item.budgetRangeMax)}`
+            : 'Chưa đặt ngân sách'}
+        </span>
+      ),
+    },
+    {
+      title: 'Hạn nhận báo giá',
+      dataIndex: 'bidDeadline',
+      key: 'bidDeadline',
+      width: 150,
+      render: formatDeadline,
+    },
+    {
+      title: 'Báo giá',
+      dataIndex: 'bidCount',
+      key: 'bidCount',
+      align: 'center',
+      width: 85,
+      render: (value) => <span className="rfq-page__bid-count">{value || 0}</span>,
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (value) => (
+        <Tag color={statusColor[value]} className="m-0 whitespace-nowrap">
+          {statusLabel[value] || value}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Thao tác',
+      key: 'actions',
+      align: 'center',
+      width: 84,
+      render: (_, item) => renderActions(item),
+    },
   ];
   const hasFilters = Boolean(rfqPage.search || rfqPage.query.status);
   const emptyContent = <div className="rfq-page__empty">
@@ -325,7 +488,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
             statusOptions={Object.keys(statusColor).map((value) => ({ value, label: statusLabel[value] }))} />
         </div>
         <div className="rfq-page__desktop-list">
-          <Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} scroll={{ x: 1050 }}
+          <Table rowKey="id" loading={loading} columns={columns} dataSource={rfqs} tableLayout="fixed" scroll={{ x: 974 }}
             locale={{ emptyText: emptyContent }}
             pagination={{ current: rfqPage.query.page, pageSize: rfqPage.query.pageSize, total: rfqPage.totalCount,
               onChange: rfqPage.setPage, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100] }} />
@@ -353,7 +516,7 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     </main>
     <CustomerFooter onNavigate={onNavigate} />
 
-    <Modal title="Tạo yêu cầu báo giá" open={createOpen} onCancel={() => setCreateOpen(false)} footer={null} width={850}>
+    <Modal title={editingRfq ? `Sửa yêu cầu báo giá · ${editingRfq.rfqNumber}` : 'Tạo yêu cầu báo giá'} open={createOpen} onCancel={() => { setCreateOpen(false); setEditingRfq(null); }} footer={null} width={850}>
       <Form form={form} layout="vertical" onFinish={createRfq} initialValues={{ items: [{ unit: 'Hộp', quantity: 100 }] }}>
         <Row gutter={16}><Col xs={24} md={12}><Form.Item name="title" label="Tiêu đề" rules={[{ required: true, min: 5 }]}><Input /></Form.Item></Col><Col xs={24} md={12}><Form.Item name="deliveryAddress" label="Địa chỉ giao" rules={[{ required: true, min: 10 }]}><Input /></Form.Item></Col></Row>
         <Form.Item name="description" label="Mô tả"><TextArea rows={2} maxLength={5000} showCount /></Form.Item>
@@ -371,10 +534,10 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
         }} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMin" label="Ngân sách từ"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item name="budgetRangeMax" label="Đến"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row>
         <Text type="secondary" style={{ display: "block", marginTop: -12, marginBottom: 16 }}>Ngân sách nhập bằng đồng (VND), không phải nghìn hay triệu. Ví dụ: 1.000.000 = một triệu đồng.</Text>
         <Form.List name="items">{(fields, { add, remove }) => <Space direction="vertical" style={{ width: '100%' }}>
-          {fields.map(({ key, ...field }) => <Card key={key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label={<Space size={6}>Quy cách<Tooltip title="Quy cách là những đặc điểm cụ thể của sản phẩm và cách đóng gói mà bạn muốn đặt."><QuestionCircleOutlined style={{ color: '#8c8c8c', cursor: 'help' }} /></Tooltip></Space>}><Select mode="tags" showSearch options={mooncakeSpecificationSuggestions.map((value) => ({ label: value, value }))} placeholder="Chọn gợi ý hoặc tự nhập quy cách" tokenSeparators={[',']} /></Form.Item></Card>)}
+          {fields.map(({ key, ...field }) => <Card key={key} size="small" title={`Mặt hàng ${field.name + 1}`} extra={fields.length > 1 && <Button danger type="link" onClick={() => remove(field.name)}>Xóa</Button>}><Row gutter={12}><Col xs={24} md={10}><Form.Item {...field} name={[field.name, 'productName']} label="Sản phẩm" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'quantity']} label="Số lượng" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col><Col xs={12} md={4}><Form.Item {...field} name={[field.name, 'unit']} label="Đơn vị" rules={[{ required: true }]}><Input /></Form.Item></Col><Col xs={24} md={6}><Form.Item {...field} name={[field.name, 'targetPrice']} label="Giá mục tiêu"><BudgetInput min={0} style={{ width: '100%' }} /></Form.Item></Col></Row><Form.Item {...field} name={[field.name, 'specifications']} label={<Space size={6}>Quy cách<Tooltip title="Quy cách là những đặc điểm cụ thể của sản phẩm và cách đóng gói mà bạn muốn đặt."><QuestionCircleOutlined style={{ color: '#8c8c8c', cursor: 'help' }} /></Tooltip></Space>}><Select mode="tags" showSearch options={mooncakeSpecificationSuggestions.map((value) => ({ label: value, value }))} placeholder="Chọn gợi ý hoặc tự nhập quy cách" tokenSeparators={[',']} /></Form.Item><Form.Item {...field} name={[field.name, 'packagingRequirements']} label="Ảnh mẫu bao bì"><PackagingImageUpload successText="Ảnh mẫu bao bì đã tải lên" previewAlt="Ảnh mẫu bao bì customer yêu cầu" /></Form.Item></Card>)}
           <Button onClick={() => add({ unit: 'Hộp', quantity: 1 })}>Thêm mặt hàng</Button>
         </Space>}</Form.List>
-        <Space style={{ marginTop: 18 }}><Button onClick={() => setCreateOpen(false)}>Hủy</Button><Button type="primary" htmlType="submit" loading={actionLoading}>Phát hành RFQ</Button></Space>
+        <Space style={{ marginTop: 18 }}><Button onClick={() => { setCreateOpen(false); setEditingRfq(null); }}>Hủy</Button><Button type="primary" htmlType="submit" loading={actionLoading}>{editingRfq ? 'Lưu thay đổi' : 'Phát hành RFQ'}</Button></Space>
       </Form>
     </Modal>
 
@@ -385,11 +548,44 @@ export default function BiddingAndQuoteComparison({ onNavigate }) {
     <Drawer title={`So sánh báo giá · ${selectedRfq?.rfqNumber || ''}`} open={compareOpen} onClose={() => setCompareOpen(false)} size={960} rootClassName="rfq-page__compare-drawer">
       {selectedRfq?.awardedBidId && <Alert type="success" showIcon style={{ marginBottom: 16 }} message={`Bạn đã chọn báo giá ${bids.find((bid) => bid.id === selectedRfq.awardedBidId)?.bidNumber || ''}.`} description="Xưởng đang xác nhận lựa chọn của bạn." />}
       <p className="rfq-page__compare-intro">Đối chiếu tổng giá, thời gian giao và hiệu lực trước khi chọn xưởng. Chạm vào mã báo giá để xem từng mặt hàng.</p>
-      <div className="rfq-page__compare-table"><Table rowKey="id" loading={actionLoading} dataSource={bids} pagination={false} scroll={{ x: 850 }} columns={[
-        { title: 'Xưởng', render: (_, bid) => { const supplier = supplierForBid(bid); return <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => setDetailBid(bid)}>{supplier?.companyName || 'Xem xưởng'}</Button>; } },
-        { title: 'Mã báo giá', dataIndex: 'bidNumber', render: (value, bid) => <Button type="link" style={{ padding: 0 }} onClick={() => setDetailBid(bid)}>{value}</Button> }, { title: 'Tổng giá', dataIndex: 'totalPrice', render: (value, bid) => <Space>{bid.id === selectedRfq?.awardedBidId && <Tag color="green">Đã chọn</Tag>}<Text strong type={bid.id === bestBidId ? 'success' : undefined}>{money(value)}{bid.id === bestBidId && ' · Giá thấp nhất'}</Text></Space> },
-        { title: 'Giao hàng', dataIndex: 'estimatedDeliveryDays', render: (value) => `${value} ngày` }, { title: 'Hiệu lực', dataIndex: 'validityDays', render: (value) => `${value} ngày` }, { title: 'Trạng thái', dataIndex: 'status', render: (value) => <Tag>{bidStatusLabel[value] || value}</Tag> },
-        { title: 'Lựa chọn', render: (_, bid) => <Button type="primary" disabled={selectedRfq?.status === 'InNegotiation' || bid.status !== 'Submitted' || bid.isExpired} loading={actionLoading} onClick={() => confirmBidSelection(bid)}>Chọn xưởng</Button> },
+      <div className="rfq-page__compare-table"><Table rowKey="id" loading={actionLoading} dataSource={bids} pagination={false} tableLayout="fixed" scroll={{ x: 910 }} columns={[
+        {
+          title: 'Xưởng',
+          width: 205,
+          render: (_, bid) => {
+            const supplier = supplierForBid(bid);
+            const name = supplier?.companyName || 'Xem xưởng';
+            return (
+              <Tooltip title={name} color="#231a18" placement="topLeft">
+                <Button type="link" style={{ padding: 0, height: 'auto', maxWidth: 185 }} onClick={() => setDetailBid(bid)}>
+                  <span className="block max-w-[180px] truncate text-left">{name}</span>
+                </Button>
+              </Tooltip>
+            );
+          },
+        },
+        {
+          title: 'Mã báo giá',
+          dataIndex: 'bidNumber',
+          width: 140,
+          render: (value, bid) => (
+            <Tooltip title={value} color="#231a18" placement="topLeft">
+              <Button type="link" style={{ padding: 0, maxWidth: 125 }} onClick={() => setDetailBid(bid)}>
+                <span className="block max-w-[120px] truncate text-left">{value}</span>
+              </Button>
+            </Tooltip>
+          ),
+        },
+        {
+          title: 'Tổng giá',
+          dataIndex: 'totalPrice',
+          width: 185,
+          render: (value, bid) => <Space>{bid.id === selectedRfq?.awardedBidId && <Tag color="green">Đã chọn</Tag>}<Text strong type={bid.id === bestBidId ? 'success' : undefined}>{money(value)}{bid.id === bestBidId && ' · Giá thấp nhất'}</Text></Space>,
+        },
+        { title: 'Giao hàng', dataIndex: 'estimatedDeliveryDays', width: 90, render: (value) => `${value} ngày` },
+        { title: 'Hiệu lực', dataIndex: 'validityDays', width: 85, render: (value) => `${value} ngày` },
+        { title: 'Trạng thái', dataIndex: 'status', width: 100, render: (value) => <Tag>{bidStatusLabel[value] || value}</Tag> },
+        { title: 'Lựa chọn', width: 105, render: (_, bid) => <Button type="primary" disabled={selectedRfq?.status === 'InNegotiation' || bid.status !== 'Submitted' || bid.isExpired} loading={actionLoading} onClick={() => confirmBidSelection(bid)}>Chọn xưởng</Button> },
       ]} /></div>
       <div className="rfq-page__compare-cards">
         {actionLoading ? <Spin description="Đang tải báo giá…" /> : bids.length ? bids.map((bid) => <article key={bid.id} className="rfq-page__compare-card">
