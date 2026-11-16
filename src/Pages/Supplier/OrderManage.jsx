@@ -567,6 +567,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Đơn hàng & SLA',
       dataIndex: 'orderNumber',
       key: 'orderNumber',
+      width: 150,
       render: (value, order) => {
         const sla = order.status === 'Pending'
           ? { date: order.responseDeadlineAtUtc || order.responseDeadlineAt, label: 'SLA phản hồi' }
@@ -592,6 +593,7 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Doanh nghiệp / người nhận',
       key: 'customer',
+      width: 200,
       render: (_, order) => (
         <div className="max-w-[145px] space-y-0.5">
           <div className="truncate font-medium text-sm text-[#231a18]">
@@ -610,6 +612,7 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Hạng mục & bao bì',
       key: 'items',
+      width: 240,
       render: (_, order) => (
         <div className="max-w-[155px] space-y-1 text-xs text-[#231a18]">
           {order.items?.map((item) => (
@@ -633,6 +636,7 @@ export default function OrderManage({ onNavigate }) {
     {
       title: 'Ngày giao',
       key: 'deliveryDate',
+      width: 120,
       render: (_, order) => (
         <div className="space-y-0.5 text-xs tabular-nums text-[#231a18] whitespace-nowrap">
           {order.confirmedDeliveryDate ? (
@@ -660,6 +664,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Tổng tiền & cọc',
       key: 'totalAmount',
       align: 'right',
+      width: 150,
       render: (_, order) => (
         <div className="space-y-1 text-right whitespace-nowrap">
           <div className="font-semibold tabular-nums text-sm text-[#7d1322]">
@@ -680,6 +685,7 @@ export default function OrderManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 150,
       render: (value, order) => {
         if (order.activeDispute?.status === 'AwaitingSupplierRebuttal') {
           return (
@@ -701,7 +707,8 @@ export default function OrderManage({ onNavigate }) {
       title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      width: 190,
+      width: 250,
+      fixed: 'right',
       render: (_, order) => {
         const allowedActions = order.allowedActions || [];
         const moreItems = [];
@@ -966,7 +973,7 @@ export default function OrderManage({ onNavigate }) {
             columns={columns}
             dataSource={orders}
             size="middle"
-            scroll={{ x: 900 }}
+            scroll={{ x: 1250 }}
             pagination={{
               current: orderQuery.page,
               pageSize: orderQuery.pageSize,
