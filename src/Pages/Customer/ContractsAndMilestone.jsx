@@ -396,6 +396,34 @@ export default function ContractsAndMilestone({ onNavigate }) {
     }
   };
 
+  const handleRecordCashMilestonePayment = (milestone) => {
+    if (!selected || milestone.sequenceNumber !== 3 || !finalMilestoneReadyForSettlement) return;
+    Modal.confirm({
+      title: 'Xác nhận đã thanh toán tiền mặt?',
+      content: `Xác nhận bạn đã trả ${money(milestone.amount)} tiền mặt cho supplier. Sau khi xác nhận, mốc M3 sẽ được ghi nhận là đã thanh toán và bạn có thể tiếp tục nghiệm thu.`,
+      okText: 'Đã thanh toán tiền mặt',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        setPayingMilestoneId(milestone.id);
+        try {
+          await paymentService.recordCashMilestonePayment(selected.id, milestone.id);
+          const [details, paymentData] = await Promise.all([
+            contractService.get(selected.id),
+            paymentService.listMine(),
+          ]);
+          setContractDetails(details);
+          setPayments(paymentData || []);
+          message.success('Đã ghi nhận thanh toán tiền mặt cho mốc M3.');
+          await load();
+        } catch (error) {
+          message.error(errorMessage(error));
+        } finally {
+          setPayingMilestoneId(null);
+        }
+      },
+    });
+  };
+
   const submitRejectMilestone = async () => {
     if (!rejectReason.trim()) {
       message.warning('Vui lòng nhập lý do từ chối để xưởng bánh khắc phục.');
@@ -804,6 +832,13 @@ export default function ContractsAndMilestone({ onNavigate }) {
       >
         {selected && <>
           <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Xưởng đã xác nhận hợp đồng. Bạn có thể chọn thanh toán cọc M1 hoặc nạp toàn bộ giá trị hợp đồng vào ký quỹ ngay từ đầu." />
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message="Lưu ý về hoàn tiền"
+            description="Sau khi bạn xác nhận hợp đồng và thanh toán, khoản tiền đã thanh toán sẽ không được hoàn lại. Vui lòng kiểm tra kỹ hợp đồng và lựa chọn thanh toán trước khi tiếp tục."
+          />
           <Descriptions bordered size="small" column={{ xs: 1, sm: 2 }}>
             <Descriptions.Item label="Mã hợp đồng">{selected.contractNumber}</Descriptions.Item>
             <Descriptions.Item label="Tên hợp đồng">{selected.title || 'Hợp đồng RFQ'}</Descriptions.Item>
@@ -818,7 +853,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
             {selected.milestones.map((milestone) => <Card key={milestone.id} size="small" style={{ marginTop: 8 }}>
               <Space orientation="vertical" size={2}>
                 <Text strong>{milestone.sequenceNumber}. {milestone.name}</Text>
-                <Text>{money(milestone.amount)} · Hạn: {milestone.dueDate || 'Theo tiến độ hợp đồng'} · {milestone.description || ''}</Text>
+                <Text>{money(milestone.amount)} · Hạn: {milestone.dueDate || 'Theo tiến độ hợp đồng'} · {milestone.description === 'Mandatory deposit required to activate the contract.' ? 'Khoản đặt cọc bắt buộc để kích hoạt hợp đồng.' : milestone.description || ''}</Text>
               </Space>
             </Card>)}
           </div>}
@@ -836,7 +871,7 @@ export default function ContractsAndMilestone({ onNavigate }) {
             {paymentChoice === 'full' && <Alert type="info" showIcon style={{ marginTop: 12 }} message="Toàn bộ tiền được giữ trong ký quỹ. Supplier vẫn cần hoàn thành từng mốc và customer nghiệm thu trước khi tiền được giải ngân theo tiến độ." />}
           </div>
           <Checkbox checked={paymentTermsConfirmed} onChange={(event) => setPaymentTermsConfirmed(event.target.checked)} style={{ marginTop: 18 }}>
-            Tôi đã đọc, hiểu và xác nhận các thông tin, điều khoản hợp đồng và lựa chọn thanh toán ở trên.
+            Tôi đã đọc và hiểu điều khoản hợp đồng, lựa chọn thanh toán và chính sách không hoàn tiền sau khi xác nhận hợp đồng và thanh toán.
           </Checkbox>
         </>}
       </Modal>
@@ -1020,14 +1055,26 @@ export default function ContractsAndMilestone({ onNavigate }) {
                               {alreadyPaid ? (
                                 <Tag color="success">{fullContractPaid ? 'Đã thanh toán toàn bộ' : 'Đã thanh toán mốc'}</Tag>
                               ) : canPay ? (
-                                <Button
-                                  size="small"
-                                  icon={<DollarOutlined />}
-                                  loading={payingMilestoneId === milestone.id}
-                                  onClick={() => handlePayMilestone(milestone)}
-                                >
-                                  Thanh toán mốc {money(milestone.amount)}
-                                </Button>
+                                <>
+                                  <Button
+                                    size="small"
+                                    icon={<DollarOutlined />}
+                                    loading={payingMilestoneId === milestone.id}
+                                    onClick={() => handlePayMilestone(milestone)}
+                                  >
+                                    Thanh toán mốc {money(milestone.amount)}
+                                  </Button>
+                                  {milestone.sequenceNumber === 3 && (
+                                    <Button
+                                      size="small"
+                                      icon={<CheckCircleOutlined />}
+                                      loading={payingMilestoneId === milestone.id}
+                                      onClick={() => handleRecordCashMilestonePayment(milestone)}
+                                    >
+                                      Đã thanh toán tiền mặt
+                                    </Button>
+                                  )}
+                                </>
                               ) : null}
                             </Space>
                           );

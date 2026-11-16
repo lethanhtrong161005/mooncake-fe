@@ -29,6 +29,11 @@ export const paymentService = {
     return unwrap(res);
   },
 
+  async recordCashMilestonePayment(contractId, milestoneId) {
+    const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.CONTRACT_MILESTONE_CASH_PAYMENT(contractId, milestoneId));
+    return unwrap(res);
+  },
+
   // 3. Khởi tạo chuyển khoản VietQR (MB Bank Napas 247)
   async createBankTransfer(payload) {
     const res = await apiClient.post(API_ENDPOINTS.PAYMENTS.BANK_TRANSFER, payload);

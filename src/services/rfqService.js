@@ -22,6 +22,9 @@ export const rfqService = {
   async create(request) {
     return unwrap(await apiClient.post(API_ENDPOINTS.RFQ.CREATE, request));
   },
+  async update(rfqId, request) {
+    return unwrap(await apiClient.put(API_ENDPOINTS.RFQ.DETAILS(rfqId), request));
+  },
   async listMine() {
     return unwrap(await apiClient.get(API_ENDPOINTS.RFQ.LIST));
   },
