@@ -6,6 +6,7 @@ import {
   Descriptions,
   Divider,
   Drawer,
+  Dropdown,
   Empty,
   Form,
   Image,
@@ -31,6 +32,7 @@ import {
   DollarCircleOutlined,
   EyeOutlined,
   FileTextOutlined,
+  MoreOutlined,
   PictureOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -696,130 +698,141 @@ export default function OrderManage({ onNavigate }) {
       },
     },
     {
-      title: 'Thao tác xưởng',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      width: 176,
+      width: 190,
       render: (_, order) => {
         const allowedActions = order.allowedActions || [];
+        const moreItems = [];
+
+        if (order.status === 'Pending') {
+          moreItems.push({
+            key: 'proposeDate',
+            icon: <CalendarOutlined />,
+            label: 'Đề xuất ngày',
+            onClick: () => handleOpenProposeModal(order),
+          });
+          moreItems.push({
+            key: 'reject',
+            label: 'Từ chối',
+            danger: true,
+            onClick: () => rejectOrder(order),
+          });
+        }
+
+        if (order.customPackaging) {
+          moreItems.push({
+            key: 'packaging',
+            icon: <PictureOutlined />,
+            label: 'Bao bì',
+            onClick: () => openPackaging(order),
+          });
+        }
+
+        if (allowedActions.includes('RequestSimulatedPayout')) {
+          moreItems.push({
+            key: 'payout',
+            icon: <DollarCircleOutlined />,
+            label: 'Giải ngân',
+            onClick: () => {
+              setSelectedOrder(order);
+              setPayoutRequestModalOpen(true);
+            },
+          });
+        }
+
+        if (allowedActions.includes('RespondCancellationRequest')) {
+          moreItems.push({
+            key: 'respondCancel',
+            label: 'Phản hồi hủy',
+            onClick: () => handleOpenRespondCancelModal(order),
+          });
+        }
+
+        let primaryAction = null;
+        if (order.status === 'Pending') {
+          primaryAction = (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => runAction(orderService.confirm, order, 'Đã xác nhận đơn hàng và tạo lịch thu cọc.')}
+              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+            >
+              Xác nhận đơn
+            </Button>
+          );
+        } else if (allowedActions.includes('StartProduction')) {
+          primaryAction = (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => runAction(
+                orderService.startProcessing,
+                order,
+                'Đơn hàng đã chuyển sang giai đoạn sản xuất.',
+              )}
+              style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+            >
+              Sản xuất
+            </Button>
+          );
+        } else if (allowedActions.includes('MarkShipped')) {
+          primaryAction = (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => runAction(
+                orderService.ship,
+                order,
+                'Đơn đã xuất kho, vui lòng tải ảnh biên bản PoD.',
+              )}
+              style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
+            >
+              Xuất kho giao
+            </Button>
+          );
+        } else if (order.status === 'Shipped') {
+          primaryAction = (
+            <Button
+              type="primary"
+              size="small"
+              icon={<UploadOutlined />}
+              onClick={() => handleOpenPodModal(order)}
+              style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
+            >
+              Tải ảnh PoD
+            </Button>
+          );
+        } else if (allowedActions.includes('SubmitDeliveryDisputeRebuttal')) {
+          primaryAction = (
+            <Button
+              type="primary"
+              size="small"
+              danger
+              onClick={() => handleOpenRebuttalModal(order)}
+            >
+              Phản biện
+            </Button>
+          );
+        }
 
         return (
-          <div className="flex flex-wrap justify-end gap-1.5">
+          <Space size="small">
             <Button
               size="small"
               icon={<FileTextOutlined />}
               onClick={() => setDetailOrder(order)}
             >
-              Chi tiết &amp; GD
+              Chi tiết
             </Button>
-            {order.status === 'Pending' && (
-              <>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => runAction(orderService.confirm, order, 'Đã xác nhận đơn hàng và tạo lịch thu cọc.')}
-                  style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-                >
-                  Xác nhận đơn
-                </Button>
-                <Button
-                  size="small"
-                  onClick={() => handleOpenProposeModal(order)}
-                  style={{ borderColor: '#9a6b16', color: '#9a6b16' }}
-                >
-                  Đề xuất ngày
-                </Button>
-                <Button size="small" danger onClick={() => rejectOrder(order)}>
-                  Từ chối
-                </Button>
-              </>
+            {primaryAction}
+            {moreItems.length > 0 && (
+              <Dropdown menu={{ items: moreItems }} placement="bottomRight">
+                <Button size="small" icon={<MoreOutlined />} />
+              </Dropdown>
             )}
-
-            {allowedActions.includes('StartProduction') && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => runAction(
-                  orderService.startProcessing,
-                  order,
-                  'Đơn hàng đã chuyển sang giai đoạn sản xuất.',
-                )}
-                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-              >
-                Bắt đầu sản xuất
-              </Button>
-            )}
-
-            {allowedActions.includes('MarkShipped') && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => runAction(
-                  orderService.ship,
-                  order,
-                  'Đơn đã xuất kho, vui lòng tải ảnh biên bản PoD.',
-                )}
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-              >
-                Xuất kho giao
-              </Button>
-            )}
-
-            {order.status === 'Shipped' && (
-              <Button
-                type="primary"
-                size="small"
-                icon={<UploadOutlined />}
-                onClick={() => handleOpenPodModal(order)}
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-              >
-                {(order.latestDelivery?.proofCount || 0) > 0
-                  ? `Thêm ảnh PoD (${order.latestDelivery.proofCount})`
-                  : 'Tải ảnh PoD'}
-              </Button>
-            )}
-
-            {order.customPackaging && (
-              <Button size="small" icon={<PictureOutlined />} onClick={() => openPackaging(order)}>
-                Bao bì
-              </Button>
-            )}
-
-            {allowedActions.includes('RequestSimulatedPayout') && (
-              <Button
-                size="small"
-                icon={<DollarCircleOutlined />}
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setPayoutRequestModalOpen(true);
-                }}
-                style={{ borderColor: '#2d5a43', color: '#2d5a43' }}
-              >
-                Giải ngân
-              </Button>
-            )}
-
-            {allowedActions.includes('SubmitDeliveryDisputeRebuttal') && (
-              <Button
-                type="primary"
-                size="small"
-                danger
-                onClick={() => handleOpenRebuttalModal(order)}
-              >
-                Phản biện khiếu nại
-              </Button>
-            )}
-
-            {allowedActions.includes('RespondCancellationRequest') && (
-              <Button
-                size="small"
-                onClick={() => handleOpenRespondCancelModal(order)}
-                style={{ borderColor: '#d48806', color: '#d48806' }}
-              >
-                Phản hồi hủy
-              </Button>
-            )}
-          </div>
+          </Space>
         );
       },
     },

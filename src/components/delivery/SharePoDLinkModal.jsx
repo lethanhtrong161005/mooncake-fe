@@ -244,7 +244,7 @@ export default function SharePoDLinkModal({ open, onClose, delivery }) {
             {(shareInfo?.shareCode || delivery.shareCode) && (
               <div className="rounded-lg border border-[#d48806]/40 bg-[#fffdf9] p-2 text-center my-2">
                 <span className="text-[11px] uppercase tracking-wider text-[#9a6b16] font-semibold block">
-                  Mã chuyến giao hàng (Trip Code)
+                  Mã chuyến giao hàng
                 </span>
                 <span className="text-xl font-bold font-mono tracking-widest text-[#8c1524] select-all">
                   {shareInfo?.shareCode || delivery.shareCode}

@@ -381,12 +381,12 @@ export default function TradingOperating({ onNavigate }) {
       render: (c) => <span style={{ fontWeight: 600, color: '#1677ff' }}>{c}</span>,
     },
     {
-      title: 'Bên Mua (Customer)',
+      title: 'Bên mua',
       dataIndex: 'buyer',
       key: 'buyer',
     },
     {
-      title: 'Bên Bán (Supplier)',
+      title: 'Bên bán',
       dataIndex: 'seller',
       key: 'seller',
     },
@@ -664,7 +664,7 @@ export default function TradingOperating({ onNavigate }) {
           style={{ background: record.status === 'PendingAdminReview' ? '#389e0d' : undefined, borderColor: '#389e0d' }}
           onClick={() => handleOpenPayoutRequestModal(record)}
         >
-          {record.status === 'PendingAdminReview' ? 'Duyệt Payout' : 'Đã Xong'}
+          {record.status === 'PendingAdminReview' ? 'Duyệt giải ngân' : 'Đã xong'}
         </Button>
       ),
     },

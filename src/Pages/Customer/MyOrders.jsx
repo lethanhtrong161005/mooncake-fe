@@ -6,6 +6,7 @@ import {
   Descriptions,
   Divider,
   Drawer,
+  Dropdown,
   Empty,
   Image,
   Input,
@@ -28,6 +29,7 @@ import {
   CrownOutlined,
   EyeOutlined,
   FileTextOutlined,
+  MoreOutlined,
   PictureOutlined,
   PhoneOutlined,
   ReloadOutlined,
@@ -780,7 +782,7 @@ export default function MyOrders({ onNavigate }) {
                               onClick={() => setProposalModalOrder(order)}
                               style={{ background: '#d48806', borderColor: '#d48806' }}
                             >
-                              Phản hồi đề xuất này
+                              Phản hồi đề xuất
                             </Button>
                           </Space>
                         </div>
@@ -890,47 +892,11 @@ export default function MyOrders({ onNavigate }) {
                       onClick={() => setDetailOrder(order)}
                       style={{ borderRadius: 8, fontWeight: 600 }}
                     >
-                      Chi tiết &amp; Giao dịch
+                      Chi tiết
                     </Button>
 
-                    {/* View/Pay Payment Schedule */}
-                    <Button
-                      icon={<CreditCardOutlined />}
-                      onClick={() => openPaymentSchedule(order)}
-                      style={{ borderRadius: 8, fontWeight: 600 }}
-                    >
-                      Lịch trình thanh toán VNPay
-                    </Button>
-
-                    {/* Respond Delivery Proposal */}
-                    {(allowedActions.includes('ApproveDeliveryProposal') || allowedActions.includes('DeclineDeliveryProposal')) && (
-                      <Button
-                        type="primary"
-                        onClick={() => setProposalModalOrder(order)}
-                        style={{ background: '#d48806', borderColor: '#d48806', borderRadius: 8 }}
-                      >
-                        Duyệt ngày giao hàng
-                      </Button>
-                    )}
-
-                    {/* View & Review Mockup */}
-                    {order.customPackaging && (
-                      <Button
-                        icon={<EyeOutlined />}
-                        onClick={() => openPackaging(order)}
-                        style={{
-                          borderRadius: 8,
-                          fontWeight: 600,
-                          color: '#b45309',
-                          borderColor: '#f59e0b',
-                        }}
-                      >
-                        Xem &amp; Duyệt Mockup 3D
-                      </Button>
-                    )}
-
-                    {/* PoD Review & Confirm Receipt */}
-                    {canConfirmReceipt && (
+                    {/* Primary Action Button (at most 1) */}
+                    {canConfirmReceipt ? (
                       <Button
                         type="primary"
                         icon={<PictureOutlined />}
@@ -942,41 +908,72 @@ export default function MyOrders({ onNavigate }) {
                           fontWeight: 700,
                         }}
                       >
-                        Kiểm tra ảnh PoD ({podProofs.length}) &amp; Xác nhận nhận hàng
+                        Nhận hàng (PoD)
                       </Button>
-                    )}
-
-                    {!canConfirmReceipt && hasPodProofs && (
+                    ) : (allowedActions.includes('ApproveDeliveryProposal') || allowedActions.includes('DeclineDeliveryProposal')) ? (
                       <Button
-                        icon={<PictureOutlined />}
-                        onClick={() => setPodModalOrder(order)}
-                        style={{ borderRadius: 8, fontWeight: 600 }}
+                        type="primary"
+                        onClick={() => setProposalModalOrder(order)}
+                        style={{ background: '#d48806', borderColor: '#d48806', borderRadius: 8 }}
                       >
-                        Xem ảnh PoD ({podProofs.length})
+                        Duyệt ngày giao
                       </Button>
-                    )}
+                    ) : null}
 
-                    {allowedActions.includes('ReportDeliveryDispute') && (
-                      <Button
-                        danger
-                        icon={<AlertOutlined />}
-                        onClick={() => setDisputeModalOrder(order)}
-                        style={{ borderRadius: 8 }}
-                      >
-                        Khiếu nại giao hàng
-                      </Button>
-                    )}
+                    {/* Secondary Actions in Dropdown Menu */}
+                    {(() => {
+                      const moreItems = [
+                        {
+                          key: 'paymentSchedule',
+                          icon: <CreditCardOutlined />,
+                          label: 'Lịch thanh toán',
+                          onClick: () => openPaymentSchedule(order),
+                        },
+                      ];
 
-                    {/* Request Cancellation */}
-                    {allowedActions.includes('RequestCancellation') && (
-                      <Button
-                        danger
-                        onClick={() => setCancelModalOrder(order)}
-                        style={{ borderRadius: 8 }}
-                      >
-                        Yêu cầu hủy đơn
-                      </Button>
-                    )}
+                      if (order.customPackaging) {
+                        moreItems.push({
+                          key: 'packaging',
+                          icon: <EyeOutlined />,
+                          label: 'Xem mockup',
+                          onClick: () => openPackaging(order),
+                        });
+                      }
+
+                      if (!canConfirmReceipt && hasPodProofs) {
+                        moreItems.push({
+                          key: 'viewPod',
+                          icon: <PictureOutlined />,
+                          label: `Xem ảnh PoD (${podProofs.length})`,
+                          onClick: () => setPodModalOrder(order),
+                        });
+                      }
+
+                      if (allowedActions.includes('ReportDeliveryDispute')) {
+                        moreItems.push({
+                          key: 'dispute',
+                          icon: <AlertOutlined />,
+                          label: 'Khiếu nại',
+                          danger: true,
+                          onClick: () => setDisputeModalOrder(order),
+                        });
+                      }
+
+                      if (allowedActions.includes('RequestCancellation')) {
+                        moreItems.push({
+                          key: 'cancel',
+                          label: 'Hủy đơn',
+                          danger: true,
+                          onClick: () => setCancelModalOrder(order),
+                        });
+                      }
+
+                      return (
+                        <Dropdown menu={{ items: moreItems }} placement="bottomRight">
+                          <Button icon={<MoreOutlined />} style={{ borderRadius: 8 }} />
+                        </Dropdown>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1147,7 +1144,7 @@ export default function MyOrders({ onNavigate }) {
                                   fontWeight: 600,
                                 }}
                               >
-                                Thanh toán VNPay ngay
+                                Thanh toán VNPay
                               </Button>
                             )}
                           </div>

@@ -8,7 +8,6 @@ import {
   Tooltip,
 } from 'antd';
 import {
-  CameraOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
@@ -16,8 +15,6 @@ import {
   InfoCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
-  SendOutlined,
-  ShareAltOutlined,
   TruckOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -25,7 +22,6 @@ import ColonyAdminLayout from '../../components/layout/ColonyAdminLayout';
 import AssignDriverModal from '../../components/delivery/AssignDriverModal';
 import CreateDeliveryModal from '../../components/delivery/CreateDeliveryModal';
 import DeliveryDetailDrawer from '../../components/delivery/DeliveryDetailDrawer';
-import PoDViewerModal from '../../components/delivery/PoDViewerModal';
 import SharePoDLinkModal from '../../components/delivery/SharePoDLinkModal';
 import FilterBar from '../../components/common/FilterBar';
 import usePagedList from '../../hooks/usePagedList';
@@ -70,11 +66,8 @@ export default function DeliverManage({ onNavigate }) {
   const [detailDelivery, setDetailDelivery] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignDelivery, setAssignDelivery] = useState(null);
-  const [podModalOpen, setPodModalOpen] = useState(false);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareDelivery, setShareDelivery] = useState(null);
-  const [currentProofs, setCurrentProofs] = useState([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -143,34 +136,16 @@ export default function DeliverManage({ onNavigate }) {
     setAssignModalOpen(true);
   };
 
-  const handleOpenPod = async (record) => {
-    setSelectedDelivery(record);
-    try {
-      const proofs = await deliveryService.getProofs(record.id || record.key);
-      setCurrentProofs(Array.isArray(proofs) ? proofs : []);
-    } catch {
-      setCurrentProofs([]);
-    }
-    setPodModalOpen(true);
-  };
-
   const handleOpenShare = (record) => {
     setShareDelivery(record);
     setShareModalOpen(true);
   };
 
-  const handleUpdateStatus = async (record, nextStatus, notes) => {
-    try {
-      await deliveryService.updateStatus(record.id || record.key, nextStatus, notes);
-      message.success(
-        `Đã cập nhật trạng thái chuyến giao sang: ${STATUS_TAG_MAP[nextStatus]?.text || nextStatus}`
-      );
-      fetchData();
-    } catch (err) {
-      message.error(
-        err.response?.data?.message || err.message || 'Lỗi khi cập nhật trạng thái chuyến giao.'
-      );
-    }
+  const [detailRefreshKey, setDetailRefreshKey] = useState(0);
+
+  const handleAfterDeliveryChange = () => {
+    fetchData();
+    setDetailRefreshKey((k) => k + 1);
   };
 
   const columns = [
@@ -308,96 +283,20 @@ export default function DeliverManage({ onNavigate }) {
       },
     },
     {
-      title: 'Điều phối & chi tiết',
+      title: 'Thao tác',
       key: 'actions',
-      align: 'right',
-      width: '18%',
-      render: (_, record) => {
-        const status = record.status;
-        return (
-          <div className="dm-actions-cell">
-            <div className="dm-actions-row">
-              {status === 'Pending' && (
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() =>
-                    handleUpdateStatus(record, 'Confirmed', 'Xưởng xác nhận xếp xe.')
-                  }
-                >
-                  Xác nhận xếp xe
-                </Button>
-              )}
-
-              {status === 'Confirmed' && (
-                <Button
-                  size="small"
-                  onClick={() =>
-                    handleUpdateStatus(record, 'PickedUp', 'Đã bốc hàng xong tại xưởng.')
-                  }
-                >
-                  Bốc hàng lên xe
-                </Button>
-              )}
-
-              {status === 'PickedUp' && (
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() =>
-                    handleUpdateStatus(
-                      record,
-                      'InTransit',
-                      'Xe xuất bến bắt đầu vận chuyển.'
-                    )
-                  }
-                >
-                  Xuất bến
-                </Button>
-              )}
-            </div>
-
-            <div className="dm-actions-row">
-              <Tooltip title="Gán hoặc đổi tài xế, tạo mã chuyến & mã QR nhận hàng">
-                <Button
-                  size="small"
-                  icon={<UserOutlined />}
-                  onClick={() => handleOpenAssign(record)}
-                >
-                  {record.driverName ? 'Tài xế' : 'Gán tài xế'}
-                </Button>
-              </Tooltip>
-
-              <Button
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={() => handleOpenDetail(record)}
-              >
-                Chi tiết
-              </Button>
-
-              <Button
-                size="small"
-                icon={<CameraOutlined />}
-                onClick={() => handleOpenPod(record)}
-              >
-                PoD ({record.proofCount || 0})
-              </Button>
-
-              <Tooltip title="Chia sẻ liên kết công khai có thời hạn cho tài xế nộp PoD">
-                <Button
-                  size="small"
-                  icon={<ShareAltOutlined />}
-                  onClick={() => handleOpenShare(record)}
-                >
-                  Link PoD
-                </Button>
-              </Tooltip>
-            </div>
-          </div>
-        );
-      },
+      align: 'center',
+      width: 110,
+      render: (_, record) => (
+        <Button
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => handleOpenDetail(record)}
+          style={{ whiteSpace: 'nowrap' }}
+        >
+          Chi tiết
+        </Button>
+      ),
     },
   ];
 
@@ -527,6 +426,7 @@ export default function DeliverManage({ onNavigate }) {
         <DeliveryDetailDrawer
           open={detailDrawerOpen}
           delivery={detailDelivery}
+          refreshKey={detailRefreshKey}
           onClose={() => setDetailDrawerOpen(false)}
           onUpdated={fetchData}
           onOpenShareModal={(record) => handleOpenShare(record)}
@@ -537,24 +437,17 @@ export default function DeliverManage({ onNavigate }) {
           open={assignModalOpen}
           onClose={() => {
             setAssignModalOpen(false);
-            fetchData();
+            handleAfterDeliveryChange();
           }}
           delivery={assignDelivery}
-          onSuccess={fetchData}
-        />
-
-        <PoDViewerModal
-          open={podModalOpen}
-          onClose={() => setPodModalOpen(false)}
-          delivery={selectedDelivery}
-          proofs={currentProofs}
+          onSuccess={handleAfterDeliveryChange}
         />
 
         <SharePoDLinkModal
           open={shareModalOpen}
           onClose={() => {
             setShareModalOpen(false);
-            fetchData();
+            handleAfterDeliveryChange();
           }}
           delivery={shareDelivery}
         />

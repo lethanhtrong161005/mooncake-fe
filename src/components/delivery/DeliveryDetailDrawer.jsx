@@ -65,11 +65,11 @@ const NEXT_STAGE_ACTION = {
     status: 'PickedUp',
     label: 'Bốc hàng lên xe',
     notes: 'Đã bốc hàng xong tại xưởng.',
-    primary: false,
+    primary: true,
   },
   PickedUp: {
     status: 'InTransit',
-    label: 'Xuất bến (In-Transit)',
+    label: 'Xuất bến',
     notes: 'Xe xuất bến bắt đầu vận chuyển.',
     primary: true,
   },
@@ -91,6 +91,7 @@ const errorText = (err, fallback) =>
 export default function DeliveryDetailDrawer({
   open,
   delivery,
+  refreshKey,
   onClose,
   onUpdated,
   onOpenShareModal,
@@ -140,7 +141,7 @@ export default function DeliveryDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, deliveryId, loadDetail]);
+  }, [open, deliveryId, refreshKey, loadDetail]);
 
   const current = detail || delivery;
   const proofs = Array.isArray(detail?.proofs) ? detail.proofs : [];
@@ -311,7 +312,7 @@ export default function DeliveryDetailDrawer({
             </Space>
           </Descriptions.Item>
           {current?.shareCode && (
-            <Descriptions.Item label="Mã chuyến (Trip Code)">
+            <Descriptions.Item label="Mã chuyến">
               <span className="font-mono text-sm font-bold text-[#8c1524]">
                 {current.shareCode}
               </span>
@@ -417,7 +418,7 @@ export default function DeliveryDetailDrawer({
                 icon={<UserOutlined />}
                 onClick={() => onOpenAssignDriver?.(current)}
               >
-                Đổi / Xem mã &amp; QR tài xế
+                Đổi tài xế
               </Button>
             </div>
           </div>
@@ -431,7 +432,7 @@ export default function DeliveryDetailDrawer({
               onClick={() => onOpenAssignDriver?.(current)}
               className="bg-[#8c1524]"
             >
-              Gán tài xế ngay
+              Gán tài xế
             </Button>
           </div>
         )}
@@ -489,7 +490,7 @@ export default function DeliveryDetailDrawer({
             icon={<ShareAltOutlined />}
             onClick={() => onOpenShareModal?.(current)}
           >
-            {shareLink?.isActive ? 'Quản lý / Reshare link' : 'Tạo link tài xế'}
+            {shareLink?.isActive ? 'Quản lý link' : 'Gửi link tài xế'}
           </Button>
         </div>
       </div>
@@ -686,7 +687,7 @@ export default function DeliveryDetailDrawer({
             <div className="dd-drawer-summary__actions">
               {nextAction && (
                 <Button
-                  type={nextAction.primary ? 'primary' : 'default'}
+                  type="primary"
                   icon={
                     nextAction.status === 'InTransit' ? (
                       <SendOutlined />
@@ -701,28 +702,28 @@ export default function DeliveryDetailDrawer({
                 </Button>
               )}
 
-              {current.status !== 'Delivered' && current.status !== 'Returned' && (
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={handleOpenEditCarrier}
-                >
-                  Sửa vận đơn &amp; người nhận
-                </Button>
-              )}
-
               <Button
                 icon={<UserOutlined />}
                 onClick={() => onOpenAssignDriver?.(current)}
               >
-                {current?.driverName ? 'Tài xế & Mã chuyến' : 'Gán tài xế'}
+                {current?.driverName ? 'Đổi tài xế' : 'Gán tài xế'}
               </Button>
 
               <Button
                 icon={<ShareAltOutlined />}
                 onClick={() => onOpenShareModal?.(current)}
               >
-                Tài xế PoD
+                Gửi link cho tài xế
               </Button>
+
+              {current.status !== 'Delivered' && current.status !== 'Returned' && (
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={handleOpenEditCarrier}
+                >
+                  Sửa vận đơn
+                </Button>
+              )}
             </div>
           </div>
 
