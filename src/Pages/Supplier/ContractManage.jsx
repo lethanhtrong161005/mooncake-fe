@@ -197,7 +197,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Số hợp đồng',
       dataIndex: 'contractNumber',
       key: 'contractNumber',
-      width: 175,
+      width: 140,
       render: (no) => (
         <span className="font-mono text-sm font-semibold text-[#7d1322]">{no}</span>
       ),
@@ -206,8 +206,10 @@ export default function ContractManage({ onNavigate }) {
       title: 'Tiêu đề / ghi chú',
       dataIndex: 'title',
       key: 'title',
+      width: 260,
+      ellipsis: true,
       render: (t) => (
-        <span className="font-medium text-[#231a18]">{t || 'Hợp đồng đơn hàng RFQ'}</span>
+        <span className="font-medium text-[#231a18]" title={t}>{t || 'Hợp đồng đơn hàng RFQ'}</span>
       ),
     },
     {
@@ -234,6 +236,7 @@ export default function ContractManage({ onNavigate }) {
     {
       title: 'Xác nhận hợp đồng',
       key: 'signature',
+      width: 240,
       render: (_, r) => {
         const supplierSigned = Boolean(r.signedBySupplierAt || r.isSignedBySupplier);
         const customerSigned = Boolean(r.signedByCustomerAt || r.isSignedByCustomer);
@@ -261,6 +264,7 @@ export default function ContractManage({ onNavigate }) {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 130,
       render: (st) => (
         <Tag color={statusMap[st]?.[0] || 'default'}>
           {statusMap[st]?.[1] || st}
@@ -271,6 +275,8 @@ export default function ContractManage({ onNavigate }) {
       title: 'Thao tác',
       key: 'action',
       align: 'right',
+      width: 220,
+      fixed: 'right',
       render: (_, record) => {
         const moreItems = [];
         if (record.status === 'Active') {
@@ -387,7 +393,7 @@ export default function ContractManage({ onNavigate }) {
                 showSizeChanger: true,
                 pageSizeOptions: [10, 20, 50, 100],
               }}
-              scroll={{ x: 950 }}
+              scroll={{ x: 1300 }}
             />
           </div>
         </section>
