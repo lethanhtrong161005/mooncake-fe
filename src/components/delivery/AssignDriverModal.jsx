@@ -257,7 +257,7 @@ export default function AssignDriverModal({ open, onClose, delivery, onSuccess }
                   </Button>
                 )}
                 <Button type="primary" htmlType="submit" loading={loading} className="bg-[#8c1524]">
-                  {hasExistingDriver ? 'Lưu & Cấp lại mã chuyến' : 'Xác nhận gán tài xế'}
+                  {hasExistingDriver ? 'Lưu & cấp mã' : 'Gán tài xế'}
                 </Button>
               </div>
             </Form>
@@ -266,7 +266,7 @@ export default function AssignDriverModal({ open, onClose, delivery, onSuccess }
           <div className="space-y-4">
             <div className="rounded-2xl border-2 border-[#d48806]/40 bg-[#fffdf9] p-4 text-center space-y-2">
               <div className="text-xs uppercase tracking-wider text-[#9a6b16] font-semibold">
-                Mã chuyến giao hàng (Trip Code)
+                Mã chuyến giao hàng
               </div>
               <div className="text-3xl font-extrabold tracking-widest text-[#8c1524] select-all font-mono py-1">
                 {shareCode || 'CHƯA CẤP'}

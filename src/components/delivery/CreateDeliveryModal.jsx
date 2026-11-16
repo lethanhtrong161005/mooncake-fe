@@ -388,13 +388,13 @@ export default function CreateDeliveryModal({
       title={
         <div className="flex items-center gap-2 text-slate-800">
           <CarOutlined className="text-amber-600 text-lg" />
-          <span>Tạo Chuyến Giao Hàng Mới (Chia Đợt - Split Shipment)</span>
+          <span>Tạo chuyến giao</span>
         </div>
       }
       open={open}
       onCancel={onClose}
       onOk={handleSubmit}
-      okText="Xác nhận Tạo Chuyến Giao"
+      okText="Tạo chuyến"
       cancelText="Hủy"
       confirmLoading={loading}
       width={720}
@@ -454,7 +454,7 @@ export default function CreateDeliveryModal({
               rules={[{ required: true, message: 'Vui lòng chọn Hợp đồng áp dụng' }]}
             >
               <Select
-                placeholder="Chọn Hợp đồng B2B đang có hiệu lực (Active)"
+                placeholder="Chọn Hợp đồng B2B đang có hiệu lực"
                 loading={loadingDetails}
               >
                 {contracts.map((c) => (

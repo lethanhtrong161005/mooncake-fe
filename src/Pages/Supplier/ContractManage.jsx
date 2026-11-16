@@ -5,6 +5,7 @@ import {
   DatePicker,
   Descriptions,
   Divider,
+  Dropdown,
   Form,
   Image,
   Input,
@@ -24,6 +25,7 @@ import {
   FileDoneOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
+  MoreOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
   TruckOutlined,
@@ -269,54 +271,64 @@ export default function ContractManage({ onNavigate }) {
       title: 'Thao tác',
       key: 'action',
       align: 'right',
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button
-            size="small"
-            icon={<FileTextOutlined />}
-            onClick={() => handleOpenMilestones(record)}
-          >
-            Xem hợp đồng &amp; đối soát
-          </Button>
+      render: (_, record) => {
+        const moreItems = [];
+        if (record.status === 'Active') {
+          moreItems.push({
+            key: 'extension',
+            icon: <ClockCircleOutlined />,
+            label: 'Xin gia hạn',
+            onClick: () => handleOpenExtension(record),
+          });
+        }
 
-          {record.status === 'PendingSignature' && (
-            !(record.signedBySupplierAt || record.isSignedBySupplier) ? (
-              <Button
-                type="primary"
-                size="small"
-                style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
-                icon={<SafetyCertificateOutlined />}
-                onClick={() => openSignModal(record)}
-              >
-                Ký hợp đồng
-              </Button>
-            ) : (
-              <Tag color="success">Đã ký (Chờ khách)</Tag>
-            )
-          )}
+        return (
+          <Space size="small">
+            <Button
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => handleOpenMilestones(record)}
+            >
+              Chi tiết
+            </Button>
 
-          {record.status === 'Active' && (
-            <>
-              <Button
-                size="small"
-                icon={<ClockCircleOutlined />}
-                onClick={() => handleOpenExtension(record)}
-              >
-                Xin gia hạn
-              </Button>
-              <Button
-                type="primary"
-                size="small"
-                style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
-                icon={<FileDoneOutlined />}
-                onClick={() => handleRequestFinalAcceptance(record)}
-              >
-                Yêu cầu nghiệm thu
-              </Button>
-            </>
-          )}
-        </Space>
-      ),
+            {record.status === 'PendingSignature' && (
+              !(record.signedBySupplierAt || record.isSignedBySupplier) ? (
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{ backgroundColor: '#7d1322', borderColor: '#7d1322' }}
+                  icon={<SafetyCertificateOutlined />}
+                  onClick={() => openSignModal(record)}
+                >
+                  Ký hợp đồng
+                </Button>
+              ) : (
+                <Tag color="success">Đã ký (Chờ khách)</Tag>
+              )
+            )}
+
+            {record.status === 'Active' && (
+              <>
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
+                  icon={<FileDoneOutlined />}
+                  onClick={() => handleRequestFinalAcceptance(record)}
+                >
+                  Nghiệm thu
+                </Button>
+                {moreItems.length > 0 && (
+                  <Dropdown menu={{ items: moreItems }} placement="bottomRight">
+                    <Button size="small" icon={<MoreOutlined />} />
+                  </Dropdown>
+                )}
+              </>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -392,6 +404,24 @@ export default function ContractManage({ onNavigate }) {
           onCancel={() => setMilestonesModalOpen(false)}
           footer={(
             <Space>
+              {contractDetails?.status === 'Active' && (
+                <>
+                  <Button
+                    icon={<ClockCircleOutlined />}
+                    onClick={() => handleOpenExtension(contractDetails)}
+                  >
+                    Xin gia hạn
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<FileDoneOutlined />}
+                    style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
+                    onClick={() => handleRequestFinalAcceptance(contractDetails)}
+                  >
+                    Nghiệm thu
+                  </Button>
+                </>
+              )}
               {contractDetails?.status === 'Active' && m2Paid && (
                 <Button
                   type="primary"
@@ -399,7 +429,7 @@ export default function ContractManage({ onNavigate }) {
                   style={{ backgroundColor: '#2d5a43', borderColor: '#2d5a43' }}
                   onClick={() => setDeliveryModalOpen(true)}
                 >
-                  Tạo đợt giao mới
+                  Tạo đợt giao
                 </Button>
               )}
               <Button onClick={() => setMilestonesModalOpen(false)}>Đóng</Button>
