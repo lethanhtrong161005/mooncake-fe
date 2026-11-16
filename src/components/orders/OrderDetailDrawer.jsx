@@ -22,6 +22,10 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import orderService from '../../services/orderService';
+import {
+  disputeIssueTypeLabel,
+  disputeStatusLabel as toDisputeStatusLabel,
+} from '../../constants/disputeLabels';
 
 const money = (value) => `${Number(value || 0).toLocaleString('vi-VN')} ₫`;
 
@@ -445,7 +449,7 @@ export default function OrderDetailDrawer({
               ? `Chờ xưởng phản hồi${deadline ? ` (hạn ${formatDateTime(deadline)})` : ''}`
               : dispute.status === 'Open'
                 ? 'Đang giải quyết (Xưởng đã nộp phản biện)'
-                : dispute.status;
+                : toDisputeStatusLabel(dispute.status);
 
             return (
               <Alert
@@ -455,7 +459,7 @@ export default function OrderDetailDrawer({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-bold">Khiếu nại giao hàng · {disputeStatusLabel}</span>
                     <Tag color={isAwaitingRebuttal ? 'orange' : 'volcano'} className="m-0 font-semibold">
-                      {isAwaitingRebuttal ? 'Chờ xưởng phản biện' : dispute.status}
+                      {toDisputeStatusLabel(dispute.status)}
                     </Tag>
                   </div>
                 }
@@ -463,7 +467,7 @@ export default function OrderDetailDrawer({
                   <div className="space-y-2 text-xs mt-1">
                     <div>
                       <span className="font-semibold text-stone-700">Vấn đề khiếu nại:</span>{' '}
-                      <b>{dispute.issueType}</b> — {dispute.description}
+                      <b>{disputeIssueTypeLabel(dispute.issueType)}</b> — {dispute.description}
                     </div>
 
                     {isAwaitingRebuttal && (
