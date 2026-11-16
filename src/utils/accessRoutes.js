@@ -1,11 +1,14 @@
-export const PUBLIC_ROUTES = new Set(['trang-chu', 'tim-kiem', 'bo-suu-tap-banh', 'san-pham', 'giao-hang-tai-xe']);
+export const PUBLIC_ROUTES = new Set([
+  'trang-chu', 'tim-kiem', 'bo-suu-tap-banh', 'san-pham', 'giao-hang-tai-xe',
+  'thanh-toan/ket-qua', 'ket-qua-thanh-toan',
+]);
 
 export const CUSTOMER_ROUTES = new Set([
   'dat-hang-thiet-ke', 'dat-hang-doanh-nghiep', 'don-hang-cua-toi',
   'in-an-bao-bi', 'yeu-cau-bao-gia', 'so-sanh-bao-gia', 'so-sanh-thau-rfq',
   'hop-dong-tien-do', 'hop-dong-dien-tu', 'giao-hang-pod', 'van-chuyen-pod',
   'thanh-toan-danh-gia',
-  'danh-gia-va-phe-duyet-mau-thu', 'thanh-toan/ket-qua', 'ket-qua-thanh-toan',
+  'danh-gia-va-phe-duyet-mau-thu',
   'ho-so-khach-hang',
 ]);
 

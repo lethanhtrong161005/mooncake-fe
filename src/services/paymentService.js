@@ -42,7 +42,10 @@ export const paymentService = {
 
   // 4. Xác thực kết quả VNPay Return Callback
   async verifyReturnCallback(queryString) {
-    const res = await apiClient.get(`${API_ENDPOINTS.PAYMENTS.VNPAY_RETURN}?${queryString}`);
+    const res = await apiClient.get(`${API_ENDPOINTS.PAYMENTS.VNPAY_RETURN}?${queryString}`, {
+      skipAuthHeader: true,
+      skipAuthRefresh: true,
+    });
     return unwrap(res);
   },
 
